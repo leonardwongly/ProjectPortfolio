@@ -4,10 +4,105 @@
     <link rel="stylesheet" href="css/bootstrap.css">
     <script src="js/bootstrap.js"></script>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
     <title>ProjectPortfolio</title>
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+        /* Show it is fixed to the top */
+        body {
+            min-height: 75rem;
+            padding-top: 4.5rem;
+        }
+        .circle-img {
+            border-radius: 50%;
+            vertical-align: middle;
+            width: 150px;
+            height: 150px;
+        }
+        @font-face {
+            font-family: SF-Pro;
+            src: url(/fonts/SF-Pro.ttf);
+        }
+
+        body {
+            font-family: SF-Pro;
+        }
+    </style>
 
 </head>
 <body>
 
+<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Project Portfolio</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                <li class="nav-item active">
+                    <a class="nav-link" aria-current="page" href="#">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Link</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="true">
+                        Resume
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <li><a class="dropdown-item" href="#">View</a></li>
+                        <li><a class="dropdown-item" href="#">Download</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="row align-items-center">
+        <div class="col-sm">
+            <img src="images/leo.jpeg" class="img-thumbnail circle-img" style="display: block;
+             margin-left: auto; margin-right: auto;" />
+            <br/>
+            <div class="row align-items-center">
+                <div class="col-6 mx-auto">
+                    <!-- Summary Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            Summary
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Leonard is a full-time student at Singapore Management University (SMU), reading Bachelor of Science (Information Systems), Major in Cyber Security under Quantedge Foundation Scholarship.
+                                In his Freshman Year, he completed a 22 weeks internship at Thome Ship Management Pte. Ltd. Thereafter, in his Sophomore & Penultimate Year, he completed a total of 25 weeks of internship at Alpha Ori Technologies Pte. Ltd (AOT) at their Singapore's office (19 weeks) & Silicon Valley's office (6 weeks), under MPA Global Internship Award 2019.
+                                Prior to SMU, he was a student at Nanyang Polytechnic (NYP), where he attained Diploma in Business Informatics with Merit, with a GPA of 3.91.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+        </div>
+    </div>
+</main>
+
 </body>
 </html>
+
