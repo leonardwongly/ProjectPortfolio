@@ -8,20 +8,6 @@
     <meta name="description" content="">
     <title>ProjectPortfolio</title>
     <style>
-        .bd-placeholder-img {
-            font-size: 1.125rem;
-            text-anchor: middle;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            user-select: none;
-        }
-
-        @media (min-width: 768px) {
-            .bd-placeholder-img-lg {
-                font-size: 3.5rem;
-            }
-        }
-
         /* Show it is fixed to the top */
         body {
             min-height: 75rem;
@@ -48,6 +34,7 @@
 
         /*** Timeline CSS ***/
         .main-timeline{
+            /*font-family: 'Roboto', sans-serif;*/
             position: relative;
         }
         .main-timeline:after{
@@ -119,10 +106,7 @@
             left: -30px;
             right: 70px;
         }
-        .main-timeline .timeline:nth-child(even) .timeline-year{
-            right: -15px;
-            left: auto;
-        }
+
         .main-timeline .timeline:nth-child(even) .timeline-icon{
             right: auto;
             left: -20px;
@@ -162,12 +146,7 @@
                 left: 10px;
                 right: 10px;
             }
-            .main-timeline ,
-            .main-timeline .timeline:nth-child(even) {
-                transform: translateX(-50%) translateY(0);
-                top: 10px;
-                left: 50%;
-            }
+
             .main-timeline .timeline-icon,
             .main-timeline .timeline:nth-child(even) .timeline-icon{
                 font-size: 50px;
@@ -236,8 +215,8 @@
     <div class="row align-items-center offset-md-2">
         <div class="col-8 mx-auto">
             <p>
-                <img src="icons/person-fill.svg" alt="" width="20" height="20" title=""/>&nbsp;Final Year Student,
-                Quantedge Foundation Scholar & MPA GIA 2019 Awardee
+                <img src="icons/person-fill.svg" alt="" width="20" height="20" />&nbsp;Final Year Student,
+                Quantedge Foundation Scholar & MPA Global Internship Award 2019 Awardee
             </p>
         </div>
     </div>
@@ -247,7 +226,7 @@
             <!-- Summary Card -->
             <div class="card" style="color:white;">
                 <div class="card-header" style="background-color:#424242">
-                    Summary <img src="icons/bootstrap.svg" alt="" width="20" height="20" title="Bootstrap">
+                    Summary
                 </div>
                 <div class="card-body" style="background-color:#616161">
                     <p class="card-text">
@@ -268,22 +247,22 @@
 </main>
 
 
-
-
-<!-- Flexbox Timeline -->
+<!-- Education Timeline -->
 <!-- Adapted from https://bestjquery.com/tutorial/timeline/demo108/ -->
 <div class="container">
     <div class="row">
         <div class="col-8 mx-auto">
 
             <div class="card">
-                <h4 class="card-header text-center"><img src="icons/book.svg" alt="" width="20" height="20" title="book-fill">&nbsp;Education</h4>
+                <h4 class="card-header text-center"><img src="icons/book.svg" alt="" width="20" height="20"
+                                                         title="book-fill">&nbsp;Education</h4>
                 <div class="card-body">
                     <div class="main-timeline">
+
                         <div class="timeline">
                             <div class="timeline-content">
                                 <div class="timeline-icon">
-                                    <img src="images/smu.jpeg" width="60px" height="60px">
+                                    <img src="images/smu.jpeg" width="60px" height="60px" />
                                 </div>
                                 <h3 class="title">Singapore Management University</h3>
                                 <h4 class="title">Aug 2017 - Dec 2021</h4>
@@ -297,12 +276,12 @@
                         <div class="timeline">
                             <div class="timeline-content">
                                 <div class="timeline-icon">
-                                    <img src="images/nyp.jpeg" width="60px" height="60px">
+                                    <img src="images/nyp.jpeg" width="60px" height="60px" />
                                 </div>
                                 <h3 class="title">Nanyang Polytechnic</h3>
                                 <h4 class="title">Aug 2017 - Dec 2021</h4>
                                 <p class="description">
-                                    •  Diploma in Business Informatics with Merit
+                                    • Diploma in Business Informatics with Merit
                                     <br/>• Director's List for <b><u>EVERY</u></b> semester
                                     <br/>• GPA 3.91/4
                                 </p>
@@ -312,31 +291,73 @@
                         <div class="timeline">
                             <div class="timeline-content">
                                 <div class="timeline-icon">
-                                    <img src="images/gachon.jpeg" width="60px" height="60px">
+                                    <img src="images/gachon.jpeg" width="60px" height="60px" />
                                 </div>
                                 <h3 class="title">Gachon University</h3>
                                 <h4 class="title">Sep - Dec 2015</h4>
                                 <p class="description">
-                                    •  Overseas Student Exchange for 1 Semester
+                                    • Overseas Student Exchange for 1 Semester
                                     <br/>• Business Major
                                     <br/>• GPA 4.1/4.5
                                 </p>
                             </div>
                         </div>
 
+
                     </div>
                 </div>
             </div>
-
-
-
         </div>
-
-
-
     </div>
 </div>
-<!-- Flexbox Timeline -->
+<!-- Education Timeline -->
+<br/>
+<br/>
+<!-- Career Timeline -->
+<!-- Adapted from https://bestjquery.com/tutorial/timeline/demo108/ -->
+<div class="container">
+    <div class="row">
+        <div class="col-8 mx-auto">
+
+            <div class="card">
+                <h4 class="card-header text-center"><img src="icons/building.svg" alt="" width="20" height="20"
+                                                         title="building">&nbsp;Career Experience </h4>
+                <div class="card-body">
+                    <div class="main-timeline">
+                        <div class="timeline">
+                            <div class="timeline-content">
+                                <div class="timeline-icon">
+                                    <img src="images/alphaori.png" width="60px" height="60px" />
+                                </div>
+                                <h3 class="title">Alpha Ori Technologies Pte. Ltd. <img src="icons/info-circle-fill.svg" width="20px" height="20px" /></h3>
+                                <p class="description">
+                                    <img src="icons/card-text.svg" width="15px" height="15px" />&nbsp;Maritime Tech Solutions Intern
+                                    <br/>
+                                    <img src="icons/calendar-fill.svg" width="15px" height="15px" />&nbsp;4 May - 31 Jul 2020 (13-weeks)
+                                    <br/>
+                                    <img src="icons/cursor-fill.svg" width="15px" height="15px" />&nbsp;Singapore
+                                </p>
+                                <br/>
+                                <p class="description">
+                                    <img src="icons/card-text.svg" width="15px" height="15px" />&nbsp;Intern (Under MPA Global Internship Award 2019)
+                                    <br/>
+                                    <img src="icons/calendar-fill.svg" width="15px" height="15px" />&nbsp;13 May - 2 Aug 2019 (12-weeks)
+                                    <br/>
+                                    <img src="icons/cursor-fill.svg" width="15px" height="15px" />&nbsp;Singapore & Silicon Valley (Santa Clara)
+                                </p>
+                                <br/>
+                            </div>
+                        </div>
+
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Career Timeline -->
 
 </body>
 </html>
