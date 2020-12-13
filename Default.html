@@ -17,8 +17,6 @@
         .circle-img {
             border-radius: 50%;
             vertical-align: middle;
-            width: 150px;
-            height: 150px;
         }
 
         @font-face {
@@ -33,22 +31,25 @@
 
 
         /*** Timeline CSS ***/
-        .main-timeline{
+        .main-timeline {
             /*font-family: 'Roboto', sans-serif;*/
             position: relative;
         }
-        .main-timeline:after{
+
+        .main-timeline:after {
             content: '';
             display: block;
             clear: both;
         }
-        .main-timeline .timeline{
+
+        .main-timeline .timeline {
             width: 60%;
             padding: 0 30px 0 0;
             margin: 20px 0;
             float: left;
         }
-        .main-timeline .timeline-content{
+
+        .main-timeline .timeline-content {
             background-color: #536E79;
             min-height: 133px;
             padding: 30px 95px 30px 130px;
@@ -56,8 +57,12 @@
             position: relative;
             z-index: 1;
         }
-        .main-timeline .timeline-content:hover{ text-decoration: none; }
-        .main-timeline .timeline-content:before{
+
+        .main-timeline .timeline-content:hover {
+            text-decoration: none;
+        }
+
+        .main-timeline .timeline-content:before {
             content: '';
             background: #fff;
             border-radius: 100px 20px 20px 100px;
@@ -69,7 +74,7 @@
             z-index: -1;
         }
 
-        .main-timeline .timeline-icon{
+        .main-timeline .timeline-icon {
             color: #fff;
             background-color: #536E79;
             font-size: 60px;
@@ -78,68 +83,90 @@
             width: 100px;
             height: 100px;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.4);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
             transform: translateY(-50%);
             position: absolute;
             right: -20px;
             top: 50%;
         }
-        .main-timeline .title{
+
+        .main-timeline .title {
             color: #536E79;
             font-size: 22px;
             font-weight: 600;
             text-transform: uppercase;
             margin: 0 0 7px 0;
         }
-        .main-timeline .description{
+
+        .main-timeline .description {
             color: #817f7f;
             font-size: 15px;
             margin: 0;
         }
-        .main-timeline .timeline:nth-child(even){
+
+        .main-timeline .timeline:nth-child(even) {
             padding: 0 0 0 30px;
             float: right;
         }
-        .main-timeline .timeline:nth-child(even) .timeline-content{ padding: 30px 130px 30px 95px; }
-        .main-timeline .timeline:nth-child(even) .timeline-content:before{
+
+        .main-timeline .timeline:nth-child(even) .timeline-content {
+            padding: 30px 130px 30px 95px;
+        }
+
+        .main-timeline .timeline:nth-child(even) .timeline-content:before {
             border-radius: 20px 100px 100px 20px;
             left: -30px;
             right: 70px;
         }
 
-        .main-timeline .timeline:nth-child(even) .timeline-icon{
+        .main-timeline .timeline:nth-child(even) .timeline-icon {
             right: auto;
             left: -20px;
         }
+
         .main-timeline .timeline:nth-child(4n+2) .timeline-content,
-        .main-timeline .timeline:nth-child(4n+2) .timeline-icon{
+        .main-timeline .timeline:nth-child(4n+2) .timeline-icon {
             background-color: #00B8D4;
         }
-        .main-timeline .timeline:nth-child(4n+2) .title{ color: #00B8D4; }
+
+        .main-timeline .timeline:nth-child(4n+2) .title {
+            color: #00B8D4;
+        }
+
         .main-timeline .timeline:nth-child(4n+3) .timeline-content,
-        .main-timeline .timeline:nth-child(4n+3) .timeline-icon{
+        .main-timeline .timeline:nth-child(4n+3) .timeline-icon {
             background-color: #FEA726;
         }
-        .main-timeline .timeline:nth-child(4n+3) .title{ color: #FEA726; }
+
+        .main-timeline .timeline:nth-child(4n+3) .title {
+            color: #FEA726;
+        }
+
         .main-timeline .timeline:nth-child(4n+4) .timeline-content,
-        .main-timeline .timeline:nth-child(4n+4) .timeline-icon{
+        .main-timeline .timeline:nth-child(4n+4) .timeline-icon {
             background-color: #01BFA5;
         }
-        .main-timeline .timeline:nth-child(4n+4) .title{ color: #01BFA5; }
-        @media screen and (max-width:767px){
+
+        .main-timeline .timeline:nth-child(4n+4) .title {
+            color: #01BFA5;
+        }
+
+        @media screen and (max-width: 767px) {
             .main-timeline .timeline,
-            .main-timeline .timeline:nth-child(even){
+            .main-timeline .timeline:nth-child(even) {
                 text-align: center;
                 width: 100%;
                 padding: 0 0 30px 0;
                 margin: 0 0 30px;
             }
+
             .main-timeline .timeline-content,
-            .main-timeline .timeline:nth-child(even) .timeline-content{
+            .main-timeline .timeline:nth-child(even) .timeline-content {
                 padding: 80px 25px;
             }
+
             .main-timeline .timeline-content:before,
-            .main-timeline .timeline:nth-child(even) .timeline-content:before{
+            .main-timeline .timeline:nth-child(even) .timeline-content:before {
                 border-radius: 50px 50px 20px 20px;
                 bottom: -30px;
                 top: 65px;
@@ -148,7 +175,7 @@
             }
 
             .main-timeline .timeline-icon,
-            .main-timeline .timeline:nth-child(even) .timeline-icon{
+            .main-timeline .timeline:nth-child(even) .timeline-icon {
                 font-size: 50px;
                 line-height: 85px;
                 width: 85px;
@@ -160,9 +187,13 @@
                 left: 50%;
             }
         }
-        @media screen and (max-width:576px){
-            .main-timeline .title{ font-size: 18px; }
+
+        @media screen and (max-width: 576px) {
+            .main-timeline .title {
+                font-size: 18px;
+            }
         }
+
         /*** Timeline CSS ***/
     </style>
 
@@ -201,9 +232,9 @@
 
 <main class="container">
     <div class="row">
-        <div class="col-sm-6 col-md-8 offset-md-1 col-lg-10">
+        <div class="col-12">
             <img src="images/leo.jpeg" class="img-thumbnail circle-img" style="display: block;
-             margin-left: auto; margin-right: auto;"/>
+             margin-left: auto; margin-right: auto; width: 150px; height: 150px;"/>
         </div>
     </div>
     <br/>
@@ -215,14 +246,14 @@
     <div class="row align-items-center offset-md-2">
         <div class="col-8 mx-auto">
             <p>
-                <img src="icons/person-fill.svg" alt="" width="20" height="20" />&nbsp;Final Year Student,
+                <img src="icons/person-fill.svg" alt="" width="20" height="20"/>&nbsp;Final Year Student,
                 Quantedge Foundation Scholar & MPA Global Internship Award 2019 Awardee
             </p>
         </div>
     </div>
     <br/>
     <div class="row align-items-center">
-        <div class="col-8 mx-auto">
+        <div class="col-12 mx-auto">
             <!-- Summary Card -->
             <div class="card" style="color:white;">
                 <div class="card-header" style="background-color:#424242">
@@ -251,59 +282,52 @@
 <!-- Adapted from https://bestjquery.com/tutorial/timeline/demo108/ -->
 <div class="container">
     <div class="row">
-        <div class="col-8 mx-auto">
+        <div class="col-12 mx-auto">
+            <h4 class="text-center"><img src="icons/book.svg" alt="" width="20" height="20"
+                                         title="book-fill">&nbsp;Education</h4>
+            <div class="main-timeline">
 
-            <div class="card">
-                <h4 class="card-header text-center"><img src="icons/book.svg" alt="" width="20" height="20"
-                                                         title="book-fill">&nbsp;Education</h4>
-                <div class="card-body">
-                    <div class="main-timeline">
-
-                        <div class="timeline">
-                            <div class="timeline-content">
-                                <div class="timeline-icon">
-                                    <img src="images/smu.jpeg" width="60px" height="60px" />
-                                </div>
-                                <h3 class="title">Singapore Management University</h3>
-                                <h4 class="title">Aug 2017 - Dec 2021</h4>
-                                <p class="description">
-                                    • Final Year Student
-                                    <br/>• Bachelor of Science (Information Systems): Major in Cyber Security
-                                </p>
-                            </div>
+                <div class="timeline">
+                    <div class="timeline-content">
+                        <div class="timeline-icon">
+                            <img src="images/smu.jpeg" width="60px" height="60px"/>
                         </div>
+                        <h3 class="title">Singapore Management University</h3>
+                        <h4 class="title">Aug 2017 - Dec 2021</h4>
+                        <p class="description">
+                            • Final Year Student
+                            <br/>• Bachelor of Science (Information Systems): Major in Cyber Security
+                        </p>
+                    </div>
+                </div>
 
-                        <div class="timeline">
-                            <div class="timeline-content">
-                                <div class="timeline-icon">
-                                    <img src="images/nyp.jpeg" width="60px" height="60px" />
-                                </div>
-                                <h3 class="title">Nanyang Polytechnic</h3>
-                                <h4 class="title">Aug 2017 - Dec 2021</h4>
-                                <p class="description">
-                                    • Diploma in Business Informatics with Merit
-                                    <br/>• Director's List for <b><u>EVERY</u></b> semester
-                                    <br/>• GPA 3.91/4
-                                </p>
-                            </div>
+                <div class="timeline">
+                    <div class="timeline-content">
+                        <div class="timeline-icon">
+                            <img src="images/nyp.jpeg" width="60px" height="60px"/>
                         </div>
+                        <h3 class="title">Nanyang Polytechnic</h3>
+                        <h4 class="title">Aug 2017 - Dec 2021</h4>
+                        <p class="description">
+                            • Diploma in Business Informatics with Merit
+                            <br/>• Director's List for <b><u>EVERY</u></b> semester
+                            <br/>• GPA 3.91/4
+                        </p>
+                    </div>
+                </div>
 
-                        <div class="timeline">
-                            <div class="timeline-content">
-                                <div class="timeline-icon">
-                                    <img src="images/gachon.jpeg" width="60px" height="60px" />
-                                </div>
-                                <h3 class="title">Gachon University</h3>
-                                <h4 class="title">Sep - Dec 2015</h4>
-                                <p class="description">
-                                    • Overseas Student Exchange for 1 Semester
-                                    <br/>• Business Major
-                                    <br/>• GPA 4.1/4.5
-                                </p>
-                            </div>
+                <div class="timeline">
+                    <div class="timeline-content">
+                        <div class="timeline-icon">
+                            <img src="images/gachon.jpeg" width="60px" height="60px"/>
                         </div>
-
-
+                        <h3 class="title">Gachon University</h3>
+                        <h4 class="title">Sep - Dec 2015</h4>
+                        <p class="description">
+                            • Overseas Student Exchange for 1 Semester
+                            <br/>• Business Major
+                            <br/>• GPA 4.1/4.5
+                        </p>
                     </div>
                 </div>
             </div>
@@ -317,91 +341,99 @@
 <!-- Adapted from https://bestjquery.com/tutorial/timeline/demo108/ -->
 <div class="container">
     <div class="row">
-        <div class="col-8 mx-auto">
+        <div class="col-12 mx-auto">
+            <h4 class="text-center"><img src="icons/building.svg" alt="" width="20" height="20"
+                                         title="building">&nbsp;Career Experience</h4>
+            <div class="main-timeline">
 
-            <div class="card">
-                <h4 class="card-header text-center"><img src="icons/building.svg" alt="" width="20" height="20"
-                                                         title="building">&nbsp;Career Experience </h4>
-                <div class="card-body">
-                    <div class="main-timeline">
-
-                        <div class="timeline">
-                            <div class="timeline-content">
-                                <div class="timeline-icon">
-                                    <img src="images/alphaori.png" width="60px" height="60px" />
-                                </div>
-                                <h3 class="title">Alpha Ori Technologies Pte. Ltd. <img src="icons/info-circle-fill.svg" width="20px" height="20px" data-bs-toggle="modal" data-bs-target="#modalAO" /></h3>
-                                <p class="description">
-                                    <img src="icons/briefcase-fill.svg" width="15px" height="15px" />&nbsp;Maritime Tech Solutions Intern
-                                    <br/>
-                                    <img src="icons/calendar-fill.svg" width="15px" height="15px" />&nbsp;4 May - 31 Jul 2020 (13-weeks)
-                                    <br/>
-                                    <img src="icons/cursor-fill.svg" width="15px" height="15px" />&nbsp;Singapore
-                                </p>
-                                <br/>
-                                <p class="description">
-                                    <img src="icons/briefcase-fill.svg" width="15px" height="15px" />&nbsp;Intern (Under MPA Global Internship Award 2019)
-                                    <br/>
-                                    <img src="icons/calendar-fill.svg" width="15px" height="15px" />&nbsp;13 May - 2 Aug 2019 (12-weeks)
-                                    <br/>
-                                    <img src="icons/cursor-fill.svg" width="15px" height="15px" />&nbsp;Singapore & Silicon Valley (Santa Clara)
-                                </p>
-                                <br/>
-                            </div>
+                <div class="timeline">
+                    <div class="timeline-content">
+                        <div class="timeline-icon">
+                            <img src="images/alphaori.png" width="60px" height="60px"/>
                         </div>
+                        <h3 class="title">Alpha Ori Technologies Pte. Ltd. <img src="icons/info-circle-fill.svg"
+                                                                                width="20px" height="20px"
+                                                                                data-bs-toggle="modal"
+                                                                                data-bs-target="#modalAO"/></h3>
+                        <p class="description">
+                            <img src="icons/briefcase-fill.svg" width="15px" height="15px"/>&nbsp;Maritime Tech
+                            Solutions Intern
+                            <br/>
+                            <img src="icons/calendar-fill.svg" width="15px" height="15px"/>&nbsp;4 May - 31 Jul 2020
+                            (13-weeks)
+                            <br/>
+                            <img src="icons/cursor-fill.svg" width="15px" height="15px"/>&nbsp;Singapore
+                        </p>
+                        <br/>
+                        <p class="description">
+                            <img src="icons/briefcase-fill.svg" width="15px" height="15px"/>&nbsp;Intern (Under MPA
+                            Global Internship Award 2019)
+                            <br/>
+                            <img src="icons/calendar-fill.svg" width="15px" height="15px"/>&nbsp;13 May - 2 Aug 2019
+                            (12-weeks)
+                            <br/>
+                            <img src="icons/cursor-fill.svg" width="15px" height="15px"/>&nbsp;Singapore & Silicon
+                            Valley (Santa Clara)
+                        </p>
+                        <br/>
+                    </div>
+                </div>
 
-                        <div class="timeline">
-                            <div class="timeline-content">
-                                <div class="timeline-icon">
-                                    <img src="images/thome.jpg" width="60px" height="60px" />
-                                </div>
-                                <h3 class="title">Thome Ship Management Pte. Ltd. <img src="icons/info-circle-fill.svg" width="20px" height="20px" data-bs-toggle="modal" data-bs-target="#modalT" /></h3>
-                                <p class="description">
-                                    <img src="icons/briefcase-fill.svg" width="15px" height="15px" />&nbsp;IT Intern
-                                    <br/>
-                                    <img src="icons/calendar-fill.svg" width="15px" height="15px" />&nbsp;7 May - 5 Oct 2018 (22-weeks)
-                                    <br/>
-                                    <img src="icons/cursor-fill.svg" width="15px" height="15px" />&nbsp;Singapore
-                                </p>
-                            </div>
+                <div class="timeline">
+                    <div class="timeline-content">
+                        <div class="timeline-icon">
+                            <img src="images/thome.jpg" width="60px" height="60px"/>
                         </div>
+                        <h3 class="title">Thome Ship Management Pte. Ltd. <img src="icons/info-circle-fill.svg"
+                                                                               width="20px" height="20px"
+                                                                               data-bs-toggle="modal"
+                                                                               data-bs-target="#modalT"/></h3>
+                        <p class="description">
+                            <img src="icons/briefcase-fill.svg" width="15px" height="15px"/>&nbsp;IT Intern
+                            <br/>
+                            <img src="icons/calendar-fill.svg" width="15px" height="15px"/>&nbsp;7 May - 5 Oct 2018
+                            (22-weeks)
+                            <br/>
+                            <img src="icons/cursor-fill.svg" width="15px" height="15px"/>&nbsp;Singapore
+                        </p>
+                    </div>
+                </div>
 
-                        <div class="timeline">
-                            <div class="timeline-content">
-                                <div class="timeline-icon">
-                                    <img src="images/rightspot.jpeg" width="60px" height="60px" />
-                                </div>
-                                <h3 class="title">Rightspot Pte. Ltd. <img src="icons/info-circle-fill.svg" width="20px" height="20px" data-bs-toggle="modal" data-bs-target="#modalRS" /></h3>
-                                <p class="description">
-                                    <img src="icons/briefcase-fill.svg" width="15px" height="15px" />&nbsp;Intern
-                                    <br/>
-                                    <img src="icons/calendar-fill.svg" width="15px" height="15px" />&nbsp;Jul - Oct 2016 (12-weeks)
-                                    <br/>
-                                    <img src="icons/cursor-fill.svg" width="15px" height="15px" />&nbsp;Singapore
-                                </p>
-                            </div>
+                <div class="timeline">
+                    <div class="timeline-content">
+                        <div class="timeline-icon">
+                            <img src="images/rightspot.jpeg" width="60px" height="60px"/>
                         </div>
+                        <h3 class="title">Rightspot Pte. Ltd. <img src="icons/info-circle-fill.svg" width="20px"
+                                                                   height="20px" data-bs-toggle="modal"
+                                                                   data-bs-target="#modalRS"/></h3>
+                        <p class="description">
+                            <img src="icons/briefcase-fill.svg" width="15px" height="15px"/>&nbsp;Intern
+                            <br/>
+                            <img src="icons/calendar-fill.svg" width="15px" height="15px"/>&nbsp;Jul - Oct 2016
+                            (12-weeks)
+                            <br/>
+                            <img src="icons/cursor-fill.svg" width="15px" height="15px"/>&nbsp;Singapore
+                        </p>
+                    </div>
+                </div>
 
-
-
-                        <div class="timeline">
-                            <div class="timeline-content">
-                                <div class="timeline-icon">
-                                    <img src="images/sammobile.jpeg" width="60px" height="60px" />
-                                </div>
-                                <h3 class="title">SamMobile <img src="icons/info-circle-fill.svg" width="20px" height="20px" data-bs-toggle="modal" data-bs-target="#modalSM"  /></h3>
-                                <p class="description">
-                                    <img src="icons/briefcase-fill.svg" width="15px" height="15px" />&nbsp;Contributing Writer (Freelance)
-                                    <br/>
-                                    <img src="icons/calendar-fill.svg" width="15px" height="15px" />&nbsp;Jul - Dec 2013 (6-months)
-                                    <br/>
-                                    <img src="icons/cursor-fill.svg" width="15px" height="15px" />&nbsp;Remote
-                                </p>
-                            </div>
+                <div class="timeline">
+                    <div class="timeline-content">
+                        <div class="timeline-icon">
+                            <img src="images/sammobile.jpeg" width="60px" height="60px"/>
                         </div>
-
-
-
+                        <h3 class="title">SamMobile <img src="icons/info-circle-fill.svg" width="20px" height="20px"
+                                                         data-bs-toggle="modal" data-bs-target="#modalSM"/></h3>
+                        <p class="description">
+                            <img src="icons/briefcase-fill.svg" width="15px" height="15px"/>&nbsp;Contributing Writer
+                            (Freelance)
+                            <br/>
+                            <img src="icons/calendar-fill.svg" width="15px" height="15px"/>&nbsp;Jul - Dec 2013
+                            (6-months)
+                            <br/>
+                            <img src="icons/cursor-fill.svg" width="15px" height="15px"/>&nbsp;Remote
+                        </p>
                     </div>
                 </div>
             </div>
@@ -409,7 +441,304 @@
     </div>
 </div>
 <!-- Career Timeline -->
+<br/>
+<br/>
+<!-- Projects Card -->
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h4 class="text-center"><img src="icons/file-code.svg" alt="" width="20" height="20"
+                                         title="file-code">&nbsp;Project Experience </h4>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/alphaori.png" width="30px" height="30px" class="circle-img"/>&nbsp;ProjectVendor
+                        (Corporate Project)</h5>
+                    <p class="card-text">• 4 May - 31 July 2020<br/>Collection of data via API from 3 different vendors to determine which vendors the company should use</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">JSON</span>
+                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                    <span class="badge rounded-pill bg-primary">C#</span>
+                    <span class="badge rounded-pill bg-primary">AWS DynamoDB</span>
+                    <span class="badge rounded-pill bg-primary">API for data collection</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/alphaori.png" width="30px" height="30px" class="circle-img"/>&nbsp;XMLData
+                        (Corporate Project)</h5>
+                    <p class="card-text">• 4 May - 31 July 2020<br/>Conversion of billions of aggregated data and upload to AWS DynamoDB</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">JSON</span>
+                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                    <span class="badge rounded-pill bg-primary">C#</span>
+                    <span class="badge rounded-pill bg-primary">AWS DynamoDB</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/smu.jpeg" width="30px" height="30px" class="circle-img"/>&nbsp;BIOS
+                        (School Project)</h5>
+                    <p class="card-text">• Aug - Dec 2019<br/>Recreated SMU Module bidding system</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">PHP</span>
+                    <span class="badge rounded-pill bg-secondary">AWS DynamoDB</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/l.jpeg" width="30px" height="30px" class="circle-img"/>&nbsp;myIPSW
+                        (Personal Project)</h5>
+                    <p class="card-text">• Jan 2020 - Present<br/>Using ipsw.me API to develop a website that provides
+                        download link to all Apple firmwares</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">JSON</span>
+                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                    <span class="badge rounded-pill bg-primary">C#</span>
+                    <span class="badge rounded-pill bg-primary">ipsw.me API</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/alphaori.png" width="30px" height="30px"
+                                                class="circle-img"/>&nbsp;rPiAIS (Corporate Project)</h5>
+                    <p class="card-text">• 13 May - 2 Aug 2019<br/>Built & configured AIS Dispatcher</p>
+                    <span class="badge rounded-pill bg-primary">CLI</span>
+                    <span class="badge rounded-pill bg-secondary">RPiAIS software</span>
+                    <span class="badge rounded-pill bg-secondary">Raspberry Pi 3B+</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/thome.jpg" width="30px" height="30px" class="circle-img"/>&nbsp;Ship
+                        Agency Portal (Corporate Project)</h5>
+                    <p class="card-text">• 5 May - 5 Oct 2018<br/>Digitalizing Agency Department to reduce
+                        miscommunication</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">JSON</span>
+                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                    <span class="badge rounded-pill bg-primary">C#</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/thome.jpg" width="30px" height="30px" class="circle-img"/>&nbsp;Enterprise
+                        Analytics Portal (Corporate Project)</h5>
+                    <p class="card-text">• 5 May - 5 Oct 2018<br/>Providing a dashboard of critical information to
+                        complement decisions</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">JSON</span>
+                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                    <span class="badge rounded-pill bg-primary">C#</span>
+                    <span class="badge rounded-pill bg-primary">MSSQL</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/thome.jpg" width="30px" height="30px" class="circle-img"/>&nbsp;Vessel
+                        Information Portal (Corporate Project)</h5>
+                    <p class="card-text">• 5 May - 5 Oct 2018<br/>Detailed overview of vessels information</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">JSON</span>
+                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                    <span class="badge rounded-pill bg-primary">C#</span>
+                    <span class="badge rounded-pill bg-primary">OpenStreetMap API</span>
+                    <span class="badge rounded-pill bg-primary">OpenSeaMap API</span>
+                    <span class="badge rounded-pill bg-primary">OpenCycleMap API</span>
+                    <span class="badge rounded-pill bg-primary">Nominatim API</span>
+                    <span class="badge rounded-pill bg-primary">Polestarglobal API</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/l.jpeg" width="30px" height="30px" class="circle-img"/>&nbsp;Custom
+                        URL Shortener (Personal Project)<span class="badge rounded-pill bg-danger">Discontinued</span>
+                    </h5>
+                    <p class="card-text">• Jan 2020 - Present<br/>Shorten link with custom domain</p>
+                    <span class="badge rounded-pill bg-primary">PHP</span>
+                    <span class="badge rounded-pill bg-primary">MariaDB</span>
+                    <span class="badge rounded-pill bg-primary">YOURLS</span>
+                    <span class="badge rounded-pill bg-secondary">CentOS</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/l.jpeg" width="30px" height="30px" class="circle-img"/>&nbsp;Personal
+                        Portfolio v1 (Personal Project)<span class="badge rounded-pill bg-danger">Discontinued</span>
+                    </h5>
+                    <p class="card-text">• Mar 2017 - Dec 2020<br/>Presenting portfolio differently</p>
+                    <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">JSON</span>
+                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                    <span class="badge rounded-pill bg-primary">C#</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/l.jpeg" width="30px" height="30px" class="circle-img"/>&nbsp;ltl96
+                        Telegram Bot<span class="badge rounded-pill bg-danger">Discontinued</span></h5>
+                    <p class="card-text">May 2017<br/>Presenting portfolio differently via Telegram</p>
+                    <span class="badge rounded-pill bg-primary">Node.js</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/nyp.jpeg" width="30px" height="30px" class="circle-img"/>&nbsp;PMD
+                        Renting Platform (School Project)</h5>
+                    <p class="card-text">• Oct 2016 - Feb 2017<br/>A quick and easy way to rent a PMD for a ride</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">JSON</span>
+                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                    <span class="badge rounded-pill bg-primary">C#</span>
+                    <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
+                    <span class="badge rounded-pill bg-primary">Digits API</span>
+                    <span class="badge rounded-pill bg-primary">Cloudinary API</span>
+                    <span class="badge rounded-pill bg-primary">Twilio SMS API</span>
+                    <span class="badge rounded-pill bg-primary">PayPal API</span>
+                    <span class="badge rounded-pill bg-primary">Braintree API</span>
+                    <span class="badge rounded-pill bg-primary">SimplifyCommerce API</span>
+                    <span class="badge rounded-pill bg-primary">pdfSharp API</span>
+                    <span class="badge rounded-pill bg-primary">Clarifal Image Recognition API</span>
+                    <span class="badge rounded-pill bg-primary">sweetalert API</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/nyp.jpeg" width="30px" height="30px" class="circle-img"/>&nbsp;<a
+                            href="https://attendance.nyp.edu.sg/" target="_blank">NYP Student Attendance System (Final
+                        Year Project)</a></h5>
+                    <p class="card-text">• May - Jul 2016<br/>Overhaul user interface with responsive design</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">JSON</span>
+                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                    <span class="badge rounded-pill bg-primary">C#</span>
+                    <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/nyp.jpeg" width="30px" height="30px" class="circle-img"/>&nbsp;E-Business
+                        & Project (School Project)</a></h5>
+                    <p class="card-text">• Apr - Aug 2015<br/>Easy and innovative way to shop for wigs, without the
+                        shame</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                    <span class="badge rounded-pill bg-primary">JSON</span>
+                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                    <span class="badge rounded-pill bg-primary">C#</span>
+                    <span class="badge rounded-pill bg-primary">Stripe API</span>
+                    <span class="badge rounded-pill bg-primary">Twilio SMS API</span>
+                    <span class="badge rounded-pill bg-primary">PDFSharp</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/nyp.jpeg" width="30px" height="30px" class="circle-img"/>&nbsp;Object-Oriented
+                        (School Project)</a></h5>
+                    <p class="card-text">• Oct 2014 - Feb 2015<br/>Better Shopping experience through a software system
+                    </p>
+                    <span class="badge rounded-pill bg-primary">Java</span>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><img src="images/nyp.jpeg" width="30px" height="30px" class="circle-img"/>&nbsp;Web
+                        Applications Development (School Project)</a></h5>
+                    <p class="card-text">• Oct 2014 - Feb 2015<br/>Create a responsive website</p>
+                    <span class="badge rounded-pill bg-primary">HTML</span>
+                    <span class="badge rounded-pill bg-primary">CSS</span>
+                    <span class="badge rounded-pill bg-primary">Javascript</span>
+                    <span class="badge rounded-pill bg-primary">jQuery</span>
+                </div>
+            </div>
+        </div>
+        <br/>
 
+
+    </div>
+</div>
+<!-- Projects Card -->
+<br/>
 <!-- Career Modal -->
 <div class="modal fade" id="modalAO" tabindex="-1" aria-labelledby="modalLabelAO" aria-hidden="true">
     <div class="modal-dialog">
@@ -420,7 +749,8 @@
             </div>
             <div class="modal-body">
                 2020<br/>
-                • Conversion over 150 million items with over 3 billion data points from unstructured data to DynamoDB<br/>
+                • Conversion over 150 million items with over 3 billion data points from unstructured data to
+                DynamoDB<br/>
                 • Setup infrastructure for API trial run with 3 vendors<br/>
                 • Analysed frequency and quality of data received from vendors<br/>
                 • Developed program to sort data via MMSI or VessselType<br/>
@@ -428,9 +758,11 @@
                 <br/>
                 <br/>
                 2019<br/>
-                • Analysed the data requirements for Charter Party Dashboard to determine over 100 data points across 12 different screens in Charter Party Dashboard<br/>
+                • Analysed the data requirements for Charter Party Dashboard to determine over 100 data points across 12
+                different screens in Charter Party Dashboard<br/>
                 • Sole Developer to configure and test AIS Dispatcher using Raspberry Pi, rPiAIS & RTL-SDR<br/>
-                • Acquired the knowledge on the functionality & the usage of AIS, VHF, UHF, Raspbian and command-line interface to complement the implementation of AIS Dispatcher<br/>
+                • Acquired the knowledge on the functionality & the usage of AIS, VHF, UHF, Raspbian and command-line
+                interface to complement the implementation of AIS Dispatcher<br/>
                 • Experienced and guided through the entire product development process<br/>
             </div>
         </div>
@@ -445,15 +777,25 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                • Graded ‘Excellent’ for this period of internship, the highest grade an SMU undergraduate could attain on an internship<br/>
-                • Lead Sole Developer for Enterprise Analytics Portal, a dashboard view that aims to provide an overview of 15 useful data points to owner, fleet group & company.<br/>
-                • Lead Sole Developer for Ship Agency, in collaboration with Project Lead in Manila, by developing a centralized system to handle over 160 emails/hour to streamline Agency Department<br/>
-                • Developer for Vessel Information Portal. Assist in implementing & improving mapping data through the use of API & updating the UI for displaying over 230 vessels information.<br/>
-                • Lead Sole Developer for Project Scheduler that will automatically update over 230 vessels information on an interval frequency.<br/>
-                • Independently learnt several new technology areas tasked and produce results quickly, often within the same day (Q88 API, OpenLayers/OpenStreetMap/OpenSeaMap API, Building Data Warehouse, Data Mart, Console Application)<br/>
-                • Willingness to take the initiative to assist other Business Analyst when they encountering technical issues. This range from fixing bugs, server connection issues & revision of code<br/>
-                • Self-learnt Progressive Web Apps (PWA) within 2 days. Presented the technology to supervisor with demo of working product. Thereafter, spent 2 weeks to refined some of the details before presenting to the entire IT team<br/>
-            <br/>
+                • Graded ‘Excellent’ for this period of internship, the highest grade an SMU undergraduate could attain
+                on an internship<br/>
+                • Lead Sole Developer for Enterprise Analytics Portal, a dashboard view that aims to provide an overview
+                of 15 useful data points to owner, fleet group & company.<br/>
+                • Lead Sole Developer for Ship Agency, in collaboration with Project Lead in Manila, by developing a
+                centralized system to handle over 160 emails/hour to streamline Agency Department<br/>
+                • Developer for Vessel Information Portal. Assist in implementing & improving mapping data through the
+                use of API & updating the UI for displaying over 230 vessels information.<br/>
+                • Lead Sole Developer for Project Scheduler that will automatically update over 230 vessels information
+                on an interval frequency.<br/>
+                • Independently learnt several new technology areas tasked and produce results quickly, often within the
+                same day (Q88 API, OpenLayers/OpenStreetMap/OpenSeaMap API, Building Data Warehouse, Data Mart, Console
+                Application)<br/>
+                • Willingness to take the initiative to assist other Business Analyst when they encountering technical
+                issues. This range from fixing bugs, server connection issues & revision of code<br/>
+                • Self-learnt Progressive Web Apps (PWA) within 2 days. Presented the technology to supervisor with demo
+                of working product. Thereafter, spent 2 weeks to refined some of the details before presenting to the
+                entire IT team<br/>
+                <br/>
             </div>
         </div>
     </div>
@@ -477,21 +819,22 @@
     </div>
 </div>
 
-    <div class="modal fade" id="modalSM" tabindex="-1" aria-labelledby="modalLabelSM" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalLabelSM">Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    • <a href="https://www.sammobile.com/author/LeonardW-2" target="_blank" rel="noreferrer noopener">Articles Link</a><br/>
-                    • Written and published an average of 1-2 articles per week for over 1.5 million registered site members<br/>
-                    <br/>
-                </div>
+<div class="modal fade" id="modalSM" tabindex="-1" aria-labelledby="modalLabelSM" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLabelSM">Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                • <a href="https://www.sammobile.com/author/LeonardW-2" target="_blank" rel="noreferrer noopener">Articles
+                Link</a><br/>
+                • Written and published an average of 1-2 articles per week for over 1.5 million registered site members<br/>
+                <br/>
             </div>
         </div>
     </div>
+</div>
 
 <!-- Career Modal -->
 </body>
