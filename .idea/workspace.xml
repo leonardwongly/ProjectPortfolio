@@ -2,25 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="35cf90f6-4440-4565-989b-c683a11df424" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/icons/font/bootstrap-icons.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/icons/font/bootstrap-icons.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/icons/font/fonts/bootstrap-icons.woff" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/icons/font/fonts/bootstrap-icons.woff2" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/icons/font/index.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/images/CDC.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/images/apolitcal.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/images/gachon.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/images/l.jpeg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/images/quantedge.jpg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Default.html" beforeDir="false" afterPath="$PROJECT_DIR$/Default.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/icons/bootstrap-icons.svg" beforeDir="false" afterPath="$PROJECT_DIR$/icons/bootstrap-icons.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/images/alphaori.png" beforeDir="false" afterPath="$PROJECT_DIR$/images/alphaori.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/images/apolitical.jpeg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/images/cdc.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/images/gachon.jpeg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/images/nyp.jpeg" beforeDir="false" afterPath="$PROJECT_DIR$/images/nyp.jpeg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/images/quantedge.jpeg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,6 +42,7 @@
     <property name="node.js.path.for.package.tslint" value="project" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
   <component name="RunManager">
@@ -87,6 +71,7 @@
       <workItem from="1607673679701" duration="10999000" />
       <workItem from="1607851028363" duration="9241000" />
       <workItem from="1607865126935" duration="3029000" />
+      <workItem from="1607924657358" duration="10092000" />
     </task>
     <servers />
   </component>
