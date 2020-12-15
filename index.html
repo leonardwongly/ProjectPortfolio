@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/bootstrap.css" />
     <script src="js/bootstrap.js"></script>
+    <script src="https://kit.fontawesome.com/1122342f81.js" crossorigin="anonymous"></script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
     <title>ProjectPortfolio</title>
     <style>
         /* Show it is fixed to the top */
@@ -201,10 +202,64 @@
             max-width: 680px;
             padding: 0 15px;
         }
-        .icons {
-            width: 350px;
-            display: block;
-            margin: 0 auto;
+
+        .social-icon {
+            color: #fff;
+        }
+
+        ul.social-icons {
+            margin-top: 10px;
+        }
+
+        .social-icons li {
+            vertical-align: top;
+            display: inline;
+            height: 100px;
+        }
+
+        .social-icons a {
+            color: #fff;
+            text-decoration: none;
+
+        }
+
+        .fa-linkedin {
+            padding: 10px 14px;
+            -o-transition: .5s;
+            -moz-transition: .5s;
+            -webkit-transition: .5s;
+            transition: .5s;
+            background-color: #322f30;
+        }
+
+        .fa-linkedin:hover {
+            background-color: #007bb5;
+        }
+
+        .fa-envelope {
+            padding: 10px 14px;
+            -o-transition: .5s;
+            -moz-transition: .5s;
+            -webkit-transition: .5s;
+            transition: .5s;
+            background-color: #322f30;
+        }
+
+        .fa-envelope:hover {
+            background-color: #0072b1;
+        }
+
+        .fa-telegram {
+            padding: 10px 14px;
+            -o-transition: .5s;
+            -moz-transition: .5s;
+            -webkit-transition: .5s;
+            transition: .5s;
+            background-color: #322f30;
+        }
+
+        .fa-telegram:hover {
+            background-color: #0088cc;
         }
     </style>
 
@@ -213,7 +268,7 @@
 
 <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">Project Portfolio</a>
+        <a class="navbar-brand" href="/index.html">Leonard's Portfolio</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -221,19 +276,16 @@
         <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav me-auto mb-2 mb-md-0">
                 <li class="nav-item active">
-                    <a class="nav-link" aria-current="page" href="#">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Link</a>
+                    <a class="nav-link" aria-current="page" href="/index.html">Home</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
                        data-bs-toggle="dropdown" aria-expanded="true">
-                        Resume
+                        View Resume
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                        <li><a class="dropdown-item" href="#">View</a></li>
-                        <li><a class="dropdown-item" href="#">Download</a></li>
+                        <li><a class="dropdown-item" href="docs/resume.docx" target="_blank" rel="noreferrer noopener">Word Format</a></li>
+                        <li><a class="dropdown-item" href="docs/resume.pdf" target="_blank" rel="noreferrer noopener">PDF Format</a></li>
                     </ul>
                 </li>
             </ul>
@@ -249,12 +301,18 @@
         </div>
     </div>
     <br/>
-    <div class="row align-items-center align-items-lg-end offset-md-2">
-        <div>
-            <h3 class="col-6 mx-auto">Leonard Wong</h3>
-            <br/>
-
-
+    <div class="row">
+        <div class="col-4 mx-auto offset-8">
+            <h3>Leonard Wong</h3>
+        </div>
+    </div>
+    <div class="row align-items-center">
+        <div class="col-5 mx-auto offset-7">
+            <ul class="social-icons align-items-center">
+                <li><a href="https://linkedin.com/in/leothelion96" class="social-icon" target="_blank" rel="noreferrer noopener"><i class="fab fa-linkedin" id="linkedin" aria-hidden="true"></i></a></li>
+                <li><a href="mailto:me@leonardwong.net" class="social-icon" target="_blank" rel="noreferrer noopener"><i class="far fa-envelope" id="mail" aria-hidden="true"></i></a></li>
+                <li><a href="https://t.me/leothelion96" class="social-icon" target="_blank" rel="noreferrer noopener"><i class="fab fa-telegram" id="telegram" aria-hidden="true"></i></a></li>
+            </ul>
         </div>
     </div>
     <div class="row align-items-center offset-md-2">
@@ -462,6 +520,7 @@
         <div class="col-12">
             <h4 class="text-center"><img src="icons/file-code.svg" alt="" width="20" height="20"
                                          title="file-code">&nbsp;Project Experience </h4>
+            <br/>
         </div>
         <br/>
         <div class="col-sm-12">
