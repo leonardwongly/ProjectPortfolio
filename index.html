@@ -3,29 +3,31 @@
 <head>
     <link rel="stylesheet" href="css/bootstrap.css"/>
     <!-- favicon -->
-    <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="favicon/apple-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="favicon/apple-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="favicon/apple-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="favicon/apple-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="favicon/apple-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="favicon/apple-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="favicon/apple-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png">
-    <link rel="icon" type="image/png" sizes="192x192"  href="favicon/android-icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
-    <link rel="manifest" href="favicon/manifest.json">
-    <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png" class="circle-img" />
+    <link rel="apple-touch-icon" sizes="60x60" href="favicon/apple-icon-60x60.png" class="circle-img" />
+    <link rel="apple-touch-icon" sizes="72x72" href="favicon/apple-icon-72x72.png" class="circle-img" />
+    <link rel="apple-touch-icon" sizes="76x76" href="favicon/apple-icon-76x76.png" class="circle-img" />
+    <link rel="apple-touch-icon" sizes="114x114" href="favicon/apple-icon-114x114.png" class="circle-img" />
+    <link rel="apple-touch-icon" sizes="120x120" href="favicon/apple-icon-120x120.png" class="circle-img" />
+    <link rel="apple-touch-icon" sizes="144x144" href="favicon/apple-icon-144x144.png" class="circle-img" />
+    <link rel="apple-touch-icon" sizes="152x152" href="favicon/apple-icon-152x152.png" class="circle-img" />
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png" class="circle-img" />
+    <link rel="icon" type="image/png" sizes="192x192"  href="favicon/android-icon-192x192.png" class="circle-img" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" class="circle-img" />
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png" class="circle-img" />
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" class="circle-img" />
+    <link rel="manifest" href="favicon/manifest.json" />
+    <meta name="msapplication-TileColor" content="#ffffff" />
+    <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png" class="circle-img" />
     <meta name="theme-color" content="#ffffff">
-    <!-- favicon -->
+    <!-- End favicon -->
     <script src="js/bootstrap.js"></script>
-    <script src="https://kit.fontawesome.com/1122342f81.js" crossorigin="anonymous"></script>
     <!-- Cloudflare Web Analytics -->
     <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "9f14d410baf343b090f192ce45e212da"}'></script>
     <!-- End Cloudflare Web Analytics -->
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css" />
+    <!-- End BootStrap Icons -->
     <noscript>Your browser does not support JavaScript!</noscript>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -37,7 +39,6 @@
             min-height: 75rem;
             padding-top: 4.5rem;
         }
-
 
         .circle-img {
             border-radius: 50%;
@@ -54,10 +55,8 @@
             font-style: normal;
         }
 
-
         /*** Timeline CSS ***/
         .main-timeline {
-            /*font-family: 'Roboto', sans-serif;*/
             position: relative;
         }
 
@@ -246,7 +245,7 @@
 
         }
 
-        .fa-linkedin {
+        .bi-linkedin {
             padding: 10px 14px;
             -o-transition: .5s;
             -moz-transition: .5s;
@@ -255,11 +254,11 @@
             background-color: #322f30;
         }
 
-        .fa-linkedin:hover {
+        .bi-linkedin:hover {
             background-color: #007bb5;
         }
 
-        .fa-envelope {
+        .bi-envelope-fill {
             padding: 10px 14px;
             -o-transition: .5s;
             -moz-transition: .5s;
@@ -268,11 +267,11 @@
             background-color: #322f30;
         }
 
-        .fa-envelope:hover {
+        .bi-envelope-fill:hover {
             background-color: #0072b1;
         }
 
-        .fa-telegram {
+        .bi-telegram {
             padding: 10px 14px;
             -o-transition: .5s;
             -moz-transition: .5s;
@@ -281,7 +280,7 @@
             background-color: #322f30;
         }
 
-        .fa-telegram:hover {
+        .bi-telegram:hover {
             background-color: #0088cc;
         }
     </style>
@@ -335,19 +334,19 @@
         <div class="col-7 mx-auto offset-5">
             <ul class="social-icons align-items-center">
                 <li><a href="https://linkedin.com/in/leothelion96" class="social-icon" target="_blank"
-                       rel="noreferrer noopener"><i class="fab fa-linkedin" id="linkedin" aria-hidden="true"></i></a>
+                       rel="noreferrer noopener"><i class="bi bi-linkedin" id="linkedin" aria-hidden="true"></i></a>
                 </li>
                 <li><a href="mailto:me@leonardwong.net" class="social-icon" target="_blank" rel="noreferrer noopener"><i
-                        class="far fa-envelope" id="mail" aria-hidden="true"></i></a></li>
+                        class="bi bi-envelope-fill" id="mail" aria-hidden="true"></i></a></li>
                 <li><a href="https://t.me/leothelion96" class="social-icon" target="_blank" rel="noreferrer noopener"><i
-                        class="fab fa-telegram" id="telegram" aria-hidden="true"></i></a></li>
+                        class="bi bi-telegram" id="telegram" aria-hidden="true"></i></a></li>
             </ul>
         </div>
     </div>
     <div class="row align-items-center offset-md-2">
         <div class="col-10 mx-auto">
             <p>
-                <img src="icons/person-fill.svg" alt="image" width="20" height="20"/>&nbsp;Final Year Student,
+                <i class="bi bi-person-fill"></i>&nbsp;Final Year Student,
                 Quantedge Foundation Scholar & MPA Global Internship Award 2019 Awardee
         </div>
     </div>
@@ -377,16 +376,13 @@
     <br/>
 </main>
 
-
 <!-- Education Timeline -->
 <!-- Adapted from https://bestjquery.com/tutorial/timeline/demo108/ -->
 <div class="container">
     <div class="row">
         <div class="col-12 mx-auto">
-            <h4 class="text-center"><img src="icons/book.svg" alt="image" width="20" height="20"
-                                         title="book-fill">&nbsp;Education</h4>
+            <h4 class="text-center"><i class="bi bi-book-fill"></i>&nbsp;Education</h4>
             <div class="main-timeline">
-
                 <div class="timeline">
                     <div class="timeline-content">
                         <div class="timeline-icon">
@@ -442,8 +438,7 @@
 <div class="container">
     <div class="row">
         <div class="col-12 mx-auto">
-            <h4 class="text-center"><img src="icons/building.svg"  alt="image" width="20" height="20"
-                                         title="building">&nbsp;Career Experience</h4>
+            <h4 class="text-center"><i class="bi bi-briefcase-fill"></i>&nbsp;Career Experience</h4>
             <div class="main-timeline">
 
                 <div class="timeline">
@@ -451,28 +446,27 @@
                         <div class="timeline-icon">
                             <img src="images/alphaori.jpg" alt="image" loading="lazy" width="60px" height="60px"/>
                         </div>
-                        <h3 class="title">Alpha Ori Technologies Pte. Ltd. <img src="icons/info-circle-fill.svg" alt="image"
-                                                                                width="20px" height="20px"
+                        <h3 class="title">Alpha Ori Technologies Pte. Ltd. <i class="bi bi-info-circle-fill"
                                                                                 data-bs-toggle="modal"
-                                                                                data-bs-target="#modalAO"/></h3>
+                                                                                data-bs-target="#modalAO"></i></h3>
                         <p class="description">
-                            <img src="icons/briefcase-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;Maritime Tech
+                            <i class="bi bi-briefcase-fill"></i>&nbsp;Maritime Tech
                             Solutions Intern
                             <br/>
-                            <img src="icons/calendar-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;4 May - 31 Jul 2020
+                            <i class="bi bi-calendar-fill"></i> 4 May - 31 Jul 2020
                             (13-weeks)
                             <br/>
-                            <img src="icons/cursor-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;Singapore
+                            <i class="bi bi-cursor-fill"></i>&nbsp;Remote, Singapore
                         </p>
                         <br/>
                         <p class="description">
-                            <img src="icons/briefcase-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;Intern (Under MPA
+                            <i class="bi bi-briefcase-fill"></i>&nbsp;&nbsp;Intern (Under MPA
                             Global Internship Award 2019)
                             <br/>
-                            <img src="icons/calendar-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;13 May - 2 Aug 2019
+                            <i class="bi bi-calendar-fill"></i>&nbsp;13 May - 2 Aug 2019
                             (12-weeks)
                             <br/>
-                            <img src="icons/cursor-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;Singapore & Silicon
+                            <i class="bi bi-cursor-fill"></i>&nbsp;Singapore & Silicon
                             Valley (Santa Clara)
                         </p>
                         <br/>
@@ -484,17 +478,15 @@
                         <div class="timeline-icon">
                             <img src="images/thome.jpg"  alt="image" loading="lazy" width="60px" height="60px"/>
                         </div>
-                        <h3 class="title">Thome Ship Management Pte. Ltd. <img src="icons/info-circle-fill.svg"
-                                                                               width="20px" height="20px"
-                                                                               data-bs-toggle="modal" alt="image"
-                                                                               data-bs-target="#modalT"/></h3>
+                        <h3 class="title">Thome Ship Management Pte. Ltd. <i class="bi bi-info-circle-fill"
+                                                                               data-bs-toggle="modal" data-bs-target="#modalT"></i></h3>
                         <p class="description">
-                            <img src="icons/briefcase-fill.svg"  alt="image" width="15px" height="15px"/>&nbsp;IT Intern
+                            <i class="bi bi-briefcase-fill"></i>&nbsp;IT Intern
                             <br/>
-                            <img src="icons/calendar-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;7 May - 5 Oct 2018
+                            <i class="bi bi-calendar-fill"></i>&nbsp;7 May - 5 Oct 2018
                             (22-weeks)
                             <br/>
-                            <img src="icons/cursor-fill.svg"  alt="image" width="15px" height="15px"/>&nbsp;Singapore
+                            <i class="bi bi-cursor-fill"></i>&nbsp;Singapore
                         </p>
                     </div>
                 </div>
@@ -504,16 +496,14 @@
                         <div class="timeline-icon">
                             <img src="images/rightspot.jpeg" alt="image" loading="lazy" width="60px" height="60px"/>
                         </div>
-                        <h3 class="title">Rightspot Pte. Ltd. <img src="icons/info-circle-fill.svg" width="20px"
-                                                                   height="20px" data-bs-toggle="modal" alt="image"
-                                                                   data-bs-target="#modalRS"/></h3>
+                        <h3 class="title">Rightspot Pte. Ltd. <i class="bi bi-info-circle-fill" data-bs-toggle="modal" data-bs-target="#modalRS"></i></h3>
                         <p class="description">
-                            <img src="icons/briefcase-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;Intern
+                            <i class="bi bi-briefcase-fill"></i>&nbsp;Intern
                             <br/>
-                            <img src="icons/calendar-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;Jul - Oct 2016
+                            <i class="bi bi-calendar-fill"></i>&nbsp;Jul - Oct 2016
                             (12-weeks)
                             <br/>
-                            <img src="icons/cursor-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;Singapore
+                            <i class="bi bi-cursor-fill"></i>&nbsp;Singapore
                         </p>
                     </div>
                 </div>
@@ -523,16 +513,16 @@
                         <div class="timeline-icon">
                             <img src="images/sammobile.jpeg" alt="image" loading="lazy" width="60px" height="60px"/>
                         </div>
-                        <h3 class="title">SamMobile <img src="icons/info-circle-fill.svg" width="20px" height="20px"
-                                                         data-bs-toggle="modal" alt="image" data-bs-target="#modalSM"/></h3>
+                        <h3 class="title">SamMobile <i class="bi bi-info-circle-fill"
+                                                         data-bs-toggle="modal" data-bs-target="#modalSM"></i></h3>
                         <p class="description">
-                            <img src="icons/briefcase-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;Contributing Writer
+                            <i class="bi bi-briefcase-fill"></i>&nbsp;Contributing Writer
                             (Freelance)
                             <br/>
-                            <img src="icons/calendar-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;Jul - Dec 2013
+                            <i class="bi bi-calendar-fill"></i>&nbsp;Jul - Dec 2013
                             (6-months)
                             <br/>
-                            <img src="icons/cursor-fill.svg" alt="image" width="15px" height="15px"/>&nbsp;Remote
+                            <i class="bi bi-cursor-fill"></i>&nbsp;Remote, Singapore
                         </p>
                     </div>
                 </div>
@@ -547,8 +537,7 @@
 <div class="container">
     <div class="row">
         <div class="col-12">
-            <h4 class="text-center"><img src="icons/file-code.svg" alt="image" width="20" height="20"
-                                         title="file-code">&nbsp;Project Experience </h4>
+            <h4 class="text-center"><i class="bi bi-file-code-fill"></i>&nbsp;Project Experience </h4>
             <br/>
         </div>
         <br/>
@@ -799,7 +788,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title"><img src="images/nyp.jpeg" alt="image" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;<a
-                            href="https://attendance.nyp.edu.sg/" target="_blank" rel="noreferrer noopener">NYP Student Attendance System (Final
+                            href="https://attendance.nyp.edu.sg/" target="_blank" rel="noreferrer noopener" style="text-decoration:none;color:black;">NYP Student Attendance System (Final
                         Year Project)</a></h5>
                     <p class="card-text">• May - Jul 2016<br/>Overhaul user interface with responsive design</p>
                     <span class="badge rounded-pill bg-primary">HTML</span>
@@ -872,8 +861,7 @@
 <div class="container">
     <div class="row">
         <div class="col-12">
-            <h4 class="text-center"><img src="icons/people.svg"  alt="image" width="20" height="20"
-                                         title="people">&nbsp;CCA & Volunteer Experience </h4>
+            <h4 class="text-center"><i class="bi bi-people-fill"></i>&nbsp;CCA & Volunteer Experience </h4>
             <br/>
             <div class="accordion" id="accordionList">
                 <div class="accordion-item">
