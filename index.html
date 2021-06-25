@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script type="module">
+        import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate';
+        const el = document.createElement('pwa-update');
+        document.body.appendChild(el);
+    </script>
+    <link rel="manifest" href="manifest.json" />
+
+
     <link rel="stylesheet" href="css/bootstrap.css"/>
     <!-- favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png" class="circle-img" />
@@ -40,6 +48,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta name="description" content="A portfolio of Leonard Wong" />
     <title>Leonard's Portfolio</title>
+
     <style>
         /* Show it is fixed to the top */
         body {

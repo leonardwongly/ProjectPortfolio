@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script type="module">
+        import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate';
+        const el = document.createElement('pwa-update');
+        document.body.appendChild(el);
+    </script>
+    <link rel="manifest" href="manifest.json" />
+
+
     <link rel="stylesheet" href="css/bootstrap.css"/>
     <!-- favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png" class="circle-img"/>
@@ -34,6 +42,7 @@
     <!-- Cloudflare Web Analytics -->
     <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b2ce9d045b1d423f9c18aba4fced7a1d"}'></script>
     <!-- End Cloudflare Web Analytics -->
+
 
     <noscript>Your browser does not support JavaScript!</noscript>
     <meta charset="UTF-8">
