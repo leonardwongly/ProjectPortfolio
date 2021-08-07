@@ -66,37 +66,33 @@
 </head>
 <body>
 <h1 style="display:none">hi</h1>
-<nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+<nav class="navbar navbar-expand-lg fixed-top navbar-dark bg-dark" aria-label="Main navigation">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/index.html">Leonard's Portfolio</a>
+        <a class="navbar-brand" href="/index.html">Leonard Portfolio</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav me-auto mb-2 mb-md-0">
+
+        <div class="navbar-collapse offcanvas-collapse collapse" id="navbarCollapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
                     <a class="nav-link" aria-current="page" href="/index.html">Home</a>
                 </li>
-                <li class="nav-item active">
-                    <a class="nav-link" aria-current="page" href="/reading.html">Books Read</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="/reading.html">Books Read</a>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
-                       data-bs-toggle="dropdown" aria-expanded="true">
-                        View Resume
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                        <li><a class="dropdown-item" href="docs/resume.docx" target="_blank" rel="noreferrer noopener">Word
-                            Format</a></li>
-                        <li><a class="dropdown-item" href="docs/resume.pdf" target="_blank" rel="noreferrer noopener">PDF
-                            Format</a></li>
-                    </ul>
+                <li class="nav-item">
+                    <a class="nav-link" href="docs/resume.pdf">View Resume</a>
                 </li>
             </ul>
+            <ul class="list-unstyled d-flex">
+                <li class="ms-3"><a class="link-dark" href="https://link.leonardwong.tech/twitter" target="_blank" rel="noreferrer noopener"><i class="bi bi-twitter" style="width:50px;height:50px;color: #1DA1F2;"></i></a></li>
+                <li class="ms-3"><a class="link-dark" href="https://link.leonardwong.tech/linkedin" target="_blank" rel="noreferrer noopener"><i class="bi bi-linkedin" style="width:50px;height:50px;color: #007bb5;"></i></a></li>
+                <li class="ms-3"><a class="link-dark" href="https://link.leonardwong.tech/telegram" target="_blank" rel="noreferrer noopener"><i class="bi bi-telegram" style="width:50px;height:50px;color: #0088cc;"></i></a></li>
+                <li class="ms-3"><a class="link-dark" href="mailto:me@leonardwong.net" target="_blank" rel="noreferrer noopener"><i class="bi bi-envelope-fill" style="width:50px;height:50px;color:#0072b1;"></i></a></li>
+            </ul>
         </div>
-
-
     </div>
 </nav>
 
@@ -987,24 +983,52 @@
 <br/>
 <br/>
 
-<footer class="footer mt-auto py-3 bg-dark" style="margin-top:30px">
-    <div class="container">
-        <span style="color:white;">&copy;2020 - 2021 Leonard Wong</span>
-        <span style="color:white;float:right;">All Rights Reserved</span>
-    </div>
-    <br/>
-    <div class="container">
-        <img src="https://api.thegreenwebfoundation.org/greencheckimage/leonardwong.tech?nocache=true"
-             alt="This website is hosted Green - checked by thegreenwebfoundation.org" width="200" height="100">
-        <span style="color:white;float:right;">
-         <script data-cfbadgetype="d" data-cfbadgeskin="dkgray" type="text/javascript">
-//<![CDATA[
-try{window.CloudFlare||function(){var a=window.document,b=a.createElement("script"),a=a.getElementsByTagName("script")[0];window.CloudFlare=[];b.type="text/javascript";b.async=!0;b.src="//ajax.cloudflare.com/cdn-cgi/nexp/cloudflare.js";a.parentNode.insertBefore(b,a)}(),CloudFlare.push(function(a){a(["cloudflare/badge"])})}catch(e$$5){try{console.error("CloudFlare badge code could not be loaded. "+e$$5.message)}catch(e$$6){}};
-//]]>
-</script>
-        </span>
-    </div>
-</footer>
+<!-- New Footer -->
+<div class="container">
+    <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+        <div class="col-md-6 d-flex align-items-center">
+            <span class="text-muted">&copy; 2020 - 2021 Leonard Wong</span>
+        </div>
+        <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
+            <span class="text-muted"><script data-cfbadgetype="f" data-cfbadgeskin="icon" type="text/javascript">
+            //<![CDATA[
+            try {
+                window.CloudFlare || function () {
+                    var a = window.document, b = a.createElement("script"), a = a.getElementsByTagName("script")[0];
+                    window.CloudFlare = [];
+                    b.type = "text/javascript";
+                    b.async = !0;
+                    b.src = "//ajax.cloudflare.com/cdn-cgi/nexp/cloudflare.js";
+                    a.parentNode.insertBefore(b, a)
+                }(), CloudFlare.push(function (a) {
+                    a(["cloudflare/badge"])
+                })
+            } catch (e$$5) {
+                try {
+                    console.error("CloudFlare badge code could not be loaded. " + e$$5.message)
+                } catch (e$$6) {
+                }
+            }
+            ;
+            //]]>
+        </script></span>
+        </div>
+        <br/>
+
+        <div class="col-md-6 d-flex align-items-center">
+            <span class="text-muted">All Rights Reserved</span>
+        </div>
+        <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
+            <ul class="list-unstyled d-flex">
+                <li class="ms-3"><a class="link-dark" href="https://link.leonardwong.tech/twitter" target="_blank" rel="noreferrer noopener"><i class="bi bi-twitter" style="width:50px;height:50px;color: #1DA1F2;"></i></a></li>
+                <li class="ms-3"><a class="link-dark" href="https://link.leonardwong.tech/linkedin" target="_blank" rel="noreferrer noopener"><i class="bi bi-linkedin" style="width:50px;height:50px;color: #007bb5;"></i></a></li>
+                <li class="ms-3"><a class="link-dark" href="https://link.leonardwong.tech/telegram" target="_blank" rel="noreferrer noopener"><i class="bi bi-telegram" style="width:50px;height:50px;color: #0088cc;"></i></a></li>
+                <li class="ms-3"><a class="link-dark" href="mailto:me@leonardwong.net" target="_blank" rel="noreferrer noopener"><i class="bi bi-envelope-fill" style="width:50px;height:50px;color:#0072b1;"></i></a></li>
+            </ul>
+        </div>
+    </footer>
+</div>
+<!-- End Footer -->
 </body>
 </html>
 
