@@ -35,12 +35,13 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
-  }
-}</component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="vue.rearranger.settings.migration" value="true" />
+  </component>
   <component name="RunManager">
     <configuration name="Default.html" type="JavascriptDebugType" temporary="true" nameIsGenerated="true" uri="http://localhost:63342/ProjectPortfolio/Default.html" useBuiltInWebServerPort="true">
       <method v="2" />
@@ -99,6 +100,8 @@
       <workItem from="1644298454228" duration="99000" />
       <workItem from="1644368192372" duration="13000" />
       <workItem from="1645361168841" duration="55000" />
+      <workItem from="1645431336578" duration="115000" />
+      <workItem from="1646312328787" duration="456000" />
     </task>
     <servers />
   </component>
