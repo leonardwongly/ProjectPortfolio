@@ -228,6 +228,41 @@
         }
     </style>
 
+    <script>
+        /*
+ * Basic Count Up from Date and Time
+ * Author: @mrwigster / https://guwii.com/bytes/count-date-time-javascript/
+ * Modified: @leonardwongly
+ */
+        window.onload = function() {
+            // Month Day, Year Hour:Minute:Second, id-of-element-container
+            countUpFromTime("Jan 4, 2022 00:00:00", 'countUpJob'); // ****** Change this line!
+            countUpFromTime("Dec 1, 2020 00:00:00", 'countUpProject');
+        };
+        function countUpFromTime(countFrom, id) {
+            countFrom = new Date(countFrom).getTime();
+            var now = new Date(),
+                countFrom = new Date(countFrom),
+                diff = (now - countFrom);
+
+            let msYear = 31536000000;
+            let msMonth = 2592000000;
+            let msDay = 86400000;
+
+            let year = Math.floor(diff / msYear);
+            let month = Math.floor((diff % msYear) / msMonth);
+            let day = Math.floor(((diff % msYear) % msMonth) / msDay);
+
+            var idEl = document.getElementById(id);
+            idEl.getElementsByClassName('years')[0].innerHTML = year;
+            idEl.getElementsByClassName('months')[0].innerHTML = month;
+            idEl.getElementsByClassName('days')[0].innerHTML = day;
+
+            clearTimeout(countUpFromTime.interval);
+            countUpFromTime.interval = setTimeout(function(){ countUpFromTime(countFrom, id); }, 1000);
+        }
+    </script>
+
 </head>
 <body style="background-color:#f6f5f7">
 <h1 style="display:none">hi</h1>
@@ -393,9 +428,14 @@
                         <p class="description">
                             <i class="bi bi-briefcase-fill"></i>&nbsp;Software Engineer
                             <br/>
-                            <i class="bi bi-calendar-fill"></i> 4 Jan 2022 - Present
-                            <br/>
                             <i class="bi bi-cursor-fill"></i> Singapore
+                            <br/>
+                            <i class="bi bi-calendar-fill"></i> 4 Jan 2022 - Present
+                            <div class="countUp" id="countUpJob">
+                        <b><span class="timeel years" style="display: none;">00</span> <!--year(s)--> <span class="timeel months">00</span> month(s) <span class="timeel days">00</span> day(s)</b>
+                        </div>
+                            <br/>
+
                         </p>
                         <br/>
                     </div>
@@ -530,7 +570,7 @@
                         <p>National University of Singapore: Institute of Systems Science</p>
                         <p class="card-text" style="font-weight: lighter">Issued Mar 2022 • No Expiration Date
                         </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://leonardwongly-public.s3.ap-southeast-1.amazonaws.com/Wong+Li+Ying+Leonard+_DOEA_14+Feb12726.pdf" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
+                        <span class="badge rounded-pill bg-dark shadow"><a href="https://cf.leonardwong.tech/Wong+Li+Ying+Leonard+_DOEA_14+Feb12726.pdf" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
                     </div>
                 </div>
             </div>
@@ -558,7 +598,7 @@
                         </h5>
                         <p>Singapore Management University</p>
                         <p class="card-text" style="font-weight: lighter">Issued Jan 2022 • No Expiration Date</p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://leonardwongly-public.s3.ap-southeast-1.amazonaws.com/BScIS.png" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
+                        <span class="badge rounded-pill bg-dark shadow"><a href="https://cf.leonardwong.tech/BScIS.png" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
                     </div>
                 </div>
             </div>
@@ -571,7 +611,7 @@
                         </h5>
                         <p>Nanyang Polytechnic</p>
                         <p class="card-text" style="font-weight: lighter">Issued May 2017 • No Expiration Date</p>
-                        <span class="badge rounded-pill bg-dark shadow" style="display: none;">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></span>
+                        <span class="badge rounded-pill bg-dark shadow"><a href="https://cf.leonardwong.tech/Dip-BI-M.jpg" target="_blank" style="text-decoration: none;color:inherit">View Certification<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
                     </div>
                 </div>
             </div>
@@ -604,6 +644,9 @@
                             Portfolio v2 (Personal Project)
                         </h5>
                         <p class="card-text">• Dec 2020 - Present<br/>Presenting portfolio differently</p>
+                        <div class="countUp" id="countUpProject">
+                            <b><span class="timeel years">00</span> year(s) <span class="timeel months">00</span> month(s) <span class="timeel days">00</span> day(s)</b>
+                        </div>
                         <a href="https://github.com/leonardwongly/ProjectPortfolio" target="_blank"
                            rel="noopener noreferrer"><img src="images/GitHub.png" alt="GitHub" loading="lazy"
                                                           width="30px"
