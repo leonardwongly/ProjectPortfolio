@@ -38,7 +38,6 @@
       <change beforePath="$PROJECT_DIR$/css/bootstrap.rtl.css.map" beforeDir="false" afterPath="$PROJECT_DIR$/css/bootstrap.rtl.css.map" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/css/bootstrap.rtl.min.css" beforeDir="false" afterPath="$PROJECT_DIR$/css/bootstrap.rtl.min.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/css/bootstrap.rtl.min.css.map" beforeDir="false" afterPath="$PROJECT_DIR$/css/bootstrap.rtl.min.css.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/js/bootstrap.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/bootstrap.bundle.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/js/bootstrap.bundle.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/js/bootstrap.bundle.js.map" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/js/bootstrap.bundle.min.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/bootstrap.bundle.min.js" afterDir="false" />
@@ -51,7 +50,6 @@
       <change beforePath="$PROJECT_DIR$/js/bootstrap.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/js/bootstrap.js.map" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/js/bootstrap.min.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/bootstrap.min.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/js/bootstrap.min.js.map" beforeDir="false" afterPath="$PROJECT_DIR$/js/bootstrap.min.js.map" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reading.html" beforeDir="false" afterPath="$PROJECT_DIR$/reading.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -169,6 +167,18 @@
       <workItem from="1651587473626" duration="383000" />
       <workItem from="1651719944850" duration="77000" />
       <workItem from="1653820368907" duration="1166000" />
+      <workItem from="1654498524529" duration="183000" />
+      <workItem from="1655970235667" duration="85000" />
+      <workItem from="1656252683473" duration="19000" />
+      <workItem from="1656252709687" duration="430000" />
+      <workItem from="1656561526110" duration="58000" />
+      <workItem from="1657266111705" duration="92000" />
+      <workItem from="1657765541214" duration="619000" />
+      <workItem from="1657853464267" duration="138000" />
+      <workItem from="1658066400583" duration="611000" />
+      <workItem from="1658156889029" duration="16000" />
+      <workItem from="1658283238003" duration="268000" />
+      <workItem from="1658284162077" duration="15000" />
     </task>
     <servers />
   </component>
