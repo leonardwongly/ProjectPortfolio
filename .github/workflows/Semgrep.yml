@@ -20,10 +20,4 @@ jobs:
       image: returntocorp/semgrep
     steps:
     - uses: actions/checkout@v3
-    - run: semgrep ci
-    - name: Run Dastardly Action Step and Publish Report
-      uses: PortSwigger/dastardly-github-action@main mikepenz/action-junit-report@v3
-      with:
-        target-url: 'https://leonardwong.tech'
-        report_paths: '**/dastardly-report.xml'       # You need to update this path if you pass in a different output filename to the Dastardly action
-        require_tests: true
+    - run: semgrep c
