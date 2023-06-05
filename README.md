@@ -19,6 +19,8 @@ Usually updates are done to the beta before it is committed to the main codebase
 ---
 
 Feel free to follow me on my socials 😶‍🌫️<br/>
+[Mastodon](https://mastodon.leonardwong.tech)
+<br/>
 [Twitter](https://twitter.leonardwong.tech)
 <br/>
 [Linkedin](https://linkedin.leonardwong.tech)
