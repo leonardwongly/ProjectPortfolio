@@ -1,0 +1,52 @@
+/* Custom styles moved from inline */
+body {
+  min-height: 75rem;
+  padding-top: 4.5rem;
+}
+.page-bg {
+  background-color: #f6f5f7;
+}
+.centered-avatar {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 200px;
+  height: 200px;
+}
+@font-face {
+  font-family: 'SF-Pro';
+  src: url('../fonts/SF-Pro-Display-Regular.otf');
+}
+div body {
+  font-family: 'SF-Pro-Display', Helvetica, sans-serif;
+  font-style: normal;
+}
+/* Utility classes */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+/* Circle images */
+.circle-img {
+  border-radius: 50%;
+  vertical-align: middle;
+}
+/* Social icons */
+.social-icon {
+  width: 50px;
+  height: 50px;
+}
+.social-icon.bi-github { color: #000; }
+.social-icon.bi-twitter-x { color: #000; }
+.social-icon.bi-threads { color: #000; }
+.social-icon.bi-mastodon { color: #6364ff; }
+.social-icon.bi-linkedin { color: #007bb5; }
+.social-icon.bi-telegram { color: #0088cc; }
+.social-icon.bi-envelope-fill { color: #0072b1; }
