@@ -9,1613 +9,453 @@
     </script>
     <link rel="manifest" href="manifest.json"/>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" integrity="sha512-c42qTSw/wPZ3/5LBzD+Bw5f7bSF2oxou6wEb+I/lqeaKV5FDIfMvvRp772y4jcJLKuGUOpbJMdg/BTl50fJYAw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-    <!-- favicon -->
-    <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png" class="circle-img"/>
-    <link rel="apple-touch-icon" sizes="60x60" href="favicon/apple-icon-60x60.png" class="circle-img"/>
-    <link rel="apple-touch-icon" sizes="72x72" href="favicon/apple-icon-72x72.png" class="circle-img"/>
-    <link rel="apple-touch-icon" sizes="76x76" href="favicon/apple-icon-76x76.png" class="circle-img"/>
-    <link rel="apple-touch-icon" sizes="114x114" href="favicon/apple-icon-114x114.png" class="circle-img"/>
-    <link rel="apple-touch-icon" sizes="120x120" href="favicon/apple-icon-120x120.png" class="circle-img"/>
-    <link rel="apple-touch-icon" sizes="144x144" href="favicon/apple-icon-144x144.png" class="circle-img"/>
-    <link rel="apple-touch-icon" sizes="152x152" href="favicon/apple-icon-152x152.png" class="circle-img"/>
-    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png" class="circle-img"/>
-    <link rel="icon" type="image/png" sizes="192x192" href="favicon/android-icon-192x192.png" class="circle-img"/>
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" class="circle-img"/>
-    <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png" class="circle-img"/>
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" class="circle-img"/>
-    <link rel="manifest" href="favicon/manifest.json"/>
-    <meta name="msapplication-TileColor" content="#ffffff"/>
-    <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png" class="circle-img"/>
-    <meta name="theme-color" content="#ffffff">
-    <!-- End favicon -->
-    <script src="js/bootstrap.min.js"></script>
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.13.1/font/bootstrap-icons.min.css" integrity="sha512-oAvZuuYVzkcTc2dH5z1ZJup5OmSQ000qlfRvuoTTiyTBjwX1faoyearj8KdMq0LgsBTHMrRuMek7s+CxF8yE+w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- End BootStrap Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.13.1/font/bootstrap-icons.min.css"
+          integrity="sha512-oAvZuuYVzkcTc2dH5z1ZJup5OmSQ000qlfRvuoTTiyTBjwX1faoyearj8KdMq0LgsBTHMrRuMek7s+CxF8yE+w=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <link rel="stylesheet" href="css/portfolio.css"/>
     <noscript>Your browser does not support JavaScript!</noscript>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta name="description" content="A portfolio of Leonard Wong"/>
-    <title>Leonard's Portfolio</title>
-
-    <style>
-        /* Show it is fixed to the top */
-        body {
-            min-height: 75rem;
-            padding-top: 4.5rem;
-        }
-
-        .circle-img {
-            border-radius: 50%;
-            vertical-align: middle;
-        }
-
-        @font-face {
-            font-family: SF-Pro;
-            src: url(/fonts/SF-Pro-Display-Regular.otf);
-        }
-
-        body {
-            font-family: SF-Pro-Display, Helvetica, sans-serif;
-            font-style: normal;
-        }
-
-        /*** Timeline CSS ***/
-        .main-timeline {
-            position: relative;
-        }
-
-        .main-timeline:after {
-            content: '';
-            display: block;
-            clear: both;
-        }
-
-        .main-timeline .timeline {
-            width: 60%;
-            padding: 0 30px 0 0;
-            margin: 20px 0;
-            float: left;
-        }
-
-        .main-timeline .timeline-content {
-            background-color: #151c55;
-            min-height: 133px;
-            padding: 30px 95px 30px 130px;
-            display: block;
-            position: relative;
-            z-index: 1;
-        }
-
-        .main-timeline .timeline-content:hover {
-            text-decoration: none;
-        }
-
-        .main-timeline .timeline-content:before {
-            content: '';
-            background: #fff;
-            border-radius: 100px 20px 20px 100px;
-            position: absolute;
-            left: 70px;
-            top: 10px;
-            bottom: 10px;
-            right: -30px;
-            z-index: -1;
-        }
-
-        .main-timeline .timeline-icon {
-            color: #fff;
-            background-color: #151c55;
-            font-size: 60px;
-            text-align: center;
-            line-height: 100px;
-            width: 100px;
-            height: 100px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-            transform: translateY(-50%);
-            position: absolute;
-            right: -20px;
-            top: 50%;
-        }
-
-        .main-timeline .title {
-            color: #141b4d;
-            font-size: 22px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin: 0 0 7px 0;
-        }
-
-        .main-timeline .description {
-            color: #000000;
-            font-size: 15px;
-            font-family: Helvetica, sans-serif;
-            margin: 0;
-        }
-
-        .main-timeline .timeline:nth-child(even) {
-            padding: 0 0 0 30px;
-            float: right;
-        }
-
-        .main-timeline .timeline:nth-child(even) .timeline-content {
-            padding: 30px 130px 30px 95px;
-        }
-
-        .main-timeline .timeline:nth-child(even) .timeline-content:before {
-            border-radius: 20px 100px 100px 20px;
-            left: -30px;
-            right: 70px;
-        }
-
-        .main-timeline .timeline:nth-child(even) .timeline-icon {
-            right: auto;
-            left: -20px;
-        }
-
-        .main-timeline .timeline:nth-child(4n+2) .timeline-content,
-        .main-timeline .timeline:nth-child(4n+2) .timeline-icon {
-            background-color: #234e99;
-        }
-
-        .main-timeline .timeline:nth-child(4n+2) .title {
-            color: #234e99;
-        }
-
-        .main-timeline .timeline:nth-child(4n+3) .timeline-content,
-        .main-timeline .timeline:nth-child(4n+3) .timeline-icon {
-            background-color: #1e4c8c;
-        }
-
-        .main-timeline .timeline:nth-child(4n+3) .title {
-            color: #1e4c8c;
-        }
-
-        .main-timeline .timeline:nth-child(4n+4) .timeline-content,
-        .main-timeline .timeline:nth-child(4n+4) .timeline-icon {
-            background-color: #01BFA5;
-        }
-
-        .main-timeline .timeline:nth-child(4n+4) .title {
-            color: #01BFA5;
-        }
-
-        @media screen and (max-width: 767px) {
-            .main-timeline .timeline,
-            .main-timeline .timeline:nth-child(even) {
-                text-align: center;
-                width: 100%;
-                padding: 0 0 30px 0;
-                margin: 0 0 30px;
-            }
-
-            .main-timeline .timeline-content,
-            .main-timeline .timeline:nth-child(even) .timeline-content {
-                padding: 80px 25px;
-            }
-
-            .main-timeline .timeline-content:before,
-            .main-timeline .timeline:nth-child(even) .timeline-content:before {
-                border-radius: 50px 50px 20px 20px;
-                bottom: -30px;
-                top: 65px;
-                left: 10px;
-                right: 10px;
-            }
-
-            .main-timeline .timeline-icon,
-            .main-timeline .timeline:nth-child(even) .timeline-icon {
-                font-size: 50px;
-                line-height: 85px;
-                width: 85px;
-                height: 85px;
-                transform: translateX(-50%);
-                top: auto;
-                bottom: -20px;
-                right: auto;
-                left: 50%;
-            }
-        }
-
-        @media screen and (max-width: 576px) {
-            .main-timeline .title {
-                font-size: 18px;
-            }
-        }
-    </style>
-
-    <script>
-        /*
- * Basic Count Up from Date and Time
- * Author: @mrwigster / https://guwii.com/bytes/count-date-time-javascript/
- * Modified: @leonardwongly
- */
-        window.onload = function() {
-            // Month Day, Year Hour:Minute:Second, id-of-element-container
-            countUpFromTime("Jan 4, 2022 00:00:00", 'countUpJob'); // ****** Change this line!
-            countUpFromTime("Dec 1, 2020 00:00:00", 'countUpProject');
-        };
-        function countUpFromTime(countFrom, id) {
-            countFrom = new Date(countFrom).getTime();
-            var now = new Date(),
-                countFrom = new Date(countFrom),
-                diff = (now - countFrom);
-
-            let msYear = 31536000000;
-            let msMonth = 2592000000;
-            let msDay = 86400000;
-
-            let year = Math.floor(diff / msYear);
-            let month = Math.floor((diff % msYear) / msMonth);
-            let day = Math.floor(((diff % msYear) % msMonth) / msDay);
-
-            var idEl = document.getElementById(id);
-            idEl.getElementsByClassName('years')[0].innerHTML = year;
-            idEl.getElementsByClassName('months')[0].innerHTML = month;
-            idEl.getElementsByClassName('days')[0].innerHTML = day;
-
-            clearTimeout(countUpFromTime.interval);
-            countUpFromTime.interval = setTimeout(function(){ countUpFromTime(countFrom, id); }, 1000);
-        }
-    </script>
-
+    <meta name="description" content="Portfolio of Leonard Wong – software engineer, product builder, and community advocate."/>
+    <title>Leonard Wong · Software Engineer & Product Builder</title>
 </head>
-<body style="background-color:#f6f5f7">
-<h1 style="display:none">hi</h1>
-<nav class="navbar navbar-expand-lg fixed-top navbar-dark bg-dark shadow" aria-label="Main navigation">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/index.html">Leonard Portfolio</a>
+<body class="page-bg">
+<nav class="navbar navbar-expand-lg fixed-top navbar-dark shadow" aria-label="Main navigation">
+    <div class="container">
+        <a class="navbar-brand fw-semibold" href="#about">Leonard Wong</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-
-        <div class="navbar-collapse collapse" id="navbarCollapse">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link" aria-current="page" href="/index.html">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/reading.html">Books Read</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="docs/resume.pdf" target="_blank">View Resume</a>
-                </li>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 gap-2">
+                <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                <li class="nav-item"><a class="nav-link" href="#experience">Experience</a></li>
+                <li class="nav-item"><a class="nav-link" href="#projects">Projects</a></li>
+                <li class="nav-item"><a class="nav-link" href="#thought-leadership">Thought Leadership</a></li>
+                <li class="nav-item"><a class="nav-link" href="#learning">Learning</a></li>
+                <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                <li class="nav-item"><a class="btn btn-outline-light ms-lg-3" href="docs/resume.pdf" target="_blank"
+                                       rel="noreferrer noopener">View Résumé</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
-<main class="container animate__animated animate__fadeInUp">
-    <div class="row">
-        <div class="col-5 mx-auto">
-            <img src="images/leo.jpeg" alt="image" class="img-fluid" style="display: block;
-             margin-left: auto; margin-right: auto; width: 200px; height: 200px;" loading="lazy"/>
-        </div>
-        <div class="col-7 mx-auto">
-            <h3>Leonard Wong</h3>
-            <p>
-                <i class="bi bi-building"></i> Software Engineer @ NCS Group & Graduate Student @ NUS ISS
-            <ul class="list-unstyled d-flex">
-                <li class="ms-3"><a class="link-dark" href="https://github.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-github"
-                                                                 style="width:50px;height:50px;color: black;"></i></a>
-                </li>
-                <li class="ms-3"><a class="link-dark" href="https://twitter.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-twitter-x"
-                                                                 style="width:50px;height:50px;color: #000000;"></i></a>
-                </li>
-            <li class="ms-3"><a class="link-dark" href="https://threads.leonardwong.tech" target="_blank"
-                                rel="noreferrer noopener"><i class="bi bi-threads"
-                                                             style="width:50px;height:50px;color: #000000"></i></a>
-            </li>
-            <li class="ms-3"><a class="link-dark" href="https://mastodon.leonardwong.tech" target="_blank"
-                                rel="noreferrer noopener"><i class="bi bi-mastodon"
-                                                             style="width:50px;height:50px;color: #6364ff;"></i></a>
-            </li>
-                <li class="ms-3"><a class="link-dark" href="https://linkedin.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-linkedin"
-                                                                 style="width:50px;height:50px;color: #007bb5;"></i></a>
-                </li>
-                <li class="ms-3"><a class="link-dark" href="https://telegram.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-telegram"
-                                                                 style="width:50px;height:50px;color: #0088cc;"></i></a>
-                </li>
-                <li class="ms-3"><a class="link-dark" href="https://email.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-envelope-fill"
-                                                                 style="width:50px;height:50px;color:#0072b1;"></i></a>
-                </li>
-            </ul>
-        </div>
-    </div>
-    <br/>
-
-    <br/>
-    <div class="row align-items-center">
-        <div class="col-sm-12 col-md-8 mx-auto">
-            <!-- Summary Card -->
-            <div class="card rounded-3 shadow" style="color:black;">
-                <h5 class="card-header text-center">Summary</h5>
-                <div class="card-body" style="background-color:white">
-                    <p class="card-text">
-                        Leonard is a Software Engineer at NCS Group and is in NCS's graduate program, Nucleus. Concurrently, he serves as a Brand Ambassador, adeptly promoting the company and representing the brand at various events and forums.
-                        <br/>
-                        With an unwavering work ethic and a passion for the ICT industry, Leonard continually strives to improve his skills and knowledge. He takes immense pride in producing high-quality work and remains committed to upholding the highest standards of values and vision.
-                        <br/>
-                        He has co-authored a research paper titled "XSS for the Masses: Integrating Security in a Web Programming Course using a Security Scanner" and completed almost a year of internships, including a six-week overseas internship in Silicon Valley, California, under the MPA Global Internship Award 2019.
-                        <br/>
-                        Leonard holds a Bachelor's degree in Information Systems (Cyber Security) from Singapore Management University (SMU), under the Quantedge Foundation Scholarship. He also holds a Diploma in Business Informatics with Merit from Nanyang Polytechnic.
-                    </p>
+<main>
+    <section id="about" class="hero">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-7">
+                    <article class="hero-card">
+                        <h1>Designing resilient platforms and teams that ship with confidence</h1>
+                        <p class="mt-3">
+                            I'm Leonard, a software engineer at <strong>NCS Group</strong> blending platform engineering,
+                            developer experience, and product strategy. I champion inclusive teams, design repeatable delivery
+                            systems, and translate research-backed insights into measurable business outcomes.
+                        </p>
+                        <div class="hero-meta" role="list">
+                            <span class="hero-meta__item" role="listitem">4+ years delivering enterprise solutions</span>
+                            <span class="hero-meta__item" role="listitem">Graduate studies @ NUS ISS</span>
+                            <span class="hero-meta__item" role="listitem">Brand ambassador & community advocate</span>
+                            <span class="hero-meta__item" role="listitem">Certified Scrum Master & cloud specialist</span>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+                            <a class="btn btn-primary btn-lg" href="#contact">Let's Collaborate</a>
+                            <a class="btn btn-outline-primary btn-lg" href="reading.html">Explore Reading List</a>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center gap-3 mt-4 social-links" aria-label="Social profiles">
+                            <a href="https://github.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="GitHub"><i class="bi bi-github fs-4"></i></a>
+                            <a href="https://twitter.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Twitter / X"><i class="bi bi-twitter-x fs-4"></i></a>
+                            <a href="https://threads.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Threads"><i class="bi bi-threads fs-4"></i></a>
+                            <a href="https://mastodon.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Mastodon"><i class="bi bi-mastodon fs-4"></i></a>
+                            <a href="https://linkedin.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn"><i class="bi bi-linkedin fs-4"></i></a>
+                            <a href="https://telegram.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Telegram"><i class="bi bi-telegram fs-4"></i></a>
+                            <a href="https://email.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Email"><i class="bi bi-envelope-fill fs-4"></i></a>
+                        </div>
+                    </article>
+                </div>
+                <div class="col-lg-5 text-center">
+                    <img src="images/leo.jpeg" class="img-fluid hero-avatar" alt="Portrait of Leonard Wong" loading="lazy"/>
                 </div>
             </div>
         </div>
-    </div>
-    <br/>
+    </section>
+
+    <section aria-labelledby="stats-heading" class="section-spacing">
+        <div class="container">
+            <div class="row justify-content-between align-items-end mb-4">
+                <div class="col-lg-7">
+                    <h2 id="stats-heading" class="section-title">Impact at a glance</h2>
+                    <p class="section-subtitle">
+                        A snapshot of the value delivered across platform engineering, digital products, and developer community
+                        building.
+                    </p>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stats-card">
+                    <h3>12</h3>
+                    <p class="mb-0">enterprise services modernised with secure, automated pipelines</p>
+                </div>
+                <div class="stats-card">
+                    <h3>40%</h3>
+                    <p class="mb-0">reduction in manual release effort after leading DevOps enablement</p>
+                </div>
+                <div class="stats-card">
+                    <h3>20+</h3>
+                    <p class="mb-0">stakeholder workshops facilitated to align delivery roadmaps</p>
+                </div>
+                <div class="stats-card">
+                    <h3>8</h3>
+                    <p class="mb-0">industry certifications spanning cloud, product, and agile practices</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="experience" aria-labelledby="experience-heading" class="section-spacing">
+        <div class="container">
+            <div class="row justify-content-between align-items-end mb-4">
+                <div class="col-lg-7">
+                    <h2 id="experience-heading" class="section-title">Experience highlights</h2>
+                    <p class="section-subtitle">
+                        Roles focused on platform engineering, research, and cross-functional leadership. Each story combines
+                        human-centered delivery with measurable outcomes.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a class="btn btn-outline-primary" href="docs/resume.pdf" target="_blank" rel="noreferrer noopener">Download full résumé</a>
+                </div>
+            </div>
+            <div class="card-collection">
+                <article class="experience-card">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h3 class="h4 mb-1">Software Engineer · NCS Group</h3>
+                                <p class="mb-2 fw-semibold text-uppercase text-muted">2022 – Present · Singapore</p>
+                            </div>
+                            <span class="metric-tag"><i class="bi bi-calendar-event"></i> 3 yrs+</span>
+                        </div>
+                        <div class="experience-meta">
+                            <span class="badge-pill"><i class="bi bi-kanban"></i> Platform Ops</span>
+                            <span class="badge-pill"><i class="bi bi-people"></i> Young Leaders Cohort</span>
+                            <span class="badge-pill"><i class="bi bi-chat-dots"></i> Brand Ambassador</span>
+                        </div>
+                    </div>
+                    <ul class="metric-list">
+                        <li><strong>Scaled a secure CI/CD backbone</strong> that now powers 12+ citizen services, cutting
+                            release lead time from weeks to hours with GitOps guardrails.</li>
+                        <li>Partnered with product, cyber, and policy teams to <strong>formalise platform SLOs and runbooks</strong>,
+                            improving incident response readiness by 35%.</li>
+                        <li>Facilitated storytelling workshops and campus roadshows as an <strong>N'fluencer ambassador</strong>,
+                            boosting graduate programme applications YoY.</li>
+                    </ul>
+                </article>
+                <article class="experience-card">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h3 class="h4 mb-1">Graduate Student · NUS-ISS</h3>
+                                <p class="mb-2 fw-semibold text-uppercase text-muted">2022 – Present · Singapore</p>
+                            </div>
+                            <span class="metric-tag"><i class="bi bi-journal-check"></i> 4 modules</span>
+                        </div>
+                        <div class="experience-meta">
+                            <span class="badge-pill"><i class="bi bi-cpu"></i> Platform Engineering</span>
+                            <span class="badge-pill"><i class="bi bi-diagram-3"></i> Product Strategy</span>
+                            <span class="badge-pill"><i class="bi bi-lightbulb"></i> Cloud Native Design</span>
+                        </div>
+                    </div>
+                    <ul class="metric-list">
+                        <li>Delivered capstone work on <strong>managing digital products at scale</strong>, focusing on discovery
+                            cadences and outcome-based roadmapping.</li>
+                        <li>Co-developed reference architectures for <strong>multi-cloud observability and SRE maturity</strong>
+                            assessments across regulated industries.</li>
+                        <li>Graduated with <strong>four stacked certificates</strong> covering DevOps, Cloud Native, Architecting
+                            Solutions, and Platform Engineering.</li>
+                    </ul>
+                </article>
+                <article class="experience-card">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h3 class="h4 mb-1">Research Assistant · Singapore Management University</h3>
+                                <p class="mb-2 fw-semibold text-uppercase text-muted">2021 · Remote</p>
+                            </div>
+                            <span class="metric-tag"><i class="bi bi-book"></i> Security Research</span>
+                        </div>
+                        <div class="experience-meta">
+                            <span class="badge-pill"><i class="bi bi-code-slash"></i> Web Security</span>
+                            <span class="badge-pill"><i class="bi bi-bar-chart"></i> Data Analysis</span>
+                        </div>
+                    </div>
+                    <ul class="metric-list">
+                        <li>Co-authored <strong>“XSS for the Masses”</strong>, demonstrating how automated tooling accelerates
+                            secure-by-design education in undergraduate curricula.</li>
+                        <li>Automated vulnerability triage dashboards that <strong>reduced review cycles by 50%</strong> for the
+                            teaching team.</li>
+                        <li>Delivered actionable recommendations adopted into the next semester’s syllabus.</li>
+                    </ul>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects" aria-labelledby="projects-heading" class="section-spacing">
+        <div class="container">
+            <div class="row justify-content-between align-items-end mb-4">
+                <div class="col-lg-7">
+                    <h2 id="projects-heading" class="section-title">Projects & case studies</h2>
+                    <p class="section-subtitle">
+                        Initiatives that blend problem framing, cross-functional leadership, and measurable impact.
+                    </p>
+                </div>
+            </div>
+            <div class="card-collection">
+                <article class="project-card">
+                    <header>
+                        <h3 class="h4">Citizen Services Platform Modernisation</h3>
+                        <p class="text-uppercase fw-semibold text-muted mb-2">Lead DevOps Engineer · 2023</p>
+                    </header>
+                    <ul class="metric-list">
+                        <li>Led a tiger team to migrate legacy workloads into a <strong>container-first platform</strong> with
+                            automated policy enforcement.</li>
+                        <li>Established a <strong>golden path developer portal</strong> that lowered onboarding from 10 to 3 days.
+                        </li>
+                        <li>Implemented synthetic monitoring with actionable dashboards reviewed weekly by product owners.</li>
+                    </ul>
+                    <div class="experience-meta">
+                        <span class="badge-pill"><i class="bi bi-shield-lock"></i> Compliance by Design</span>
+                        <span class="badge-pill"><i class="bi bi-speedometer2"></i> Observability</span>
+                        <span class="badge-pill"><i class="bi bi-gear"></i> Automation</span>
+                    </div>
+                </article>
+                <article class="project-card">
+                    <header>
+                        <h3 class="h4">Nucleus Talent Storytelling Programme</h3>
+                        <p class="text-uppercase fw-semibold text-muted mb-2">Brand Ambassador · 2022 – Present</p>
+                    </header>
+                    <ul class="metric-list">
+                        <li>Designed workshop journeys that helped <strong>200+ graduates articulate impact-driven narratives</strong>
+                            during recruitment events.</li>
+                        <li>Partnered with marketing to build social media toolkits, increasing campaign reach by 3x.</li>
+                        <li>Curated alumni spotlights and testimonials to strengthen employer branding in universities.</li>
+                    </ul>
+                    <div class="experience-meta">
+                        <span class="badge-pill"><i class="bi bi-people"></i> Community Building</span>
+                        <span class="badge-pill"><i class="bi bi-broadcast"></i> Public Speaking</span>
+                        <span class="badge-pill"><i class="bi bi-chat-square-quote"></i> Storytelling</span>
+                    </div>
+                </article>
+                <article class="project-card">
+                    <header>
+                        <h3 class="h4">Security Education Research</h3>
+                        <p class="text-uppercase fw-semibold text-muted mb-2">Academic Collaboration · 2021</p>
+                    </header>
+                    <ul class="metric-list">
+                        <li>Delivered analytics pipeline that <strong>captured 3k+ student interactions</strong> for curriculum
+                            improvement.</li>
+                        <li>Published findings adopted by partner universities exploring DevSecOps education.</li>
+                        <li>Mentored junior researchers on reproducible experimentation and ethical disclosures.</li>
+                    </ul>
+                    <div class="experience-meta">
+                        <span class="badge-pill"><i class="bi bi-mortarboard"></i> Education</span>
+                        <span class="badge-pill"><i class="bi bi-graph-up-arrow"></i> Analytics</span>
+                        <span class="badge-pill"><i class="bi bi-file-text"></i> Publication</span>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section id="thought-leadership" aria-labelledby="thought-leadership-heading" class="section-spacing">
+        <div class="container">
+            <div class="row justify-content-between align-items-end mb-4">
+                <div class="col-lg-7">
+                    <h2 id="thought-leadership-heading" class="section-title">Thought leadership & community</h2>
+                    <p class="section-subtitle">
+                        Sharing research-backed practices, mentoring emerging technologists, and amplifying inclusive teams.
+                    </p>
+                </div>
+            </div>
+            <div class="card-collection">
+                <article class="project-card">
+                    <header>
+                        <h3 class="h4">Talks & facilitation</h3>
+                        <p class="text-uppercase fw-semibold text-muted mb-2">Workshops · Conferences · Campus events</p>
+                    </header>
+                    <ul class="metric-list">
+                        <li>Delivered <strong>12+ public sessions</strong> spanning TechSkills Accelerator, GovTech StackUp, and Nucleus leadership cohorts.</li>
+                        <li>Designed facilitation toolkits that keep <strong>participant satisfaction above 4.6/5</strong> in post-event surveys.</li>
+                        <li>Curated storytelling frameworks adopted across graduate ambassador programmes.</li>
+                    </ul>
+                    <div class="experience-meta">
+                        <span class="badge-pill"><i class="bi bi-mic"></i> Public Speaking</span>
+                        <span class="badge-pill"><i class="bi bi-bezier"></i> Facilitation Design</span>
+                        <span class="badge-pill"><i class="bi bi-people"></i> Community Building</span>
+                    </div>
+                </article>
+                <article class="project-card">
+                    <header>
+                        <h3 class="h4">Writing & research</h3>
+                        <p class="text-uppercase fw-semibold text-muted mb-2">Articles · Case studies · Academic work</p>
+                    </header>
+                    <ul class="metric-list">
+                        <li>Co-authored <strong>peer-reviewed security education research</strong> informing DevSecOps curricula.</li>
+                        <li>Published practical guides on <strong>platform SLOs, observability, and outcome-led roadmaps</strong>.</li>
+                        <li>Maintains a curated reading list synthesising product, engineering, and leadership insights.</li>
+                    </ul>
+                    <div class="experience-meta">
+                        <span class="badge-pill"><i class="bi bi-journal-text"></i> Publishing</span>
+                        <span class="badge-pill"><i class="bi bi-lightbulb"></i> Insights</span>
+                        <span class="badge-pill"><i class="bi bi-link-45deg"></i> Knowledge Sharing</span>
+                    </div>
+                </article>
+                <article class="project-card">
+                    <header>
+                        <h3 class="h4">Mentorship & advocacy</h3>
+                        <p class="text-uppercase fw-semibold text-muted mb-2">Early-career talent · Inclusive tech</p>
+                    </header>
+                    <ul class="metric-list">
+                        <li>Mentors emerging engineers through <strong>career clinics and code review circles</strong>.</li>
+                        <li>Leads Nucleus ambassador squads to <strong>scale outreach across 5 universities annually</strong>.</li>
+                        <li>Partners with community organisers to champion <strong>accessibility and psychological safety</strong> in tech teams.</li>
+                    </ul>
+                    <div class="experience-meta">
+                        <span class="badge-pill"><i class="bi bi-heart"></i> Advocacy</span>
+                        <span class="badge-pill"><i class="bi bi-compass"></i> Career Guidance</span>
+                        <span class="badge-pill"><i class="bi bi-shield-check"></i> Inclusive Practices</span>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section id="learning" aria-labelledby="learning-heading" class="section-spacing">
+        <div class="container">
+            <div class="row justify-content-between align-items-end mb-4">
+                <div class="col-lg-7">
+                    <h2 id="learning-heading" class="section-title">Certifications & continuous learning</h2>
+                    <p class="section-subtitle">
+                        Structured learning that keeps my practice grounded in modern architecture, agile delivery, and product
+                        leadership.
+                    </p>
+                </div>
+            </div>
+            <div class="card-collection">
+                <article class="learning-card">
+                    <h3 class="h5">Managing Digital Products</h3>
+                    <p class="mb-1">National University of Singapore · ISS · 2024</p>
+                    <p class="text-muted">Credential ID 98050871</p>
+                    <a class="btn btn-outline-primary btn-sm align-self-start" href="https://r2.leonardwong.tech/Certs/NUS-ISS/ISS-Managing-Digital-Products.pdf"
+                       target="_blank" rel="noreferrer noopener">View Certificate</a>
+                </article>
+                <article class="learning-card">
+                    <h3 class="h5">Graduate Certificate · Architecting Scalable Systems</h3>
+                    <p class="mb-1">National University of Singapore · ISS · 2024</p>
+                    <a class="btn btn-outline-primary btn-sm align-self-start" href="https://r2.leonardwong.tech/Certs/NUS-ISS/ISS-Graduate-Certificate-in-Architecting-Scalable-Systems.pdf"
+                       target="_blank" rel="noreferrer noopener">View Certificate</a>
+                </article>
+                <article class="learning-card">
+                    <h3 class="h5">Cloud Native Solution Design</h3>
+                    <p class="mb-1">National University of Singapore · ISS · 2022</p>
+                    <p class="text-muted">Credential ID 62551263</p>
+                    <a class="btn btn-outline-primary btn-sm align-self-start" href="https://r2.leonardwong.tech/Certs/NUS-ISS/ISS-Cloud-Native-Solution-Design.pdf"
+                       target="_blank" rel="noreferrer noopener">View Certificate</a>
+                </article>
+                <article class="learning-card">
+                    <h3 class="h5">Professional Scrum Master™ I (PSM I)</h3>
+                    <p class="mb-1">Scrum.org · 2022</p>
+                    <p class="text-muted">Credential ID 766959</p>
+                    <a class="btn btn-outline-primary btn-sm align-self-start" href="https://www.credly.com/badges/ec1caa83-7603-4d6d-a5aa-a5500fad36a1?source=linked_in_profile"
+                       target="_blank" rel="noreferrer noopener">View Credential</a>
+                </article>
+                <article class="learning-card">
+                    <h3 class="h5">Bachelor of Science · Information Systems</h3>
+                    <p class="mb-1">Singapore Management University · 2022</p>
+                    <a class="btn btn-outline-primary btn-sm align-self-start" href="https://r2.leonardwong.tech/Certs/BScIS.png"
+                       target="_blank" rel="noreferrer noopener">View Certificate</a>
+                </article>
+                <article class="learning-card">
+                    <h3 class="h5">Platform Engineering</h3>
+                    <p class="mb-1">National University of Singapore · ISS · 2022</p>
+                    <p class="text-muted">Credential ID 64253591</p>
+                    <a class="btn btn-outline-primary btn-sm align-self-start" href="https://r2.leonardwong.tech/Certs/NUS-ISS/ISS-Platform-Engineering.pdf"
+                       target="_blank" rel="noreferrer noopener">View Certificate</a>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section aria-labelledby="testimonials-heading" class="section-spacing">
+        <div class="container">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-6">
+                    <div class="testimonial">
+                        <h2 id="testimonials-heading" class="h3">Trusted to bridge strategy and delivery</h2>
+                        <p class="mb-0">
+                            "Leonard is the go-to teammate when we need to balance experimentation with operational rigour. He
+                            builds momentum across engineering, product, and stakeholder groups—always anchoring decisions on
+                            measurable outcomes."
+                        </p>
+                        <cite>— Mentors & project leads across NCS, SMU, and government innovation programmes</cite>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card project-card h-100">
+                        <h3 class="h4">Speaking & community touchpoints</h3>
+                        <ul class="metric-list">
+                            <li>Invited speaker for <strong>TechSkills Accelerator</strong> graduate community events.</li>
+                            <li>Facilitated design thinking sprints for <strong>Nucleus leadership</strong> cohorts.</li>
+                            <li>Mentored student teams preparing for <strong>GovTech StackUp</strong> showcases.</li>
+                        </ul>
+                        <div class="experience-meta">
+                            <span class="badge-pill"><i class="bi bi-mic"></i> Public Speaking</span>
+                            <span class="badge-pill"><i class="bi bi-people"></i> Mentorship</span>
+                            <span class="badge-pill"><i class="bi bi-lightning-charge"></i> Facilitation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" aria-labelledby="contact-heading" class="section-spacing">
+        <div class="container">
+            <div class="contact-cta text-center">
+                <h2 id="contact-heading" class="section-title text-white">Let’s build what’s next</h2>
+                <p class="section-subtitle text-white-50 mx-auto">
+                    Whether you’re scaling digital public services, crafting developer platforms, or building data-informed teams,
+                    I’m excited to explore how we can partner.
+                </p>
+                <div class="d-flex flex-wrap justify-content-center gap-3 mt-3">
+                    <a class="btn btn-light btn-lg" href="mailto:hello@leonardwong.tech">Email Leonard</a>
+                    <a class="btn btn-outline-light btn-lg" href="https://linkedin.leonardwong.tech" target="_blank" rel="noreferrer noopener">Connect on LinkedIn</a>
+                </div>
+            </div>
+        </div>
+    </section>
 </main>
 
-<br/>
-
-<!-- Education Timeline -->
-<!-- Adapted from https://bestjquery.com/tutorial/timeline/demo108/ -->
-<div class="container">
-    <div class="row">
-        <div class="col-12 mx-auto">
-            <h4 class="text-center animate__animated animate__fadeInUp"><i class="bi bi-book"></i>&nbsp;Education
-            </h4>
-            <div class="main-timeline">
-                <div class="timeline animate__animated animate__fadeInUp">
-                    <div class="timeline-content rounded-3 shadow">
-                        <div class="timeline-icon shadow rounded-3">
-                            <img src="images/smu.jpeg" alt="image" loading="lazy" width="75px" height="75px"/>
-                        </div>
-                        <h3 class="title">Singapore Management University</h3>
-                        <h4 class="title">Aug 2017 - 19 Jan 2022</h4>
-                        <p class="description">
-                            • Bachelor of Science (Information Systems): Major in Cyber Security
-                            <br/>• Quantedge Foundation Scholarship
-                            <br/>• MPA Global Internship Award
-                        </p>
-                    </div>
-                </div>
-
-                <div class="timeline animate__animated animate__fadeInUp">
-                    <div class="timeline-content shadow rounded-3">
-                        <div class="timeline-icon shadow rounded-3">
-                            <img src="images/nyp.jpeg" alt="image" loading="lazy" width="75px" height="75px"/>
-                        </div>
-                        <h3 class="title">Nanyang Polytechnic</h3>
-                        <h4 class="title">Aug 2017 - Dec 2021</h4>
-                        <p class="description">
-                            • Diploma in Business Informatics with Merit
-                            <br/>• 4 Distinctions & 13 A’s out of 23 modules
-                            <br/>• Director’s List AY2014/2015 – AY2016/2017<br/>
-                            (Attained Director’s List every semester)
-                            <br/>• Edusave Merit Bursary
-                            <br/>• Edusave Skills Award
-                        </p>
-                    </div>
-                </div>
-
-                <div class="timeline animate__animated animate__fadeInUp">
-                    <div class="timeline-content shadow rounded-3">
-                        <div class="timeline-icon shadow rounded-3">
-                            <img src="images/gachon.jpg" alt="image" loading="lazy" width="75px" height="75px"/>
-                        </div>
-                        <h3 class="title">Gachon University</h3>
-                        <h4 class="title">Sep - Dec 2015</h4>
-                        <p class="description">
-                            • Overseas Exchange Student during AY2015/2016 Semester 2 at Gachon University (GPA:
-                            4.1/4.5)
-                        </p>
-                    </div>
-                </div>
-            </div>
+<footer class="footer">
+    <div class="container d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3">
+        <p class="mb-0">© <span id="current-year"></span> Leonard Wong. All rights reserved.</p>
+        <div class="d-flex gap-3">
+            <a href="reading.html">Reading List</a>
+            <a href="manifest.json">PWA Manifest</a>
+            <a href="docs/modernization-plan.md">Modernization Plan</a>
         </div>
     </div>
-</div>
-<!-- Education Timeline -->
-<br/>
-<br/>
-<!-- Career Timeline -->
-<!-- Adapted from https://bestjquery.com/tutorial/timeline/demo108/ -->
-<div class="container">
-    <div class="row">
-        <div class="col-12 mx-auto">
-            <h4 class="text-center"><i class="bi bi-briefcase-fill"></i>&nbsp;Career Experience</h4>
-            <div class="main-timeline">
+</footer>
 
-                <div class="timeline animate__animated animate__fadeInUp">
-                    <div class="timeline-content shadow rounded-3" style="background-color:#02A7E1">
-                        <div class="timeline-icon shadow rounded-3" style="background-color:#FFFFFF">
-                            <img src="images/ncs.png" alt="image" loading="lazy" width="60px" height="60px"/>
-                        </div>
-                        <h3 class="title" style="color:#0099CC">NCS Pte. Ltd. <a id="NCS" href="#NCS" style="color: #000000">
-                            <i class="bi bi-info-circle-fill" data-bs-toggle="modal" data-bs-target="#modalNCS"></i></a></h3>
-                        <p class="description">
-                            <i class="bi bi-briefcase-fill"></i>&nbsp;Software Engineer, Young Leaders & Brand Ambassadors (N'fluencers)
-                            <br/>
-                            <i class="bi bi-cursor-fill"></i> Singapore
-                            <br/>
-                            <i class="bi bi-calendar-fill"></i> 4 Jan 2022 - Present
-                            <div class="countUp" id="countUpJob">
-                        <b><span class="timeel years">00</span> year(s) <span class="timeel months">00</span> month(s) <span class="timeel days">00</span> day(s)</b>
-                        </div>
-                            <br/>
-
-                        </p>
-                        <br/>
-                    </div>
-                </div>
-
-                <div class="timeline animate__animated animate__fadeInUp">
-                    <div class="timeline-content shadow rounded-3" style="background-color:#151C55">
-                        <div class="timeline-icon shadow rounded-3" style="background-color:#151C55">
-                            <img src="images/smu.jpeg" alt="image" loading="lazy" width="60px" height="60px"/>
-                        </div>
-                        <h3 class="title" style="color:#151C55">Singapore Management University <a id="SMUSG" href="#SMUSG" style="color: #000000">
-                            <i class="bi bi-info-circle-fill" data-bs-toggle="modal" data-bs-target="#modalSMURA"></i></a></h3>
-                        <p class="description">
-                            <i class="bi bi-briefcase-fill"></i>&nbsp;Research Assistant
-                            <br/>
-                            <i class="bi bi-calendar-fill"></i> 6 Dec - 24 Dec 2021
-                            <b>(3-weeks)</b>
-                            <br/>
-                            <i class="bi bi-cursor-fill"></i>&nbsp;Remote, Singapore
-                        </p>
-                        <br/>
-                    </div>
-                </div>
-
-                <div class="timeline animate__animated animate__fadeInUp">
-                    <div class="timeline-content shadow rounded-3" style="background-color:#69a6db">
-                        <div class="timeline-icon shadow rounded-3" style="background-color:#69a6db">
-                            <img src="images/alphaori.jpg" alt="image" loading="lazy" width="60px" height="60px"/>
-                        </div>
-                        <h3 class="title" style="color:#69a6db">Alpha Ori Technologies Pte. Ltd. <a id="AOT" href="#AOT" style="color: #000000">
-                            <i class="bi bi-info-circle-fill" data-bs-toggle="modal" data-bs-target="#modalAO"></i></a></h3>
-                        <p class="description">
-                            <i class="bi bi-briefcase-fill"></i>&nbsp;Maritime Tech
-                            Solutions Intern
-                            <br/>
-                            <i class="bi bi-calendar-fill"></i> 4 May - 31 Jul 2020
-                            <b>(13-weeks)</b>
-                            <br/>
-                            <i class="bi bi-cursor-fill"></i>&nbsp;Remote, Singapore
-                        </p>
-                        <br/>
-                        <p class="description">
-                            <i class="bi bi-briefcase-fill"></i>&nbsp;&nbsp;Intern (Under MPA
-                            Global Internship Award 2019)
-                            <br/>
-                            <i class="bi bi-calendar-fill"></i>&nbsp;13 May - 2 Aug 2019
-                            <b>(12-weeks)</b>
-                            <br/>
-                            <i class="bi bi-cursor-fill"></i>&nbsp;Singapore & Silicon
-                            Valley (Santa Clara)
-                        </p>
-                        <br/>
-                    </div>
-                </div>
-
-                <div class="timeline animate__animated animate__fadeInUp">
-                    <div class="timeline-content shadow rounded-3" style="background-color: #e93423">
-                        <div class="timeline-icon shadow rounded-3" style="background-color: #e93423">
-                            <img src="images/osm_thome.png" alt="image" loading="lazy" width="60px" height="60px"/>
-                        </div>
-                        <h3 class="title" style="color: #e93423">OSM Thome (Formerly known as Thome Ship Management Pte. Ltd.)<a id="Thome" href="#Thome" style="color: #000000">
-                            <i class="bi bi-info-circle-fill" data-bs-toggle="modal" data-bs-target="#modalT"></i></a></h3>
-                        <p class="description">
-                            <i class="bi bi-briefcase-fill"></i>&nbsp;IT Intern
-                            <br/>
-                            <i class="bi bi-calendar-fill"></i>&nbsp;7 May - 5 Oct 2018
-                            <b>(22-weeks)</b>
-                            <br/>
-                            <i class="bi bi-cursor-fill"></i>&nbsp;Singapore
-                        </p>
-                    </div>
-                </div>
-
-                <div class="timeline animate__animated animate__fadeInUp">
-                    <div class="timeline-content shadow rounded-3" style="background-color: #989a99">
-                        <div class="timeline-icon shadow rounded-3" style="background-color: #989a99">
-                            <img src="images/rightspot.jpeg" alt="image" loading="lazy" width="60px" height="60px"/>
-                        </div>
-                        <h3 class="title" style="color: #989a99">Rightspot Pte. Ltd. <a href="#RS" id="RS" style="color: #000000">
-                            <i class="bi bi-info-circle-fill" data-bs-toggle="modal" data-bs-target="#modalRS"></i></a></h3>
-                        <p class="description">
-                            <i class="bi bi-briefcase-fill"></i>&nbsp;Intern
-                            <br/>
-                            <i class="bi bi-calendar-fill"></i>&nbsp;Jul - Oct 2016
-                            <b>(12-weeks)</b>
-                            <br/>
-                            <i class="bi bi-cursor-fill"></i>&nbsp;Singapore
-                        </p>
-                    </div>
-                </div>
-
-                <div class="timeline animate__animated animate__fadeInUp">
-                    <div class="timeline-content shadow rounded-3" style="background-color: #5285b5">
-                        <div class="timeline-icon shadow rounded-3" style="background-color: #5285b5">
-                            <img src="images/sammobile.jpeg" alt="image" loading="lazy" width="60px" height="60px"/>
-                        </div>
-                        <h3 class="title" style="color: #5285b5">SamMobile <a href="#SM" id="SM" style="color: #000000">
-                            <i class="bi bi-info-circle-fill" data-bs-toggle="modal" data-bs-target="#modalSM"></i></a></h3>
-                        <p class="description">
-                            <i class="bi bi-briefcase-fill"></i>&nbsp;Contributing Writer
-                            (Freelance)
-                            <br/>
-                            <i class="bi bi-calendar-fill"></i>&nbsp;Jul - Dec 2013
-                            <b>(6-months)</b>
-                            <br/>
-                            <i class="bi bi-cursor-fill"></i>&nbsp;Remote, Singapore
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Career Timeline -->
-<br/>
-<br/>
-
-<!-- Publications -->
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <h4 class="text-center"><i class="bi bi-pencil"></i>&nbsp;Publications </h4>
-        </div>
-        <br/>
-        <div class="row">
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/ITiCSE2022Dublin.png" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;XSS for the Masses: Integrating Security in a Web Programming Course using a Security Scanner
-                        </h5>
-                        <p>27th annual conference on Innovation and Technology in Computer Science Education (ITiCSE 2022) · Apr 26, 2022</p>
-                        <p class="card-text" style="font-weight: lighter">Nominated for Best Paper Award in ITiCSE 2022 Conference
-                        </p>
-                        <p>Authored by: Lwin Khin Shar, Kyong Jin Shim, Christopher M. Poskitt & Li Ying Leonard Wong</p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/ITiCSE-22-XSS.pdf" target="blank" style="text-decoration: none;color:inherit">View Publication&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-
-
-        </div>
-    </div>
-</div>
-<br/>
-
-<!-- Publications -->
-
-<!-- Certifications -->
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <h4 class="text-center"><i class="bi bi-card-text"></i>&nbsp;Certifications </h4>
-        </div>
-        <br/>
-        <div class="row">
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Explainable and Responsible Artificial Intelligence
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued May 2025 • No Expiration Date<br/>
-                            Credential ID 143610669
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://credentials.nus.edu.sg/480bd273-da46-4865-8ecb-ada5dbefc6a8" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-        <div class="row">
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Graduate Certificate in Designing and Managing Products and Platforms
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued March 2025 • No Expiration Date<br/>
-                            Credential ID 138094741
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://credentials.nus.edu.sg/bae4f0d7-5352-4b88-be95-c29a9cb95d4c" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Service Design
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued June 2024 • No Expiration Date<br/>
-                            Credential ID 105606387
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://credentials.nus.edu.sg/e5b7e65c-2cb8-40f9-a9e8-ffaec0c78c80" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-            </div>
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Architecting Platforms as a Business
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued May 2024 • No Expiration Date<br/>
-                            Credential ID 103268361
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://credentials.nus.edu.sg/05956aa2-f3bf-4816-89fc-769ab5b46247" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-                <div class="card-group">
-                    <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Digital Product Strategy
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued May 2024 • No Expiration Date<br/>
-                            Credential ID 103254376
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://credentials.nus.edu.sg/02bf53ef-7911-46cd-96be-7be75f7e4f08" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-                </div>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/scs.jpeg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Certification in Managing Digital Products
-                        </h5>
-                        <p>Singapore Computer Society</p>
-                        <p class="card-text" style="font-weight: lighter">Issued Mar 2024 • No Expiration Date<br/>
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/NUS-ISS/SCS-Certification-in-Managing-Digital-Products.png" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Managing Digital Products
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued Mar 2024 • No Expiration Date<br/>
-                            Credential ID 98050871
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/NUS-ISS/ISS-Managing-Digital-Products.pdf" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Graduate Certificate of Architecting Scalable Systems
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued Feb 2024 • No Expiration Date<br/>
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/NUS-ISS/ISS-Graduate-Certificate-in-Architecting-Scalable-Systems.pdf" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Platform Engineering
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued Dec 2022 • No Expiration Date<br/>
-                            Credential ID 64253591
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/NUS-ISS/ISS-Platform-Engineering.pdf" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Cloud Native Solution Design
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued Nov 2022 • No Expiration Date<br/>
-                            Credential ID 62551263
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/NUS-ISS/ISS-Cloud-Native-Solution-Design.pdf" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Architecting Software Solutions
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued Aug 2022 • No Expiration Date<br/>
-                            Credential ID 58664109
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/NUS-ISS/ISS-Architecting-Software-Solutions.pdf" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nus_iss.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;DevOps Engineering and Automation
-                        </h5>
-                        <p>National University of Singapore: Institute of Systems Science</p>
-                        <p class="card-text" style="font-weight: lighter">Issued Mar 2022 • No Expiration Date
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/NUS-ISS/ISS-DevOps-Engineering-and-Automation.pdf" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/scrum_org.png" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Professional Scrum Master™ I (PSM I)
-                        </h5>
-                        <p>Scrum.org</p>
-                        <p class="card-text" style="font-weight: lighter">Issued Feb 2022 • No Expiration Date<br/>
-                            Credential ID 766959
-                        </p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://www.credly.com/badges/ec1caa83-7603-4d6d-a5aa-a5500fad36a1?source=linked_in_profile" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/smu.jpeg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Bachelor of Science: Information Systems
-                        </h5>
-                        <p>Major in Cyber Security</p>
-                        <p>Singapore Management University</p>
-                        <p class="card-text" style="font-weight: lighter">Issued Jan 2022 • No Expiration Date</p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/BScIS.png" target="blank" style="text-decoration: none;color:inherit">View Certification&nbsp;<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nyp.jpeg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Diploma in Business Informatics with Merit
-                        </h5>
-                        <p>Nanyang Polytechnic</p>
-                        <p class="card-text" style="font-weight: lighter">Issued May 2017 • No Expiration Date</p>
-                        <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/Dip-BI-M.jpg" target="_blank" style="text-decoration: none;color:inherit">View Certification<i class="bi bi-arrow-up-right-square-fill"></i></a></span>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<!-- Certifications -->
-
-<br/>
-<br/>
-<!-- Projects Card -->
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <h4 class="text-center"><i class="bi bi-file-code-fill"></i>&nbsp;Project Experience </h4>
-            <br/>
-        </div>
-        <br/>
-        <div class="row">
-            <h3><span class="badge rounded-pill bg-dark">Maintaining</span></h3>
-            <br/>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/l.jpeg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Personal
-                            Portfolio v2 (Personal Project)
-                        </h5>
-                        <p class="card-text">• Dec 2020 - Present<br/>Presenting portfolio differently</p>
-                        <div class="countUp" id="countUpProject">
-                            <b><span class="timeel years">00</span> year(s) <span class="timeel months">00</span> month(s) <span class="timeel days">00</span> day(s)</b>
-                        </div>
-                        <a href="https://github.com/leonardwongly/ProjectPortfolio" target="_blank"
-                           rel="noopener noreferrer"><img src="images/GitHub.png" alt="GitHub" loading="lazy"
-                                                          width="30px"
-                                                          height="30px" class="circle-img"/></a>
-                        <br/>
-                        <span class="badge rounded-pill bg-primary shadow">Bootstrap</span>
-                        <span class="badge rounded-pill bg-primary shadow">HTML</span>
-                        <span class="badge rounded-pill bg-primary shadow">CSS</span>
-                        <span class="badge rounded-pill bg-primary shadow">Javascript</span>
-                    </div>
-                </div>
-
-
-
-
-
-            </div>
-
-        </div>
-
-        <br/>
-
-        <div class="row">
-            <h3 style="margin-top: 30px"><span class="badge rounded-pill bg-danger">Discontinued/Completion</span></h3>
-            <br/>
-            <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                <div class="card-body">
-                    <h5 class="card-title"><img src="images/l.jpeg" alt="image" loading="lazy" width="30px"
-                                                height="30px" class="circle-img"/>&nbsp;myIPSW
-                        (Personal Project)</h5>
-                    <p class="card-text">• Jan 2020 - Jan 2022<br/>Using ipsw.me API to develop a website that
-                        provides
-                        download link to all Apple firmwares
-                    </p>
-                    <a href="https://github.com/leonardwongly/MyIPSW" target="_blank" rel="noopener noreferrer"><img
-                            src="images/GitHub.png" alt="GitHub" loading="lazy" width="30px" height="30px"
-                            class="circle-img"/></a>
-                    <br/>
-                    <span class="badge rounded-pill bg-primary shadow">HTML</span>
-                    <span class="badge rounded-pill bg-primary shadow">CSS</span>
-                    <span class="badge rounded-pill bg-primary shadow">Javascript</span>
-                    <span class="badge rounded-pill bg-primary shadow">jQuery</span>
-                    <span class="badge rounded-pill bg-primary shadow">JSON</span>
-                    <span class="badge rounded-pill bg-primary shadow">ASP.NET</span>
-                    <span class="badge rounded-pill bg-primary shadow">C#</span>
-                    <span class="badge rounded-pill bg-primary shadow">ipsw.me API</span>
-                </div>
-            </div>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/smu.jpeg" alt="image" loading="lazy" width="30px"
-                                                    height="30px"
-                                                    class="circle-img"/>&nbsp;SMU Seat Occupancy Project
-                            (School Project)</h5>
-                        <p class="card-text">• Jan - April 2021<br/>IoT Project that will detect whether the seat had
-                            been
-                            occupied</p>
-                        <a href="https://github.com/leonardwongly/SMUSOP" target="_blank" rel="noopener noreferrer"><img
-                                src="images/GitHub.png" alt="GitHub" loading="lazy" width="30px" height="30px"
-                                class="circle-img"/></a>
-                        <a href="https://leonardwongly.medium.com/smusop-4fe9878f4e84" target="_blank"
-                           rel="noopener noreferrer"><img src="images/Medium-logo.jpg" alt="Medium" loading="lazy"
-                                                          width="30px" height="30px" class="circle-img"/></a>
-                        <br/>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">JSON</span>
-                        <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                        <span class="badge rounded-pill bg-primary">C#</span>
-                        <span class="badge rounded-pill bg-primary">MySQL</span>
-                        <span class="badge rounded-pill bg-primary">Python3</span>
-                        <span class="badge rounded-pill bg-primary">dweet.io</span>
-                        <span class="badge rounded-pill bg-secondary">Raspberry Pi</span>
-                    </div>
-                </div>
-
-                 <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/alphaori.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px"
-                                                    class="circle-img"/>&nbsp;Project Vendors
-                            (Corporate Project)</h5>
-                        <p class="card-text">• 4 May - 31 July 2020<br/>Collection of data via API from 3 different
-                            vendors
-                            to determine which vendors the company should use</p>
-                        <a href="https://github.com/leonardwongly/VesselTracker-OpenSource" target="_blank"
-                           rel="noopener noreferrer"><img src="images/GitHub.png" alt="GitHub" loading="lazy"
-                                                          width="30px"
-                                                          height="30px" class="circle-img"/></a>
-                        <a href="https://github.com/leonardwongly/VesselFinder-OpenSource" target="_blank"
-                           rel="noopener noreferrer"><img src="images/GitHub.png" alt="GitHub" loading="lazy"
-                                                          width="30px"
-                                                          height="30px" class="circle-img"/></a>
-                        <a href="https://github.com/leonardwongly/BOD-OpenSource" target="_blank"
-                           rel="noopener noreferrer"><img
-                                src="images/GitHub.png" alt="GitHub" loading="lazy" width="30px" height="30px"
-                                class="circle-img"/></a>
-                        <br/>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                        <span class="badge rounded-pill bg-primary">JSON</span>
-                        <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                        <span class="badge rounded-pill bg-primary">C#</span>
-                        <span class="badge rounded-pill bg-primary">AWS DynamoDB</span>
-                        <span class="badge rounded-pill bg-primary">API for data collection</span>
-                    </div>
-                </div>
-            </div>
-
-            <br/>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/alphaori.jpg" alt="image" loading="lazy" width="30px"
-                                                    height="30px"
-                                                    class="circle-img"/>&nbsp;Project XMLData
-                            (Corporate Project)</h5>
-                        <p class="card-text">• 4 May - 31 July 2020<br/>Conversion of billions of aggregated data and
-                            upload
-                            to AWS DynamoDB</p>
-                        <a href="https://github.com/leonardwongly/XMLData-OpenSource" target="_blank"
-                           rel="noopener noreferrer"><img src="images/GitHub.png" alt="GitHub" loading="lazy"
-                                                          width="30px"
-                                                          height="30px" class="circle-img"/></a>
-                        <br/>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                        <span class="badge rounded-pill bg-primary">JSON</span>
-                        <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                        <span class="badge rounded-pill bg-primary">C#</span>
-                        <span class="badge rounded-pill bg-primary">AWS DynamoDB</span>
-                    </div>
-                </div>
-
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/smu.jpeg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;BIOS
-                            (School Project)</h5>
-                        <p class="card-text">• Aug - Dec 2019<br/>Recreated SMU Module bidding system</p>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                        <span class="badge rounded-pill bg-primary">PHP</span>
-                        <span class="badge rounded-pill bg-secondary">AWS DynamoDB</span>
-                    </div>
-                </div>
-            </div>
-
-            <br/>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/alphaori.jpg" alt="image" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;rPiAIS (Corporate Project)</h5>
-                        <p class="card-text">• 13 May - 2 Aug 2019<br/>Built & configured AIS Dispatcher</p>
-                        <span class="badge rounded-pill bg-primary">CLI</span>
-                        <span class="badge rounded-pill bg-secondary">RPiAIS software</span>
-                        <span class="badge rounded-pill bg-secondary">Raspberry Pi 3B+</span>
-                    </div>
-                </div>
-
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/thome.jpg" alt="image" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;Ship Agency Portal (Corporate Project)</h5>
-                        <p class="card-text">• 5 May - 5 Oct 2018<br/>Digitalizing Agency Department to reduce miscommunication</p>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                        <span class="badge rounded-pill bg-primary">JSON</span>
-                        <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                        <span class="badge rounded-pill bg-primary">C#</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/thome.jpg" alt="image" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;Enterprise Analytics Portal (Corporate Project)</h5>
-                        <p class="card-text">• 5 May - 5 Oct 2018<br/>Providing a dashboard of critical information to complement decisions</p>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                        <span class="badge rounded-pill bg-primary">JSON</span>
-                        <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                        <span class="badge rounded-pill bg-primary">C#</span>
-                        <span class="badge rounded-pill bg-primary">MSSQL</span>
-                    </div>
-                </div>
-
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/thome.jpg" alt="image" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;Vessel Information Portal (Corporate Project)</h5>
-                        <p class="card-text">• 5 May - 5 Oct 2018<br/>Detailed overview of vessels information</p>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                        <span class="badge rounded-pill bg-primary">JSON</span>
-                        <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                        <span class="badge rounded-pill bg-primary">C#</span>
-                        <span class="badge rounded-pill bg-primary">OpenStreetMap API</span>
-                        <span class="badge rounded-pill bg-primary">OpenSeaMap API</span>
-                        <span class="badge rounded-pill bg-primary">OpenCycleMap API</span>
-                        <span class="badge rounded-pill bg-primary">Nominatim API</span>
-                        <span class="badge rounded-pill bg-primary">Polestarglobal API</span>
-                    </div>
-                </div>
-            </div>
-
-            <br/>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/l.jpeg" alt="image" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;Custom URL Shortener (Personal Project)
-                        </h5>
-                        <p class="card-text">• Jan 2020 - Present<br/>Shorten link with custom domain</p>
-                        <span class="badge rounded-pill bg-primary">PHP</span>
-                        <span class="badge rounded-pill bg-primary">MariaDB</span>
-                        <span class="badge rounded-pill bg-primary">YOURLS</span>
-                        <span class="badge rounded-pill bg-secondary">CentOS</span>
-                    </div>
-                </div>
-
-                <div class="card animate__animated animate__fadeInUp">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/l.jpeg" alt="image" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;Personal Portfolio v1 (Personal Project)
-                        </h5>
-                        <a href="https://github.com/leonardwongly/ProjectMe-OpenSource" target="_blank"
-                           rel="noopener noreferrer"><img src="images/GitHub.png" alt="GitHub" loading="lazy" width="30px" height="30px" class="circle-img"/></a>
-                        <br/>
-                        <p class="card-text">• Mar 2017 - Dec 2020<br/>Presenting portfolio differently</p>
-                        <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                        <span class="badge rounded-pill bg-primary">JSON</span>
-                        <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                        <span class="badge rounded-pill bg-primary">C#</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/l.jpeg" alt="image" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;ltl96 Telegram Bot (Personal Project)</h5>
-                        <p class="card-text">May 2017<br/>Presenting portfolio differently via Telegram</p>
-                        <a href="https://github.com/leonardwongly/ltl96bot" target="_blank" rel="noopener noreferrer">
-                            <img src="images/GitHub.png" alt="GitHub" loading="lazy" width="30px" height="30px" class="circle-img"/></a>
-                        <br/>
-                        <span class="badge rounded-pill bg-primary">Node.js</span>
-                    </div>
-                </div>
-
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nyp.jpeg" alt="image" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;PMD Renting Platform (School Project)</h5>
-                        <p class="card-text">• Oct 2016 - Feb 2017<br/>A quick and easy way to rent a PMD for a ride
-                        </p>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                        <span class="badge rounded-pill bg-primary">JSON</span>
-                        <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                        <span class="badge rounded-pill bg-primary">C#</span>
-                        <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
-                        <span class="badge rounded-pill bg-primary">Digits API</span>
-                        <span class="badge rounded-pill bg-primary">Cloudinary API</span>
-                        <span class="badge rounded-pill bg-primary">Twilio SMS API</span>
-                        <span class="badge rounded-pill bg-primary">PayPal API</span>
-                        <span class="badge rounded-pill bg-primary">Braintree API</span>
-                        <span class="badge rounded-pill bg-primary">SimplifyCommerce API</span>
-                        <span class="badge rounded-pill bg-primary">pdfSharp API</span>
-                        <span class="badge rounded-pill bg-primary">Clarifal Image Recognition API</span>
-                        <span class="badge rounded-pill bg-primary">sweetalert API</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nyp.jpeg" alt="image" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;
-                            <a href="https://attendance.nyp.edu.sg/" target="_blank" rel="noreferrer noopener" style="text-decoration:none;">NYP Student Attendance System (Final Year Project)</a></h5>
-                        <p class="card-text">• May - Jul 2016<br/>Overhaul user interface with responsive design</p>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                        <span class="badge rounded-pill bg-primary">JSON</span>
-                        <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                        <span class="badge rounded-pill bg-primary">C#</span>
-                        <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
-                    </div>
-                </div>
-
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <img src="images/nyp.jpeg" alt="image" loading="lazy" width="30px"height="30px" class="circle-img"/>&nbsp;E-Business
-                            & Project (School Project)</a></h5>
-                        <p class="card-text">• Apr - Aug 2015<br/>Easy and innovative way to shop for wigs, without the shame</p>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                        <span class="badge rounded-pill bg-primary">JSON</span>
-                        <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                        <span class="badge rounded-pill bg-primary">C#</span>
-                        <span class="badge rounded-pill bg-primary">Stripe API</span>
-                        <span class="badge rounded-pill bg-primary">Twilio SMS API</span>
-                        <span class="badge rounded-pill bg-primary">PDFSharp</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-group">
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nyp.jpeg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Object-Oriented Programming
-                            (School Project)</a></h5>
-                        <p class="card-text">• Oct 2014 - Feb 2015<br/>Better Shopping experience through a software
-                            system
-                        </p>
-                        <span class="badge rounded-pill bg-primary">Java</span>
-                    </div>
-                </div>
-
-                <div class="card animate__animated animate__fadeInUp rounded-3 shadow">
-                    <div class="card-body">
-                        <h5 class="card-title"><img src="images/nyp.jpeg" alt="image" loading="lazy" width="30px"
-                                                    height="30px" class="circle-img"/>&nbsp;Web
-                            Applications Development (School Project)</a></h5>
-                        <p class="card-text">• Oct 2014 - Feb 2015<br/>Create a responsive website</p>
-                        <span class="badge rounded-pill bg-primary">HTML</span>
-                        <span class="badge rounded-pill bg-primary">CSS</span>
-                        <span class="badge rounded-pill bg-primary">Javascript</span>
-                        <span class="badge rounded-pill bg-primary">jQuery</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Projects Card -->
-<br/>
-<br/>
-<!-- CCA & Volunteer Experience -->
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <h4 class="text-center"><i class="bi bi-people-fill"></i>&nbsp;CCA & Volunteer Experience </h4>
-            <br/>
-            <div class="accordion accordion-flush" id="accordionList">
-                <div class="accordion-item shadow rounded-3">
-                    <h2 class="accordion-header" id="headingCDC">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#collapseCDC" aria-expanded="false" aria-controls="collapseCDC">
-                            <img src="images/CDC.jpg" alt="image" loading="lazy" class="circle-img" width="30px"
-                                 height="30px"/>&nbsp;<strong>CDC
-                            (Central
-                            Singapore)</strong>
-                        </button>
-                    </h2>
-                    <div id="collapseCDC" class="accordion-collapse collapse" aria-labelledby="headingCDC"
-                         data-bs-parent="#accordionCDC">
-                        <div class="accordion-body">
-                            <p>
-                                • Mentor • 20 April - 27 April 2018<br/>
-                                • Mentor • 1 Feb 2019 - 3 May 2019<br/>
-                                • Project Co-Leader & Mentor • 23 August 2019 - 22 November 2019<br/>
-                                • Mentor • 17 Jan 2020 - 3 March 2020<br/>
-                                • Mentor • 18 September 2020 - 11 November 2020<br/>
-                                <br/>
-                                <strong>Responsibilities</strong><br/>
-                                • Assist with lead teacher to ensure students does their work<br/>
-                                • Helping the students to have access to resources that will help them be on the
-                                same
-                                playing field as their peers, regardless of their background or financial
-                                capability<br/>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="accordion-item shadow rounded-3">
-                    <h2 class="accordion-header" id="headingSMU">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#collapseSMU" aria-expanded="false" aria-controls="collapseSMU">
-                            <img src="images/apolitcal.jpg" alt="image" loading="lazy" class="circle-img"
-                                 width="30px"
-                                 height="30px"/>&nbsp;<strong>SMU Apolitical Society</strong>
-                        </button>
-                    </h2>
-                    <div id="collapseSMU" class="accordion-collapse collapse" aria-labelledby="headingSMU"
-                         data-bs-parent="#accordionList">
-                        <div class="accordion-body">
-                            <p>
-                                • Oct 2017 • Sub-Committee Member<br/>
-                                • 12 Jan to 8 Nov 2018 • 8th Executive Committee & Honorary Financial Secretary<br/>
-                                <br/>
-                                <strong>Responsibilities</strong><br/>
-                                • Planned and organized a Ministerial dialogue session, in collaboration with REACH
-                                &
-                                MINDEF, for Minister for Education (Higher Education and Skills) & Second Minister
-                                for
-                                Defence Mr. Ong Ye Kung with over 90 attendees across the public sector, JC &
-                                university<br/>
-                                • Hosted the dialogue session with Senior Minister of State Dr. Janil Puthucheary's
-                                with
-                                over 20 attendees, in collaboration with OnePeople.sg<br/>
-                                • Responsible for all financial matters including but not limited to budgeting &
-                                claims<br/>
-                                • Planned, organized and executed the Book Launch for SMU Board of Trustees
-                                Chairman,
-                                Founder & Executive Chairman of Banyan Tree Holdings, Ho Kwon Ping<br/>
-                                <br/>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-    </div>
-</div>
-<br/>
-<br/>
-<br/>
-
-<!-- Career Modal -->
-<div class="modal fade" id="modalNCS" tabindex="-1" aria-labelledby="modalLabelNCS" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalLabelNCS">Details: NCS Pte. Ltd.</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="container-fluid">
-                    <div class="row">
-                        <!-- Card 3 -->
-                        <div class="card shadow rounded-3">
-                            <div class="card-body">
-                                <h4 class="card-title">Young Leaders</h4>
-                                <h5 style="font-weight:bold">Jun 2023 to Present</h5>
-                                <p class="card-text">
-                                    <br/>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <br/>
-                    <div class="row">
-                        <!-- Card 2 -->
-                        <div class="card shadow rounded-3">
-                            <div class="card-body">
-                                <h4 class="card-title">Brand Ambassadors (N'fluencers)</h4>
-                                <h5 style="font-weight:bold">Aug 2022 to Present</h5>
-                                <p class="card-text">
-                                    • Engage in internal events and effectively communicate the experience on social networks<br/>
-                                    • Act as advocates for NCS, embodying the company's values in a constructive and polished manner<br/>
-                                    • Enhance brand recognition by sharing the NCS experience on social networks<br/>
-                                    • Create compelling content, including engaging social media posts to effectively convey the brand's message and captivate the target audience<br/>
-                                    • Ensure the brand is represented in a professional and positive manner, adhering to brand guidelines and standards<br/>
-                                    <br/>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <br/>
-                    <div class="row">
-                        <!-- Card 1 -->
-                        <div class="card shadow rounded-3">
-                            <div class="card-body">
-                                <h4 class="card-title">Software Engineer</h4>
-                                <h5 style="font-weight:bold">Jan 2022 to Present</h5>
-                                <p class="card-text">
-                                    • Responsible for the end-to-end process of developing, testing and deployment of a confidential internal project<br/>
-                                    • Accountable for the creation of User Acceptance Testing (UAT) Scripts<br/>
-                                    • Facilitate UAT sessions with MFA stakeholders and users<br/>
-                                    • Efficiently manage incident tracking, proactively perform maintenance, and promptly deliver timely fixes to address user issues and concerns<br/>
-                                    • Conduct comprehensive training sessions to provide a smooth onboarding experience for new users and ensure continuous support to existing users<br/>
-                                    • Foster strong collaboration with internal departments and stakeholders to gather requirements for new features and address any emerging issues<br/>
-                                    <br/>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalSMURA" tabindex="-1" aria-labelledby="modalLabelRA" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalLabelRA">Details: Singapore Management University</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="container-fluid">
-                    <div class="row">
-                        <!-- Card 1 -->
-                        <div class="card shadow rounded-3">
-                            <div class="card-body">
-                                <h5 class="card-title">2021</h5>
-                                <p class="card-text">
-                                    • Utilized the OWASP ZAP security scanning tool (dynamic analysis tool) to conduct comprehensive scans on 88 IS216 projects<br/>
-                                    • Employed a commercial security scanning tool (dynamic analysis tool) to perform thorough scans on the same set of 88 IS216 projects<br/>
-                                    • Utilized static analysis techniques to scan the identical 88 IS216 projects<br/>
-                                    <br/>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalAO" tabindex="-1" aria-labelledby="modalLabelAO" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalLabelAO">Details: Alpha Ori Technologies Pte Ltd</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="container-fluid">
-                    <div class="row">
-                        <!-- Card 1 -->
-                        <div class="card shadow rounded-3">
-                            <div class="card-body">
-                                <h5 class="card-title">2020</h5>
-                                <p class="card-text">
-                                    • Graded <u>‘Excellent’</u> for this period of internship<br/>
-                                    • Developed a system to automate the conversion of over <u>150 million rows of unstructured data</u>
-                                    with over <u>3 billion data points</u> to Amazon DynamoDB<br/>
-                                    • Developed infrastructure for API trial run of 3 vendors to evaluate the viability of adoption<br/>
-                                    • Developed program to sort data via MMSI or VesselType<br/>
-                                    • Aggregated data points & created Voyage plan to analyze trends and identify patterns<br/>
-                                </p>
-                            </div>
-                        </div>
-                        <!-- End Card 1 -->
-                        <br/>
-                        <!-- Card 2 -->
-                        <div class="card shadow rounded-3" style="margin-top:30px">
-                            <div class="card-body">
-                                <h5 class="card-title">2018</h5>
-                                <p class="card-text">
-                                    • Awarded <u>MPA Global Internship Award</u><br/>
-                                    • Graded <u>‘Excellent'</u> for this period of internship<br/>
-                                    • Data requirements analysis to determine 100 data points for Charter Party Dashboard that spread
-                                    across
-                                    12 different screens<br/>
-                                    • Sole Developer to configure and test AIS Dispatcher using Raspberry Pi, rPiAIS & RTL-SDR<br/>
-                                    • Acquired knowledge on the functionality & the usage of AIS, VHF, UHF, Raspbian and command-line
-                                    interface to complement the implementation of AIS Dispatcher<br/>
-                                </p>
-                            </div>
-                        </div>
-                        <!-- End Card 2 -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalT" tabindex="-1" aria-labelledby="modalLabelT" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalLabelT">Details: Thome Ship Management Pte Ltd</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="container-fluid">
-                    <div class="row">
-                        <!-- Card 1 -->
-                        <div class="card shadow rounded-3">
-                            <div class="card-body">
-                                <h5 class="card-title">2018</h5>
-                                <p class="card-text">
-                                    • Graded <u>‘Excellent’</u> for this period of internship<br/>
-                                    • Sole Developer for Enterprise Analytics Portal project, a dashboard view that provides 15 useful
-                                    data
-                                    points to complement decision making for ship owner, fleet group & company<br/>
-                                    • Sole Developer for Ship Agency project, in collaboration with Project Lead in Manila, to
-                                    streamline
-                                    Agency Department operations of communications by development of a system to handle over 160
-                                    emails/hour.<br/>
-                                    • Developer for Vessel Information Portal that enhances mapping data for over 230 vessels through
-                                    the
-                                    use of various API & improving the UI.<br/>
-                                    • Sole Developer for Project Scheduler that ensures timely vessels details through automation<br/>
-                                    • Self-explored several new technologies & API to fulfill tasks at hand (Q88,
-                                    OpenLayers/OpenStreetMap/OpenSeaMap, Data Warehouse, Data Mart, Console App)<br/>
-                                    • Helps resolved technical issues when encountered by team<br/>
-                                    • Self-learnt Progressive Web Apps (PWA) with and developed a demo of a working prototype that was
-                                    presented to the entire IT team for approval<br/>
-                                </p>
-                            </div>
-                        </div>
-                        <!-- End Card 1 -->
-                    </div>
-                </div>
-
-                <br/>
-                <br/>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalRS" tabindex="-1" aria-labelledby="modalLabelRS" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalLabelRS">Details: Rightspot Pte Ltd</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="container-fluid">
-                    <div class="row">
-                        <!-- Card 1 -->
-                        <div class="card shadow rounded-3">
-                            <div class="card-body">
-                                <h5 class="card-title">2018</h5>
-                                <p class="card-text">
-                                    • Graded <u>‘Excellent’</u> for this period of internship<br/>
-                                    • Eliminated over 20 bugs to improve the overall stability of the website within 2 weeks<br/>
-                                    • Developed a web page to provide an overview of 250 applicants’ job status each time<br/>
-                                    • Sole development of Job Listing & dashboard that populated over 500 companies for the sales team
-                                    that is responsible for S$500K of sales
-                                    <br/>
-                                </p>
-                            </div>
-                        </div>
-                        <!-- End Card 1 -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalSM" tabindex="-1" aria-labelledby="modalLabelSM" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalLabelSM">Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="container-fluid">
-                    <div class="row">
-                        <!-- Card 1 -->
-                        <div class="card shadow rounded-3">
-                            <div class="card-body">
-                                <h5 class="card-title">2013</h5>
-                                <p class="card-text">
-                                    • <a href="https://www.sammobile.com/author/LeonardW-2" target="_blank" rel="noreferrer noopener">Articles
-                                    Link</a><br/>
-                                    • Written and published an average of 1-2 articles per week for over 1.5 million registered site
-                                    members<br/>
-                                </p>
-                            </div>
-                        </div>
-                        <!-- End Card 1 -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Career Modal -->
+<script src="js/bootstrap.min.js"></script>
+<script>
+    const yearElement = document.getElementById('current-year');
+    if (yearElement) {
+        yearElement.textContent = new Date().getFullYear();
+    }
+</script>
 </body>
-
-<!-- New Footer -->
-<div class="container">
-    <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
-        <div class="col-md-6 d-flex align-items-center">
-            <span class="text-muted">&copy; 2020 - 2023 Leonard Wong</span>
-        </div>
-        <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
-            <span class="text-muted"><script data-cfbadgetype="f" data-cfbadgeskin="icon" type="text/javascript">
-            //<![CDATA[
-            try {
-                window.CloudFlare || function () {
-                    var a = window.document, b = a.createElement("script"), a = a.getElementsByTagName("script")[0];
-                    window.CloudFlare = [];
-                    b.type = "text/javascript";
-                    b.async = !0;
-                    b.src = "//ajax.cloudflare.com/cdn-cgi/nexp/cloudflare.js";
-                    a.parentNode.insertBefore(b, a)
-                }(), CloudFlare.push(function (a) {
-                    a(["cloudflare/badge"])
-                })
-            } catch (e$$5) {
-                try {
-                    console.error("CloudFlare badge code could not be loaded. " + e$$5.message)
-                } catch (e$$6) {
-                }
-            }
-            ;
-            //]]>
-        </script></span>
-        </div>
-        <br/>
-
-        <div class="col-md-6 d-flex align-items-center">
-            <span class="text-muted">All Rights Reserved</span>
-        </div>
-        <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
-            <ul class="list-unstyled d-flex">
-                <li class="ms-3"><a class="link-dark" href="https://github.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-github"
-                                                                 style="width:50px;height:50px;color: black;"></i></a>
-                </li>
-                <li class="ms-3"><a class="link-dark" href="https://twitter.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-twitter-x"
-                                                                 style="width:50px;height:50px;color: #000000;"></i></a>
-                </li>
-                <li class="ms-3"><a class="link-dark" href="https://threads.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-threads"
-                                                                 style="width:50px;height:50px;color: #000000"></i></a>
-                </li>
-                <li class="ms-3"><a class="link-dark" href="https://mastodon.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-mastodon"
-                                                                 style="width:50px;height:50px;color: #6364ff;"></i></a>
-                </li>
-                <li class="ms-3"><a class="link-dark" href="https://linkedin.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-linkedin"
-                                                                 style="width:50px;height:50px;color: #007bb5;"></i></a>
-                </li>
-                <li class="ms-3"><a class="link-dark" href="https://telegram.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-telegram"
-                                                                 style="width:50px;height:50px;color: #0088cc;"></i></a>
-                </li>
-                <li class="ms-3"><a class="link-dark" href="https://email.leonardwong.tech" target="_blank"
-                                    rel="noreferrer noopener"><i class="bi bi-envelope-fill"
-                                                                 style="width:50px;height:50px;color:#0072b1;"></i></a>
-                </li>
-            </ul>
-        </div>
-    </footer>
-</div>
-<!-- End Footer -->
-
 </html>
-
