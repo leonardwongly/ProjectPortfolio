@@ -1394,28 +1394,31 @@
             <span class="text-muted">&copy; 2020 - 2023 Leonard Wong</span>
         </div>
         <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
-            <span class="text-muted"><script data-cfbadgetype="f" data-cfbadgeskin="icon" type="text/javascript">
-            //<![CDATA[
-            try {
-                window.CloudFlare || function () {
-                    var a = window.document, b = a.createElement("script"), a = a.getElementsByTagName("script")[0];
-                    window.CloudFlare = [];
-                    b.type = "text/javascript";
-                    b.async = !0;
-                    b.src = "//ajax.cloudflare.com/cdn-cgi/nexp/cloudflare.js";
-                    a.parentNode.insertBefore(b, a)
-                }(), CloudFlare.push(function (a) {
-                    a(["cloudflare/badge"])
-                })
-            } catch (e$$5) {
-                try {
-                    console.error("CloudFlare badge code could not be loaded. " + e$$5.message)
-                } catch (e$$6) {
-                }
-            }
-            ;
-            //]]>
-        </script></span>
+            <span class="text-muted">
+                <script data-cfbadgetype="f" data-cfbadgeskin="icon">
+                    try {
+                        const queue = window.CloudFlare = window.CloudFlare || [];
+                        queue.push((cloudflare) => {
+                            cloudflare(["cloudflare/badge"]);
+                        });
+
+                        if (!document.querySelector('script[data-cloudflare-badge="loader"]')) {
+                            const script = document.createElement('script');
+                            script.dataset.cloudflareBadge = 'loader';
+                            script.src = 'https://ajax.cloudflare.com/cdn-cgi/nexp/cloudflare.js';
+                            script.async = true;
+                            script.defer = true;
+                            script.crossOrigin = 'anonymous';
+                            script.referrerPolicy = 'no-referrer';
+                            const firstScript = document.getElementsByTagName('script')[0];
+                            const parent = (firstScript && firstScript.parentNode) ? firstScript.parentNode : (document.head || document.body);
+                            parent.insertBefore(script, firstScript || null);
+                        }
+                    } catch (error) {
+                        console.error('Cloudflare badge code could not be loaded.', error);
+                    }
+                </script>
+            </span>
         </div>
         <br/>
 
