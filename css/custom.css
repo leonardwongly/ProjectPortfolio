@@ -305,15 +305,24 @@ a:hover,
   width: 48px;
   height: 48px;
   border-radius: 16px;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
+  color: var(--primary-dark);
   background: var(--surface-strong);
   border: 1px solid var(--border-soft);
   box-shadow: 0 15px 30px -20px rgba(15, 23, 66, 0.45);
+  text-decoration: none;
   transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.social-icon__graphic {
+  width: 1em;
+  height: 1em;
+  display: block;
 }
 
 .social-icon:hover,
 .social-icon:focus {
+  color: inherit;
   transform: translateY(-4px);
   box-shadow: 0 18px 32px -18px rgba(79, 70, 229, 0.45);
   background: rgba(79, 70, 229, 0.08);
@@ -324,13 +333,13 @@ a:hover,
   outline-offset: 4px;
 }
 
-.social-icon.bi-github { color: #161b22; }
-.social-icon.bi-twitter-x { color: #000000; }
-.social-icon.bi-threads { color: #000000; }
-.social-icon.bi-mastodon { color: #6364ff; }
-.social-icon.bi-linkedin { color: #007bb5; }
-.social-icon.bi-telegram { color: #0088cc; }
-.social-icon.bi-envelope-fill { color: #0072b1; }
+.social-icon--github { color: #161b22; }
+.social-icon--twitter { color: #050708; }
+.social-icon--threads { color: #000000; }
+.social-icon--mastodon { color: #6364ff; }
+.social-icon--linkedin { color: #007bb5; }
+.social-icon--telegram { color: #0088cc; }
+.social-icon--email { color: #0072b1; }
 
 .summary-card {
   background: var(--surface-strong);
