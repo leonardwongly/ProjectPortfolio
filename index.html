@@ -1,12 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script type="module">
-        import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate';
-
-        const el = document.createElement('pwa-update');
-        document.body.appendChild(el);
-    </script>
+    <script type="module" src="js/pwa-update.js"></script>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests">
     <link rel="manifest" href="manifest.json"/>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
@@ -38,40 +34,7 @@
     <meta name="description" content="A portfolio of Leonard Wong"/>
     <title>Leonard's Portfolio</title>
 
-    <script>
-        /*
- * Basic Count Up from Date and Time
- * Author: @mrwigster / https://guwii.com/bytes/count-date-time-javascript/
- * Modified: @leonardwongly
- */
-        window.onload = function() {
-            // Month Day, Year Hour:Minute:Second, id-of-element-container
-            countUpFromTime("Jan 4, 2022 00:00:00", 'countUpJob'); // ****** Change this line!
-            countUpFromTime("Dec 1, 2020 00:00:00", 'countUpProject');
-        };
-        function countUpFromTime(countFrom, id) {
-            countFrom = new Date(countFrom).getTime();
-            var now = new Date(),
-                countFrom = new Date(countFrom),
-                diff = (now - countFrom);
-
-            let msYear = 31536000000;
-            let msMonth = 2592000000;
-            let msDay = 86400000;
-
-            let year = Math.floor(diff / msYear);
-            let month = Math.floor((diff % msYear) / msMonth);
-            let day = Math.floor(((diff % msYear) % msMonth) / msDay);
-
-            var idEl = document.getElementById(id);
-            idEl.getElementsByClassName('years')[0].innerHTML = year;
-            idEl.getElementsByClassName('months')[0].innerHTML = month;
-            idEl.getElementsByClassName('days')[0].innerHTML = day;
-
-            clearTimeout(countUpFromTime.interval);
-            countUpFromTime.interval = setTimeout(function(){ countUpFromTime(countFrom, id); }, 1000);
-        }
-    </script>
+    <script src="js/countup.js" defer></script>
 
 </head>
 <body class="page-bg">
@@ -1602,4 +1565,3 @@
 </body>
 
 </html>
-
