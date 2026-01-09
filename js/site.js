@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     '.main-timeline .timeline-content',
     '.card',
     '.accordion-item',
+    '.project-item',
     '.book-grid .card'
   ];
 

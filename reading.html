@@ -26,7 +26,8 @@
     <link rel="manifest" href="favicon/manifest.json"/>
     <meta name="msapplication-TileColor" content="#ffffff"/>
     <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png" class="circle-img"/>
-    <meta name="theme-color" content="#f3f6ff">
+    <meta name="theme-color" content="#f3f6ff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
     <!-- End favicon -->
     <script src="js/bootstrap.min.js" defer></script>
     <script src="js/main.js" defer></script>
@@ -62,6 +63,12 @@
                     <a class="nav-link" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">View Resume</a>
                 </li>
             </ul>
+            <div class="navbar-actions d-flex align-items-center gap-2 mt-3 mt-lg-0 ms-lg-auto">
+                <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+                    <span class="theme-toggle__label">Theme</span>
+                    <span class="theme-toggle__state" data-theme-label>Light</span>
+                </button>
+            </div>
             <ul class="list-unstyled d-flex flex-wrap align-items-center social-links">
                 <li>
                     <a class="social-icon social-icon--github" href="https://github.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="GitHub">
@@ -1177,7 +1184,7 @@
 <div class="container">
     <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
         <div class="col-md-6 d-flex align-items-center">
-            <span class="text-muted">&copy; 2020 - 2023 Leonard Wong</span>
+            <span class="text-muted">&copy; 2020 - 2025 Leonard Wong</span>
         </div>
         <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
             <span class="text-muted" id="cloudflare-badge" aria-hidden="true"></span>

@@ -4,6 +4,7 @@ const REVEAL_SELECTORS = [
   '.section-title',
   '.main-timeline .timeline',
   '.card.animate__animated',
+  '.project-item',
   '.year-heading',
   '.page-hint',
   '.book-grid .card',
@@ -16,11 +17,92 @@ const COUNT_UP_CONFIGS = [
   { id: 'countUpProject', from: 'Dec 1, 2020 00:00:00' }
 ];
 
+const THEME_STORAGE_KEY = 'theme-preference';
+
 document.addEventListener('DOMContentLoaded', () => {
+  initThemeToggle();
   initCountUps();
   initRevealOnScroll();
   initCloudflareBadge();
 });
+
+function initThemeToggle() {
+  const toggles = Array.from(document.querySelectorAll('[data-theme-toggle]'));
+  if (!toggles.length) {
+    return;
+  }
+
+  const stored = readStoredTheme();
+  if (stored) {
+    applyTheme(stored);
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+
+  updateThemeToggleLabels(getEffectiveTheme(), toggles);
+
+  toggles.forEach((toggle) => {
+    toggle.addEventListener('click', () => {
+      const next = getEffectiveTheme() === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      updateThemeToggleLabels(next, toggles);
+    });
+  });
+
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const handleSystemChange = () => {
+    if (!readStoredTheme()) {
+      updateThemeToggleLabels(getEffectiveTheme(), toggles);
+    }
+  };
+
+  if (typeof mediaQuery.addEventListener === 'function') {
+    mediaQuery.addEventListener('change', handleSystemChange);
+  } else if (typeof mediaQuery.addListener === 'function') {
+    mediaQuery.addListener(handleSystemChange);
+  }
+}
+
+function readStoredTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    return stored === 'dark' || stored === 'light' ? stored : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function getEffectiveTheme() {
+  const stored = readStoredTheme();
+  if (stored) {
+    return stored;
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (error) {
+    // Ignore storage errors (private mode, etc.).
+  }
+}
+
+function updateThemeToggleLabels(theme, toggles) {
+  toggles.forEach((toggle) => {
+    const label = toggle.querySelector('[data-theme-label]');
+    if (label) {
+      label.textContent = theme === 'dark' ? 'Dark' : 'Light';
+    }
+    toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+    toggle.setAttribute(
+      'aria-label',
+      theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+    );
+  });
+}
 
 function initCountUps() {
   COUNT_UP_CONFIGS.forEach(({ id, from }) => {
