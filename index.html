@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script type="module">
-        import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate';
-
-        const el = document.createElement('pwa-update');
-        document.body.appendChild(el);
-    </script>
+    <script type="module" src="js/pwa-update.js"></script>
     <link rel="manifest" href="manifest.json"/>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://ajax.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
     <link rel="stylesheet" href="css/custom.css"/>
+    <link rel="preload" href="fonts/SF-Pro-Display-Regular.otf" as="font" type="font/otf" crossorigin>
+    <link rel="preload" href="fonts/SF-Pro-Display-Semibold.otf" as="font" type="font/otf" crossorigin>
+    <link rel="preload" href="images/leo.jpeg" as="image" fetchpriority="high">
 
     <!-- favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png" class="circle-img"/>
@@ -29,49 +28,19 @@
     <link rel="manifest" href="favicon/manifest.json"/>
     <meta name="msapplication-TileColor" content="#ffffff"/>
     <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png" class="circle-img"/>
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#f3f6ff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
     <!-- End favicon -->
     <script src="js/bootstrap.min.js" defer></script>
+    <script src="js/main.js" defer></script>
+    <script src="js/site.js" defer></script>
     <noscript>Your browser does not support JavaScript!</noscript>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://ajax.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://cdn.jsdelivr.net https://ajax.cloudflare.com; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="description" content="A portfolio of Leonard Wong"/>
     <title>Leonard's Portfolio</title>
-
-    <script>
-        /*
- * Basic Count Up from Date and Time
- * Author: @mrwigster / https://guwii.com/bytes/count-date-time-javascript/
- * Modified: @leonardwongly
- */
-        window.onload = function() {
-            // Month Day, Year Hour:Minute:Second, id-of-element-container
-            countUpFromTime("Jan 4, 2022 00:00:00", 'countUpJob'); // ****** Change this line!
-            countUpFromTime("Dec 1, 2020 00:00:00", 'countUpProject');
-        };
-        function countUpFromTime(countFrom, id) {
-            countFrom = new Date(countFrom).getTime();
-            var now = new Date(),
-                countFrom = new Date(countFrom),
-                diff = (now - countFrom);
-
-            let msYear = 31536000000;
-            let msMonth = 2592000000;
-            let msDay = 86400000;
-
-            let year = Math.floor(diff / msYear);
-            let month = Math.floor((diff % msYear) / msMonth);
-            let day = Math.floor(((diff % msYear) % msMonth) / msDay);
-
-            var idEl = document.getElementById(id);
-            idEl.getElementsByClassName('years')[0].innerHTML = year;
-            idEl.getElementsByClassName('months')[0].innerHTML = month;
-            idEl.getElementsByClassName('days')[0].innerHTML = day;
-
-            clearTimeout(countUpFromTime.interval);
-            countUpFromTime.interval = setTimeout(function(){ countUpFromTime(countFrom, id); }, 1000);
-        }
-    </script>
 
 </head>
 <body class="page-bg">
@@ -154,6 +123,12 @@
                     <a class="nav-link" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">View Resume</a>
                 </li>
             </ul>
+            <div class="navbar-actions d-flex align-items-center gap-2 mt-3 mt-lg-0 ms-lg-auto">
+                <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+                    <span class="theme-toggle__label">Theme</span>
+                    <span class="theme-toggle__state" data-theme-label>Light</span>
+                </button>
+            </div>
         </div>
     </div>
 </nav>
@@ -162,13 +137,31 @@
     <section class="hero-panel animate__animated animate__fadeInUp">
         <div class="row g-5 align-items-center">
             <div class="col-lg-4 text-center">
-                <img decoding="async" fetchpriority="high" src="images/leo.jpeg" alt="Portrait of Leonard Wong" class="img-fluid hero-avatar" loading="lazy" width="220" height="220"/>
+                <img decoding="async" fetchpriority="high" src="images/leo.jpeg" alt="Portrait of Leonard Wong" class="img-fluid hero-avatar" loading="eager" width="220" height="220"/>
             </div>
             <div class="col-lg-8 hero-intro">
                 <h3>Leonard Wong</h3>
                 <p>
                     <svg class="icon icon-building" aria-hidden="true" focusable="false"><use href="#icon-building"/></svg>&nbsp;Software Engineer @ NCS Group & Graduate Student @ NUS ISS
                 </p>
+                <div class="quick-facts" role="list">
+                    <div class="quick-fact" role="listitem">
+                        <span class="quick-fact__label">Role</span>
+                        <span class="quick-fact__value">Software Engineer</span>
+                    </div>
+                    <div class="quick-fact" role="listitem">
+                        <span class="quick-fact__label">Graduate</span>
+                        <span class="quick-fact__value">NUS ISS</span>
+                    </div>
+                    <div class="quick-fact" role="listitem">
+                        <span class="quick-fact__label">Employer</span>
+                        <span class="quick-fact__value">NCS Group</span>
+                    </div>
+                    <div class="quick-fact" role="listitem">
+                        <span class="quick-fact__label">Base</span>
+                        <span class="quick-fact__value">Singapore</span>
+                    </div>
+                </div>
                 <ul class="list-unstyled d-flex flex-wrap align-items-center social-links">
                     <li>
                         <a class="social-icon social-icon--github" href="https://github.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="GitHub">
@@ -478,7 +471,7 @@
                     <h5 class="card-title"><img decoding="async" src="images/ITiCSE2022Dublin.png" alt="ITiCSE 2022 badge" loading="lazy" width="30px"
                                                 height="30px" class="circle-img"/>&nbsp;XSS for the Masses: Integrating Security in a Web Programming Course using a Security Scanner
                     </h5>
-                    <p>27th annual conference on Innovation and Technology in Computer Science Education (ITiCSE 2022) · Apr 26, 2022</p>
+                    <p>27th annual conference on Innovation and Technology in Computer Science Education (ITiCSE 2022) - Apr 26, 2022</p>
                     <p class="card-text fw-light">Nominated for Best Paper Award in ITiCSE 2022 Conference
                     </p>
                     <p>Authored by: Lwin Khin Shar, Kyong Jin Shim, Christopher M. Poskitt & Li Ying Leonard Wong</p>
@@ -747,20 +740,306 @@
             <h3 class="subheading-badge"><span class="badge rounded-pill bg-danger shadow-sm">Discontinued/Completion</span></h3>
         </div>
     </div>
-    <div class="row g-4">
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                            <div class="card-body">
-                                <h5 class="card-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" width="30px"
-                                                            height="30px" class="circle-img"/>&nbsp;myIPSW
-                                    (Personal Project)</h5>
-                                <p class="card-text">• Jan 2020 - Jan 2022<br/>Using ipsw.me API to develop a website that
-                                    provides
-                                    download link to all Apple firmwares
-                                </p>
-                                <a href="https://github.com/leonardwongly/MyIPSW" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="30px" height="30px"
-                                        class="circle-img"/></a>
-                                <br/>
+    <div class="row">
+        <div class="col-12">
+            <div class="project-group">
+                <h5 class="project-group-title">Corporate Projects</h5>
+                <div class="project-list">
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/alphaori.jpg" alt="Alpha Ori Technologies logo" loading="lazy" class="circle-img project-icon"/>Project Vendors</span>
+                            <span class="project-meta">4 May - 31 Jul 2020 - Corporate</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Collection of data via API from 3 different vendors to determine which vendors the company should use.</p>
+                            <div class="project-links">
+                                <a href="https://github.com/leonardwongly/VesselTracker-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                                <a href="https://github.com/leonardwongly/VesselFinder-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                                <a href="https://github.com/leonardwongly/BOD-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                            </div>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                                <span class="badge rounded-pill bg-primary">JSON</span>
+                                <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                                <span class="badge rounded-pill bg-primary">C#</span>
+                                <span class="badge rounded-pill bg-primary">AWS DynamoDB</span>
+                                <span class="badge rounded-pill bg-primary">API for data collection</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/alphaori.jpg" alt="Alpha Ori Technologies logo" loading="lazy" class="circle-img project-icon"/>Project XMLData</span>
+                            <span class="project-meta">4 May - 31 Jul 2020 - Corporate</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Conversion of billions of aggregated data and upload to AWS DynamoDB.</p>
+                            <div class="project-links">
+                                <a href="https://github.com/leonardwongly/XMLData-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                            </div>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                                <span class="badge rounded-pill bg-primary">JSON</span>
+                                <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                                <span class="badge rounded-pill bg-primary">C#</span>
+                                <span class="badge rounded-pill bg-primary">AWS DynamoDB</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/alphaori.jpg" alt="Alpha Ori Technologies logo" loading="lazy" class="circle-img project-icon"/>rPiAIS</span>
+                            <span class="project-meta">13 May - 2 Aug 2019 - Corporate</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Built and configured an AIS dispatcher.</p>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">CLI</span>
+                                <span class="badge rounded-pill bg-secondary">RPiAIS software</span>
+                                <span class="badge rounded-pill bg-secondary">Raspberry Pi 3B+</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/thome.jpg" alt="Thome Group logo" loading="lazy" class="circle-img project-icon"/>Ship Agency Portal</span>
+                            <span class="project-meta">5 May - 5 Oct 2018 - Corporate</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Digitalized the agency department to reduce miscommunication.</p>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                                <span class="badge rounded-pill bg-primary">JSON</span>
+                                <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                                <span class="badge rounded-pill bg-primary">C#</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/thome.jpg" alt="Thome Group logo" loading="lazy" class="circle-img project-icon"/>Enterprise Analytics Portal</span>
+                            <span class="project-meta">5 May - 5 Oct 2018 - Corporate</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Dashboard of critical information to support decision making.</p>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                                <span class="badge rounded-pill bg-primary">JSON</span>
+                                <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                                <span class="badge rounded-pill bg-primary">C#</span>
+                                <span class="badge rounded-pill bg-primary">MSSQL</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/thome.jpg" alt="Thome Group logo" loading="lazy" class="circle-img project-icon"/>Vessel Information Portal</span>
+                            <span class="project-meta">5 May - 5 Oct 2018 - Corporate</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Detailed overview of vessel information.</p>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                                <span class="badge rounded-pill bg-primary">JSON</span>
+                                <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                                <span class="badge rounded-pill bg-primary">C#</span>
+                                <span class="badge rounded-pill bg-primary">OpenStreetMap API</span>
+                                <span class="badge rounded-pill bg-primary">OpenSeaMap API</span>
+                                <span class="badge rounded-pill bg-primary">OpenCycleMap API</span>
+                                <span class="badge rounded-pill bg-primary">Nominatim API</span>
+                                <span class="badge rounded-pill bg-primary">Polestarglobal API</span>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+            <div class="project-group">
+                <h5 class="project-group-title">School Projects</h5>
+                <div class="project-list">
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/smu.jpeg" alt="Singapore Management University logo" loading="lazy" class="circle-img project-icon"/>SMU Seat Occupancy Project</span>
+                            <span class="project-meta">Jan - Apr 2021 - School</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">IoT project that detects whether a seat has been occupied.</p>
+                            <div class="project-links">
+                                <a href="https://github.com/leonardwongly/SMUSOP" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                                <a href="https://leonardwongly.medium.com/smusop-4fe9878f4e84" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/Medium-logo.jpg" alt="Medium" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                            </div>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">JSON</span>
+                                <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                                <span class="badge rounded-pill bg-primary">C#</span>
+                                <span class="badge rounded-pill bg-primary">MySQL</span>
+                                <span class="badge rounded-pill bg-primary">Python3</span>
+                                <span class="badge rounded-pill bg-primary">dweet.io</span>
+                                <span class="badge rounded-pill bg-secondary">Raspberry Pi</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/smu.jpeg" alt="Singapore Management University logo" loading="lazy" class="circle-img project-icon"/>BIOS</span>
+                            <span class="project-meta">Aug - Dec 2019 - School</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Recreated SMU module bidding system.</p>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                                <span class="badge rounded-pill bg-primary">PHP</span>
+                                <span class="badge rounded-pill bg-secondary">AWS DynamoDB</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" class="circle-img project-icon"/>PMD Renting Platform</span>
+                            <span class="project-meta">Oct 2016 - Feb 2017 - School</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">A quick and easy way to rent a PMD for a ride.</p>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                                <span class="badge rounded-pill bg-primary">JSON</span>
+                                <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                                <span class="badge rounded-pill bg-primary">C#</span>
+                                <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
+                                <span class="badge rounded-pill bg-primary">Digits API</span>
+                                <span class="badge rounded-pill bg-primary">Cloudinary API</span>
+                                <span class="badge rounded-pill bg-primary">Twilio SMS API</span>
+                                <span class="badge rounded-pill bg-primary">PayPal API</span>
+                                <span class="badge rounded-pill bg-primary">Braintree API</span>
+                                <span class="badge rounded-pill bg-primary">SimplifyCommerce API</span>
+                                <span class="badge rounded-pill bg-primary">pdfSharp API</span>
+                                <span class="badge rounded-pill bg-primary">Clarifal Image Recognition API</span>
+                                <span class="badge rounded-pill bg-primary">sweetalert API</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" class="circle-img project-icon"/>NYP Student Attendance System</span>
+                            <span class="project-meta">May - Jul 2016 - School</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Overhauled UI with responsive design.</p>
+                            <div class="project-links">
+                                <a href="https://attendance.nyp.edu.sg/" target="_blank" rel="noreferrer noopener">Project link</a>
+                            </div>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                                <span class="badge rounded-pill bg-primary">JSON</span>
+                                <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                                <span class="badge rounded-pill bg-primary">C#</span>
+                                <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" class="circle-img project-icon"/>E-Business &amp; Project</span>
+                            <span class="project-meta">Apr - Aug 2015 - School</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Easy and innovative way to shop for wigs.</p>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                                <span class="badge rounded-pill bg-primary">JSON</span>
+                                <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                                <span class="badge rounded-pill bg-primary">C#</span>
+                                <span class="badge rounded-pill bg-primary">Stripe API</span>
+                                <span class="badge rounded-pill bg-primary">Twilio SMS API</span>
+                                <span class="badge rounded-pill bg-primary">PDFSharp</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" class="circle-img project-icon"/>Object-Oriented Programming</span>
+                            <span class="project-meta">Oct 2014 - Feb 2015 - School</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Better shopping experience through a software system.</p>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">Java</span>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" class="circle-img project-icon"/>Web Applications Development</span>
+                            <span class="project-meta">Oct 2014 - Feb 2015 - School</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Created a responsive website.</p>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+            <div class="project-group">
+                <h5 class="project-group-title">Personal Projects</h5>
+                <div class="project-list">
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" class="circle-img project-icon"/>myIPSW</span>
+                            <span class="project-meta">Jan 2020 - Jan 2022 - Personal</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Using ipsw.me API to develop a website that provides download links to Apple firmwares.</p>
+                            <div class="project-links">
+                                <a href="https://github.com/leonardwongly/MyIPSW" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                            </div>
+                            <div class="project-tags">
                                 <span class="badge rounded-pill bg-primary shadow">HTML</span>
                                 <span class="badge rounded-pill bg-primary shadow">CSS</span>
                                 <span class="badge rounded-pill bg-primary shadow">Javascript</span>
@@ -771,301 +1050,64 @@
                                 <span class="badge rounded-pill bg-primary shadow">ipsw.me API</span>
                             </div>
                         </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/smu.jpeg" alt="Singapore Management University logo" loading="lazy" width="30px"
-                                                                height="30px"
-                                                                class="circle-img"/>&nbsp;SMU Seat Occupancy Project
-                                        (School Project)</h5>
-                                    <p class="card-text">• Jan - April 2021<br/>IoT Project that will detect whether the seat had
-                                        been
-                                        occupied</p>
-                                    <a href="https://github.com/leonardwongly/SMUSOP" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="30px" height="30px"
-                                            class="circle-img"/></a>
-                                    <a href="https://leonardwongly.medium.com/smusop-4fe9878f4e84" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/Medium-logo.jpg" alt="Medium" loading="lazy"
-                                                                      width="30px" height="30px" class="circle-img"/></a>
-                                    <br/>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">JSON</span>
-                                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                                    <span class="badge rounded-pill bg-primary">C#</span>
-                                    <span class="badge rounded-pill bg-primary">MySQL</span>
-                                    <span class="badge rounded-pill bg-primary">Python3</span>
-                                    <span class="badge rounded-pill bg-primary">dweet.io</span>
-                                    <span class="badge rounded-pill bg-secondary">Raspberry Pi</span>
-                                </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" class="circle-img project-icon"/>Custom URL Shortener</span>
+                            <span class="project-meta">Jan 2020 - Present - Personal</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Shorten links with a custom domain.</p>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">PHP</span>
+                                <span class="badge rounded-pill bg-primary">MariaDB</span>
+                                <span class="badge rounded-pill bg-primary">YOURLS</span>
+                                <span class="badge rounded-pill bg-secondary">CentOS</span>
                             </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/alphaori.jpg" alt="Alpha Ori Technologies logo" loading="lazy" width="30px"
-                                                                height="30px"
-                                                                class="circle-img"/>&nbsp;Project Vendors
-                                        (Corporate Project)</h5>
-                                    <p class="card-text">• 4 May - 31 July 2020<br/>Collection of data via API from 3 different
-                                        vendors
-                                        to determine which vendors the company should use</p>
-                                    <a href="https://github.com/leonardwongly/VesselTracker-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy"
-                                                                      width="30px"
-                                                                      height="30px" class="circle-img"/></a>
-                                    <a href="https://github.com/leonardwongly/VesselFinder-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy"
-                                                                      width="30px"
-                                                                      height="30px" class="circle-img"/></a>
-                                    <a href="https://github.com/leonardwongly/BOD-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="30px" height="30px"
-                                            class="circle-img"/></a>
-                                    <br/>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                    <span class="badge rounded-pill bg-primary">JSON</span>
-                                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                                    <span class="badge rounded-pill bg-primary">C#</span>
-                                    <span class="badge rounded-pill bg-primary">AWS DynamoDB</span>
-                                    <span class="badge rounded-pill bg-primary">API for data collection</span>
-                                </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" class="circle-img project-icon"/>Personal Portfolio v1</span>
+                            <span class="project-meta">Mar 2017 - Dec 2020 - Personal</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Presenting portfolio differently.</p>
+                            <div class="project-links">
+                                <a href="https://github.com/leonardwongly/ProjectMe-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
                             </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/alphaori.jpg" alt="Alpha Ori Technologies logo" loading="lazy" width="30px"
-                                                                height="30px"
-                                                                class="circle-img"/>&nbsp;Project XMLData
-                                        (Corporate Project)</h5>
-                                    <p class="card-text">• 4 May - 31 July 2020<br/>Conversion of billions of aggregated data and
-                                        upload
-                                        to AWS DynamoDB</p>
-                                    <a href="https://github.com/leonardwongly/XMLData-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy"
-                                                                      width="30px"
-                                                                      height="30px" class="circle-img"/></a>
-                                    <br/>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                    <span class="badge rounded-pill bg-primary">JSON</span>
-                                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                                    <span class="badge rounded-pill bg-primary">C#</span>
-                                    <span class="badge rounded-pill bg-primary">AWS DynamoDB</span>
-                                </div>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
+                                <span class="badge rounded-pill bg-primary">HTML</span>
+                                <span class="badge rounded-pill bg-primary">CSS</span>
+                                <span class="badge rounded-pill bg-primary">Javascript</span>
+                                <span class="badge rounded-pill bg-primary">jQuery</span>
+                                <span class="badge rounded-pill bg-primary">JSON</span>
+                                <span class="badge rounded-pill bg-primary">ASP.NET</span>
+                                <span class="badge rounded-pill bg-primary">C#</span>
                             </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/smu.jpeg" alt="Singapore Management University logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;BIOS
-                                        (School Project)</h5>
-                                    <p class="card-text">• Aug - Dec 2019<br/>Recreated SMU Module bidding system</p>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                    <span class="badge rounded-pill bg-primary">PHP</span>
-                                    <span class="badge rounded-pill bg-secondary">AWS DynamoDB</span>
-                                </div>
+                        </div>
+                    </details>
+                    <details class="project-item">
+                        <summary>
+                            <span class="project-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" class="circle-img project-icon"/>ltl96 Telegram Bot</span>
+                            <span class="project-meta">May 2017 - Personal</span>
+                            <span class="project-toggle">Details</span>
+                        </summary>
+                        <div class="project-body">
+                            <p class="project-description">Presented portfolio differently via Telegram.</p>
+                            <div class="project-links">
+                                <a href="https://github.com/leonardwongly/ltl96bot" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
                             </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/alphaori.jpg" alt="Alpha Ori Technologies logo" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;rPiAIS (Corporate Project)</h5>
-                                    <p class="card-text">• 13 May - 2 Aug 2019<br/>Built & configured AIS Dispatcher</p>
-                                    <span class="badge rounded-pill bg-primary">CLI</span>
-                                    <span class="badge rounded-pill bg-secondary">RPiAIS software</span>
-                                    <span class="badge rounded-pill bg-secondary">Raspberry Pi 3B+</span>
-                                </div>
+                            <div class="project-tags">
+                                <span class="badge rounded-pill bg-primary">Node.js</span>
                             </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/thome.jpg" alt="Thome Group logo" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;Ship Agency Portal (Corporate Project)</h5>
-                                    <p class="card-text">• 5 May - 5 Oct 2018<br/>Digitalizing Agency Department to reduce miscommunication</p>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                    <span class="badge rounded-pill bg-primary">JSON</span>
-                                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                                    <span class="badge rounded-pill bg-primary">C#</span>
-                                </div>
-                            </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/thome.jpg" alt="Thome Group logo" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;Enterprise Analytics Portal (Corporate Project)</h5>
-                                    <p class="card-text">• 5 May - 5 Oct 2018<br/>Providing a dashboard of critical information to complement decisions</p>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                    <span class="badge rounded-pill bg-primary">JSON</span>
-                                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                                    <span class="badge rounded-pill bg-primary">C#</span>
-                                    <span class="badge rounded-pill bg-primary">MSSQL</span>
-                                </div>
-                            </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/thome.jpg" alt="Thome Group logo" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;Vessel Information Portal (Corporate Project)</h5>
-                                    <p class="card-text">• 5 May - 5 Oct 2018<br/>Detailed overview of vessels information</p>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                    <span class="badge rounded-pill bg-primary">JSON</span>
-                                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                                    <span class="badge rounded-pill bg-primary">C#</span>
-                                    <span class="badge rounded-pill bg-primary">OpenStreetMap API</span>
-                                    <span class="badge rounded-pill bg-primary">OpenSeaMap API</span>
-                                    <span class="badge rounded-pill bg-primary">OpenCycleMap API</span>
-                                    <span class="badge rounded-pill bg-primary">Nominatim API</span>
-                                    <span class="badge rounded-pill bg-primary">Polestarglobal API</span>
-                                </div>
-                            </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;Custom URL Shortener (Personal Project)
-                                    </h5>
-                                    <p class="card-text">• Jan 2020 - Present<br/>Shorten link with custom domain</p>
-                                    <span class="badge rounded-pill bg-primary">PHP</span>
-                                    <span class="badge rounded-pill bg-primary">MariaDB</span>
-                                    <span class="badge rounded-pill bg-primary">YOURLS</span>
-                                    <span class="badge rounded-pill bg-secondary">CentOS</span>
-                                </div>
-                            </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;Personal Portfolio v1 (Personal Project)
-                                    </h5>
-                                    <a href="https://github.com/leonardwongly/ProjectMe-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="30px" height="30px" class="circle-img"/></a>
-                                    <br/>
-                                    <p class="card-text">• Mar 2017 - Dec 2020<br/>Presenting portfolio differently</p>
-                                    <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                    <span class="badge rounded-pill bg-primary">JSON</span>
-                                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                                    <span class="badge rounded-pill bg-primary">C#</span>
-                                </div>
-                            </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;ltl96 Telegram Bot (Personal Project)</h5>
-                                    <p class="card-text">May 2017<br/>Presenting portfolio differently via Telegram</p>
-                                    <a href="https://github.com/leonardwongly/ltl96bot" target="_blank" rel="noopener noreferrer">
-                                        <img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="30px" height="30px" class="circle-img"/></a>
-                                    <br/>
-                                    <span class="badge rounded-pill bg-primary">Node.js</span>
-                                </div>
-                            </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;PMD Renting Platform (School Project)</h5>
-                                    <p class="card-text">• Oct 2016 - Feb 2017<br/>A quick and easy way to rent a PMD for a ride
-                                    </p>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                    <span class="badge rounded-pill bg-primary">JSON</span>
-                                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                                    <span class="badge rounded-pill bg-primary">C#</span>
-                                    <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
-                                    <span class="badge rounded-pill bg-primary">Digits API</span>
-                                    <span class="badge rounded-pill bg-primary">Cloudinary API</span>
-                                    <span class="badge rounded-pill bg-primary">Twilio SMS API</span>
-                                    <span class="badge rounded-pill bg-primary">PayPal API</span>
-                                    <span class="badge rounded-pill bg-primary">Braintree API</span>
-                                    <span class="badge rounded-pill bg-primary">SimplifyCommerce API</span>
-                                    <span class="badge rounded-pill bg-primary">pdfSharp API</span>
-                                    <span class="badge rounded-pill bg-primary">Clarifal Image Recognition API</span>
-                                    <span class="badge rounded-pill bg-primary">sweetalert API</span>
-                                </div>
-                            </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="30px" height="30px" class="circle-img"/>&nbsp;
-                                        <a href="https://attendance.nyp.edu.sg/" target="_blank" rel="noreferrer noopener">NYP Student Attendance System (Final Year Project)</a></h5>
-                                    <p class="card-text">• May - Jul 2016<br/>Overhaul user interface with responsive design</p>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                    <span class="badge rounded-pill bg-primary">JSON</span>
-                                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                                    <span class="badge rounded-pill bg-primary">C#</span>
-                                    <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
-                                </div>
-                            </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="30px"height="30px" class="circle-img"/>&nbsp;E-Business
-                                        & Project (School Project)</a></h5>
-                                    <p class="card-text">• Apr - Aug 2015<br/>Easy and innovative way to shop for wigs, without the shame</p>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                    <span class="badge rounded-pill bg-primary">JSON</span>
-                                    <span class="badge rounded-pill bg-primary">ASP.NET</span>
-                                    <span class="badge rounded-pill bg-primary">C#</span>
-                                    <span class="badge rounded-pill bg-primary">Stripe API</span>
-                                    <span class="badge rounded-pill bg-primary">Twilio SMS API</span>
-                                    <span class="badge rounded-pill bg-primary">PDFSharp</span>
-                                </div>
-                            </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Object-Oriented Programming
-                                        (School Project)</a></h5>
-                                    <p class="card-text">• Oct 2014 - Feb 2015<br/>Better Shopping experience through a software
-                                        system
-                                    </p>
-                                    <span class="badge rounded-pill bg-primary">Java</span>
-                                </div>
-                            </div>
-        </div>
-        <div class="col-12 col-lg-6 col-xl-4">
-            <div class="card animate__animated animate__fadeInUp">
-                                <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Web
-                                        Applications Development (School Project)</a></h5>
-                                    <p class="card-text">• Oct 2014 - Feb 2015<br/>Create a responsive website</p>
-                                    <span class="badge rounded-pill bg-primary">HTML</span>
-                                    <span class="badge rounded-pill bg-primary">CSS</span>
-                                    <span class="badge rounded-pill bg-primary">Javascript</span>
-                                    <span class="badge rounded-pill bg-primary">jQuery</span>
-                                </div>
-                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -1408,124 +1450,15 @@
     </div>
 </div>
 <!-- Career Modal -->
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const selectors = [
-            '.hero-panel',
-            '.summary-card',
-            '.section-title',
-            '.main-timeline .timeline',
-            '.card.animate__animated',
-            '.year-heading',
-            '.page-hint',
-            '.book-grid .card',
-            '.badge.shadow',
-            '.badge.shadow-sm'
-        ];
-
-        const collected = [];
-        const seen = new Set();
-
-        selectors.forEach((selector) => {
-            document.querySelectorAll(selector).forEach((element, position) => {
-                if (!seen.has(element)) {
-                    seen.add(element);
-                    element.classList.add('reveal-on-scroll');
-                    if (!element.dataset.animateAutoOrder) {
-                        element.dataset.animateAutoOrder = String(position);
-                    }
-                    collected.push(element);
-                }
-            });
-        });
-
-        if (!collected.length) {
-            return;
-        }
-
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-        const applyImmediate = () => {
-            collected.forEach((element) => {
-                element.classList.add('is-visible');
-                element.style.removeProperty('--animation-delay');
-            });
-        };
-
-        if (!('IntersectionObserver' in window) || reduceMotion.matches) {
-            applyImmediate();
-            return;
-        }
-
-        const baseDelay = 70;
-
-        collected.forEach((element, index) => {
-            const hasCustomOrder = element.hasAttribute('data-animate-order');
-            const sourceOrder = hasCustomOrder ? element.dataset.animateOrder : element.dataset.animateAutoOrder;
-            const parsedOrder = Number.parseInt(sourceOrder ?? index, 10);
-            const normalizedOrder = Number.isFinite(parsedOrder) ? Math.max(parsedOrder, 0) : index;
-            const delay = (hasCustomOrder ? normalizedOrder : Math.min(normalizedOrder, 8)) * baseDelay;
-            element.style.setProperty('--animation-delay', `${delay}ms`);
-        });
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('is-visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.18, rootMargin: '0px 0px -5% 0px' });
-
-        collected.forEach((element) => observer.observe(element));
-
-        if (typeof reduceMotion.addEventListener === 'function') {
-            reduceMotion.addEventListener('change', (event) => {
-                if (event.matches) {
-                    applyImmediate();
-                }
-            });
-        } else if (typeof reduceMotion.addListener === 'function') {
-            reduceMotion.addListener((event) => {
-                if (event.matches) {
-                    applyImmediate();
-                }
-            });
-        }
-    });
-</script>
 
 <!-- New Footer -->
 <div class="container section-block">
     <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
         <div class="col-md-6 d-flex align-items-center">
-            <span class="text-muted">&copy; 2020 - 2023 Leonard Wong</span>
+            <span class="text-muted">&copy; 2020 - 2025 Leonard Wong</span>
         </div>
         <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
-            <span class="text-muted">
-                <script data-cfbadgetype="f" data-cfbadgeskin="icon">
-                    try {
-                        const queue = window.CloudFlare = window.CloudFlare || [];
-                        queue.push((cloudflare) => {
-                            cloudflare(["cloudflare/badge"]);
-                        });
-
-                        if (!document.querySelector('script[data-cloudflare-badge="loader"]')) {
-                            const script = document.createElement('script');
-                            script.dataset.cloudflareBadge = 'loader';
-                            script.src = 'https://ajax.cloudflare.com/cdn-cgi/nexp/cloudflare.js';
-                            script.async = true;
-                            script.defer = true;
-                            script.crossOrigin = 'anonymous';
-                            script.referrerPolicy = 'no-referrer';
-                            const firstScript = document.getElementsByTagName('script')[0];
-                            const parent = (firstScript && firstScript.parentNode) ? firstScript.parentNode : (document.head || document.body);
-                            parent.insertBefore(script, firstScript || null);
-                        }
-                    } catch (error) {
-                        console.error('Cloudflare badge code could not be loaded.', error);
-                    }
-                </script>
-            </span>
+            <span class="text-muted" id="cloudflare-badge" aria-hidden="true"></span>
         </div>
         <br/>
 
@@ -1602,4 +1535,3 @@
 </body>
 
 </html>
-
