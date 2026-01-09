@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script type="module">
-        import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate';
-        const el = document.createElement('pwa-update');
-        document.body.appendChild(el);
-    </script>
+    <script type="module" src="js/pwa-update.js"></script>
     <link rel="manifest" href="manifest.json" />
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://ajax.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
     <link rel="stylesheet" href="css/custom.css"/>
+    <link rel="preload" href="fonts/SF-Pro-Display-Regular.otf" as="font" type="font/otf" crossorigin>
+    <link rel="preload" href="fonts/SF-Pro-Display-Semibold.otf" as="font" type="font/otf" crossorigin>
     <!-- favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png" class="circle-img"/>
     <link rel="apple-touch-icon" sizes="60x60" href="favicon/apple-icon-60x60.png" class="circle-img"/>
@@ -27,13 +26,17 @@
     <link rel="manifest" href="favicon/manifest.json"/>
     <meta name="msapplication-TileColor" content="#ffffff"/>
     <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png" class="circle-img"/>
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#f3f6ff">
     <!-- End favicon -->
     <script src="js/bootstrap.min.js" defer></script>
+    <script src="js/main.js" defer></script>
+    <script src="js/site.js" defer></script>
 
     <noscript>Your browser does not support JavaScript!</noscript>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://ajax.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://cdn.jsdelivr.net https://ajax.cloudflare.com; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="description" content="A portfolio of Leonard Wong"/>
     <title>Leonard's Portfolio</title>
 </head>
@@ -1177,31 +1180,7 @@
             <span class="text-muted">&copy; 2020 - 2023 Leonard Wong</span>
         </div>
         <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
-            <span class="text-muted">
-                <script data-cfbadgetype="f" data-cfbadgeskin="icon">
-                    try {
-                        const queue = window.CloudFlare = window.CloudFlare || [];
-                        queue.push((cloudflare) => {
-                            cloudflare(["cloudflare/badge"]);
-                        });
-
-                        if (!document.querySelector('script[data-cloudflare-badge="loader"]')) {
-                            const script = document.createElement('script');
-                            script.dataset.cloudflareBadge = 'loader';
-                            script.src = 'https://ajax.cloudflare.com/cdn-cgi/nexp/cloudflare.js';
-                            script.async = true;
-                            script.defer = true;
-                            script.crossOrigin = 'anonymous';
-                            script.referrerPolicy = 'no-referrer';
-                            const firstScript = document.getElementsByTagName('script')[0];
-                            const parent = (firstScript && firstScript.parentNode) ? firstScript.parentNode : (document.head || document.body);
-                            parent.insertBefore(script, firstScript || null);
-                        }
-                    } catch (error) {
-                        console.error('Cloudflare badge code could not be loaded.', error);
-                    }
-                </script>
-            </span>
+            <span class="text-muted" id="cloudflare-badge" aria-hidden="true"></span>
         </div>
         <br/>
 
@@ -1275,91 +1254,5 @@
     </footer>
 </div>
 <!-- End Footer -->
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const selectors = [
-            '.hero-panel',
-            '.summary-card',
-            '.section-title',
-            '.main-timeline .timeline',
-            '.card.animate__animated',
-            '.year-heading',
-            '.page-hint',
-            '.book-grid .card',
-            '.badge.shadow',
-            '.badge.shadow-sm'
-        ];
-
-        const collected = [];
-        const seen = new Set();
-
-        selectors.forEach((selector) => {
-            document.querySelectorAll(selector).forEach((element, position) => {
-                if (!seen.has(element)) {
-                    seen.add(element);
-                    element.classList.add('reveal-on-scroll');
-                    if (!element.dataset.animateAutoOrder) {
-                        element.dataset.animateAutoOrder = String(position);
-                    }
-                    collected.push(element);
-                }
-            });
-        });
-
-        if (!collected.length) {
-            return;
-        }
-
-        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-        const applyImmediate = () => {
-            collected.forEach((element) => {
-                element.classList.add('is-visible');
-                element.style.removeProperty('--animation-delay');
-            });
-        };
-
-        if (!('IntersectionObserver' in window) || reduceMotion.matches) {
-            applyImmediate();
-            return;
-        }
-
-        const baseDelay = 70;
-
-        collected.forEach((element, index) => {
-            const hasCustomOrder = element.hasAttribute('data-animate-order');
-            const sourceOrder = hasCustomOrder ? element.dataset.animateOrder : element.dataset.animateAutoOrder;
-            const parsedOrder = Number.parseInt(sourceOrder ?? index, 10);
-            const normalizedOrder = Number.isFinite(parsedOrder) ? Math.max(parsedOrder, 0) : index;
-            const delay = (hasCustomOrder ? normalizedOrder : Math.min(normalizedOrder, 8)) * baseDelay;
-            element.style.setProperty('--animation-delay', `${delay}ms`);
-        });
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('is-visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.18, rootMargin: '0px 0px -5% 0px' });
-
-        collected.forEach((element) => observer.observe(element));
-
-        if (typeof reduceMotion.addEventListener === 'function') {
-            reduceMotion.addEventListener('change', (event) => {
-                if (event.matches) {
-                    applyImmediate();
-                }
-            });
-        } else if (typeof reduceMotion.addListener === 'function') {
-            reduceMotion.addListener((event) => {
-                if (event.matches) {
-                    applyImmediate();
-                }
-            });
-        }
-    });
-</script>
 </body>
 </html>
-
