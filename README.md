@@ -24,3 +24,15 @@ Feel free to follow me on my socials 😶‍🌫️<br/>
 [Twitter](https://twitter.leonardwong.tech)
 <br/>
 [Linkedin](https://linkedin.leonardwong.tech)
+
+---
+
+## Development notes
+
+- Source HTML lives in `src/` with shared partials in `partials/`.
+- Regenerate the production pages after edits:
+  ```bash
+  node scripts/build.js
+  ```
+- Local vendor scripts are stored in `js/vendor/` (PWA update + Workbox).
+- Font WOFF2 files are generated from the OTF sources via FontTools.

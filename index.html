@@ -3,13 +3,11 @@
 <head>
     <script type="module" src="js/pwa-update.js"></script>
     <link rel="manifest" href="manifest.json"/>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="preconnect" href="https://ajax.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
     <link rel="stylesheet" href="css/custom.css"/>
-    <link rel="preload" href="fonts/SF-Pro-Display-Regular.otf" as="font" type="font/otf" crossorigin>
-    <link rel="preload" href="fonts/SF-Pro-Display-Semibold.otf" as="font" type="font/otf" crossorigin>
-    <link rel="preload" href="images/leo.jpeg" as="image" fetchpriority="high">
+    <link rel="preload" href="fonts/SF-Pro-Display-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/SF-Pro-Display-Semibold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="images/leo-220.jpeg" as="image" imagesrcset="images/leo-220.jpeg 1x, images/leo-440.jpeg 2x" fetchpriority="high">
 
     <!-- favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png" class="circle-img"/>
@@ -25,7 +23,6 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" class="circle-img"/>
     <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png" class="circle-img"/>
     <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" class="circle-img"/>
-    <link rel="manifest" href="favicon/manifest.json"/>
     <meta name="msapplication-TileColor" content="#ffffff"/>
     <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png" class="circle-img"/>
     <meta name="theme-color" content="#f3f6ff" media="(prefers-color-scheme: light)">
@@ -37,10 +34,22 @@
     <noscript>Your browser does not support JavaScript!</noscript>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://ajax.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://cdn.jsdelivr.net https://ajax.cloudflare.com; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="description" content="A portfolio of Leonard Wong"/>
-    <title>Leonard's Portfolio</title>
+    <link rel="canonical" href="https://leonardwong.tech/"/>
+    <meta property="og:title" content="Leonard Wong Portfolio"/>
+    <meta property="og:description" content="A portfolio of Leonard Wong"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="https://leonardwong.tech/"/>
+    <meta property="og:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
+    <meta property="og:image:alt" content="Portrait of Leonard Wong"/>
+    <meta property="og:site_name" content="Leonard Wong"/>
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:title" content="Leonard Wong Portfolio"/>
+    <meta name="twitter:description" content="A portfolio of Leonard Wong"/>
+    <meta name="twitter:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
+    <title>Leonard Wong | Portfolio</title>
 
 </head>
 <body class="page-bg">
@@ -114,7 +123,7 @@
         <div class="navbar-collapse collapse" id="navbarCollapse">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" aria-current="page" href="/index.html">Home</a>
+                    <a class="nav-link" href="/index.html">Home</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/reading.html">Books Read</a>
@@ -133,11 +142,12 @@
     </div>
 </nav>
 
+
 <main class="container-xxl py-5">
     <section class="hero-panel animate__animated animate__fadeInUp">
         <div class="row g-5 align-items-center">
             <div class="col-lg-4 text-center">
-                <img decoding="async" fetchpriority="high" src="images/leo.jpeg" alt="Portrait of Leonard Wong" class="img-fluid hero-avatar" loading="eager" width="220" height="220"/>
+                <img decoding="async" fetchpriority="high" src="images/leo-220.jpeg" alt="Portrait of Leonard Wong" class="img-fluid hero-avatar" loading="eager" width="220" height="220" srcset="images/leo-220.jpeg 1x, images/leo-440.jpeg 2x" sizes="(min-width: 992px) 220px, 60vw"/>
             </div>
             <div class="col-lg-8 hero-intro">
                 <h3>Leonard Wong</h3>
@@ -263,7 +273,7 @@
                 <div class="timeline animate__animated animate__fadeInUp">
                     <div class="timeline-content">
                         <div class="timeline-icon">
-                            <img decoding="async" src="images/smu.jpeg" alt="Singapore Management University logo" loading="lazy" width="75px" height="75px"/>
+                            <img decoding="async" src="images/smu-75.jpeg" alt="Singapore Management University logo" loading="lazy" width="75" height="75" srcset="images/smu-75.jpeg 1x, images/smu-150.jpeg 2x" sizes="75px"/>
                         </div>
                         <h3 class="title">Singapore Management University</h3>
                         <h4 class="title">Aug 2017 - 19 Jan 2022</h4>
@@ -278,7 +288,7 @@
                 <div class="timeline animate__animated animate__fadeInUp">
                     <div class="timeline-content">
                         <div class="timeline-icon">
-                            <img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="75px" height="75px"/>
+                            <img decoding="async" src="images/nyp-75.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="75" height="75" srcset="images/nyp-75.jpeg 1x, images/nyp-150.jpeg 2x" sizes="75px"/>
                         </div>
                         <h3 class="title">Nanyang Polytechnic</h3>
                         <h4 class="title">Aug 2017 - Dec 2021</h4>
@@ -296,7 +306,7 @@
                 <div class="timeline animate__animated animate__fadeInUp">
                     <div class="timeline-content">
                         <div class="timeline-icon">
-                            <img decoding="async" src="images/gachon.jpg" alt="Gachon University logo" loading="lazy" width="75px" height="75px"/>
+                            <img decoding="async" src="images/gachon-75.jpg" alt="Gachon University logo" loading="lazy" width="75" height="75" srcset="images/gachon-75.jpg 1x, images/gachon-150.jpg 2x" sizes="75px"/>
                         </div>
                         <h3 class="title">Gachon University</h3>
                         <h4 class="title">Sep - Dec 2015</h4>
@@ -325,7 +335,7 @@
                 <div class="timeline animate__animated animate__fadeInUp">
                     <div class="timeline-content">
                         <div class="timeline-icon">
-                            <img decoding="async" src="images/ncs.png" alt="NCS logo" loading="lazy" width="60px" height="60px"/>
+                            <img decoding="async" src="images/ncs-60.png" alt="NCS logo" loading="lazy" width="60" height="60" srcset="images/ncs-60.png 1x, images/ncs-120.png 2x" sizes="60px"/>
                         </div>
                         <h3 class="title">NCS Pte. Ltd. <a id="NCS" href="#NCS">
                             <svg class="icon icon-info" aria-hidden="true" focusable="false" data-bs-toggle="modal" data-bs-target="#modalNCS"><use href="#icon-info"/></svg></a></h3>
@@ -348,7 +358,7 @@
                 <div class="timeline animate__animated animate__fadeInUp">
                     <div class="timeline-content">
                         <div class="timeline-icon">
-                            <img decoding="async" src="images/smu.jpeg" alt="Singapore Management University logo" loading="lazy" width="60px" height="60px"/>
+                            <img decoding="async" src="images/smu-60.jpeg" alt="Singapore Management University logo" loading="lazy" width="60" height="60" srcset="images/smu-60.jpeg 1x, images/smu-120.jpeg 2x" sizes="60px"/>
                         </div>
                         <h3 class="title">Singapore Management University <a id="SMUSG" href="#SMUSG">
                             <svg class="icon icon-info" aria-hidden="true" focusable="false" data-bs-toggle="modal" data-bs-target="#modalSMURA"><use href="#icon-info"/></svg></a></h3>
@@ -367,7 +377,7 @@
                 <div class="timeline animate__animated animate__fadeInUp">
                     <div class="timeline-content">
                         <div class="timeline-icon">
-                            <img decoding="async" src="images/alphaori.jpg" alt="Alpha Ori Technologies logo" loading="lazy" width="60px" height="60px"/>
+                            <img decoding="async" src="images/alphaori-60.jpg" alt="Alpha Ori Technologies logo" loading="lazy" width="60" height="60" srcset="images/alphaori-60.jpg 1x, images/alphaori-120.jpg 2x" sizes="60px"/>
                         </div>
                         <h3 class="title">Alpha Ori Technologies Pte. Ltd. <a id="AOT" href="#AOT">
                             <svg class="icon icon-info" aria-hidden="true" focusable="false" data-bs-toggle="modal" data-bs-target="#modalAO"><use href="#icon-info"/></svg></a></h3>
@@ -398,7 +408,7 @@
                 <div class="timeline animate__animated animate__fadeInUp">
                     <div class="timeline-content">
                         <div class="timeline-icon">
-                            <img decoding="async" src="images/osm_thome.png" alt="OSM Thome logo" loading="lazy" width="60px" height="60px"/>
+                            <img decoding="async" src="images/osm_thome-60.png" alt="OSM Thome logo" loading="lazy" width="60" height="60" srcset="images/osm_thome-60.png 1x, images/osm_thome-120.png 2x" sizes="60px"/>
                         </div>
                         <h3 class="title">OSM Thome (Formerly known as Thome Ship Management Pte. Ltd.)<a id="Thome" href="#Thome">
                             <svg class="icon icon-info" aria-hidden="true" focusable="false" data-bs-toggle="modal" data-bs-target="#modalT"><use href="#icon-info"/></svg></a></h3>
@@ -416,7 +426,7 @@
                 <div class="timeline animate__animated animate__fadeInUp">
                     <div class="timeline-content">
                         <div class="timeline-icon">
-                            <img decoding="async" src="images/rightspot.jpeg" alt="Rightspot logo" loading="lazy" width="60px" height="60px"/>
+                            <img decoding="async" src="images/rightspot-60.jpeg" alt="Rightspot logo" loading="lazy" width="60" height="60" srcset="images/rightspot-60.jpeg 1x, images/rightspot-120.jpeg 2x" sizes="60px"/>
                         </div>
                         <h3 class="title">Rightspot Pte. Ltd. <a href="#RS" id="RS">
                             <svg class="icon icon-info" aria-hidden="true" focusable="false" data-bs-toggle="modal" data-bs-target="#modalRS"><use href="#icon-info"/></svg></a></h3>
@@ -434,7 +444,7 @@
                 <div class="timeline animate__animated animate__fadeInUp">
                     <div class="timeline-content">
                         <div class="timeline-icon">
-                            <img decoding="async" src="images/sammobile.jpeg" alt="SamMobile logo" loading="lazy" width="60px" height="60px"/>
+                            <img decoding="async" src="images/sammobile-60.jpeg" alt="SamMobile logo" loading="lazy" width="60" height="60" srcset="images/sammobile-60.jpeg 1x, images/sammobile-120.jpeg 2x" sizes="60px"/>
                         </div>
                         <h3 class="title">SamMobile <a href="#SM" id="SM">
                             <svg class="icon icon-info" aria-hidden="true" focusable="false" data-bs-toggle="modal" data-bs-target="#modalSM"><use href="#icon-info"/></svg></a></h3>
@@ -468,8 +478,7 @@
         <div class="col-lg-8">
             <div class="card animate__animated animate__fadeInUp">
                 <div class="card-body">
-                    <h5 class="card-title"><img decoding="async" src="images/ITiCSE2022Dublin.png" alt="ITiCSE 2022 badge" loading="lazy" width="30px"
-                                                height="30px" class="circle-img"/>&nbsp;XSS for the Masses: Integrating Security in a Web Programming Course using a Security Scanner
+                    <h5 class="card-title"><img decoding="async" src="images/ITiCSE2022Dublin-30.png" alt="ITiCSE 2022 badge" loading="lazy" width="30" height="30" class="circle-img" srcset="images/ITiCSE2022Dublin-30.png 1x, images/ITiCSE2022Dublin-60.png 2x" sizes="30px"/>&nbsp;XSS for the Masses: Integrating Security in a Web Programming Course using a Security Scanner
                     </h5>
                     <p>27th annual conference on Innovation and Technology in Computer Science Education (ITiCSE 2022) - Apr 26, 2022</p>
                     <p class="card-text fw-light">Nominated for Best Paper Award in ITiCSE 2022 Conference
@@ -494,8 +503,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Explainable and Responsible Artificial Intelligence
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Explainable and Responsible Artificial Intelligence
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued May 2025 • No Expiration Date<br/>
@@ -508,8 +516,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Graduate Certificate in Designing and Managing Products and Platforms
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Graduate Certificate in Designing and Managing Products and Platforms
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued March 2025 • No Expiration Date<br/>
@@ -522,8 +529,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Service Design
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Service Design
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued June 2024 • No Expiration Date<br/>
@@ -536,8 +542,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Architecting Platforms as a Business
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Architecting Platforms as a Business
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued May 2024 • No Expiration Date<br/>
@@ -550,8 +555,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Digital Product Strategy
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Digital Product Strategy
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued May 2024 • No Expiration Date<br/>
@@ -564,8 +568,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/scs.jpeg" alt="Singapore Computer Society logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Certification in Managing Digital Products
+                                    <h5 class="card-title"><img decoding="async" src="images/scs-30.jpeg" alt="Singapore Computer Society logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/scs-30.jpeg 1x, images/scs-60.jpeg 2x" sizes="30px"/>&nbsp;Certification in Managing Digital Products
                                     </h5>
                                     <p>Singapore Computer Society</p>
                                     <p class="card-text fw-light">Issued Mar 2024 • No Expiration Date<br/>
@@ -577,8 +580,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Managing Digital Products
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Managing Digital Products
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued Mar 2024 • No Expiration Date<br/>
@@ -591,8 +593,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Graduate Certificate of Architecting Scalable Systems
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Graduate Certificate of Architecting Scalable Systems
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued Feb 2024 • No Expiration Date<br/>
@@ -604,8 +605,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Platform Engineering
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Platform Engineering
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued Dec 2022 • No Expiration Date<br/>
@@ -618,8 +618,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Cloud Native Solution Design
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Cloud Native Solution Design
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued Nov 2022 • No Expiration Date<br/>
@@ -632,8 +631,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Architecting Software Solutions
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Architecting Software Solutions
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued Aug 2022 • No Expiration Date<br/>
@@ -646,8 +644,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss.jpg" alt="NUS-ISS logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;DevOps Engineering and Automation
+                                    <h5 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;DevOps Engineering and Automation
                                     </h5>
                                     <p>National University of Singapore: Institute of Systems Science</p>
                                     <p class="card-text fw-light">Issued Mar 2022 • No Expiration Date
@@ -659,8 +656,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/scrum_org.png" alt="Scrum.org logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Professional Scrum Master™ I (PSM I)
+                                    <h5 class="card-title"><img decoding="async" src="images/scrum_org-30.png" alt="Scrum.org logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/scrum_org-30.png 1x, images/scrum_org-60.png 2x" sizes="30px"/>&nbsp;Professional Scrum Master™ I (PSM I)
                                     </h5>
                                     <p>Scrum.org</p>
                                     <p class="card-text fw-light">Issued Feb 2022 • No Expiration Date<br/>
@@ -673,8 +669,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/smu.jpeg" alt="Singapore Management University logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Bachelor of Science: Information Systems
+                                    <h5 class="card-title"><img decoding="async" src="images/smu-30.jpeg" alt="Singapore Management University logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/smu-30.jpeg 1x, images/smu-60.jpeg 2x" sizes="30px"/>&nbsp;Bachelor of Science: Information Systems
                                     </h5>
                                     <p>Major in Cyber Security</p>
                                     <p>Singapore Management University</p>
@@ -686,8 +681,7 @@
         <div class="col-12 col-md-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Diploma in Business Informatics with Merit
+                                    <h5 class="card-title"><img decoding="async" src="images/nyp-30.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nyp-30.jpeg 1x, images/nyp-60.jpeg 2x" sizes="30px"/>&nbsp;Diploma in Business Informatics with Merit
                                     </h5>
                                     <p>Nanyang Polytechnic</p>
                                     <p class="card-text fw-light">Issued May 2017 • No Expiration Date</p>
@@ -715,17 +709,14 @@
         <div class="col-12 col-lg-6 col-xl-4">
             <div class="card animate__animated animate__fadeInUp">
                                 <div class="card-body">
-                                    <h5 class="card-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" width="30px"
-                                                                height="30px" class="circle-img"/>&nbsp;Personal
+                                    <h5 class="card-title"><img decoding="async" src="images/l-30.jpeg" alt="Leonard Wong monogram" loading="lazy" width="30" height="30" class="circle-img" srcset="images/l-30.jpeg 1x, images/l-60.jpeg 2x" sizes="30px"/>&nbsp;Personal
                                         Portfolio v2 (Personal Project)
                                     </h5>
                                     <p class="card-text">• Dec 2020 - Present<br/>Presenting portfolio differently</p>
                                     <div class="countUp" id="countUpProject">
                                         <b><span class="timeel years">00</span> year(s) <span class="timeel months">00</span> month(s) <span class="timeel days">00</span> day(s)</b>
                                     </div>
-                                    <a href="https://github.com/leonardwongly/ProjectPortfolio" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy"
-                                                                      width="30px"
-                                                                      height="30px" class="circle-img"/></a>
+                                    <a href="https://github.com/leonardwongly/ProjectPortfolio" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub-30.png" alt="GitHub" loading="lazy" width="30" height="30" class="circle-img" srcset="images/GitHub-30.png 1x, images/GitHub-60.png 2x" sizes="30px"/></a>
                                     <br/>
                                     <span class="badge rounded-pill bg-primary shadow">Bootstrap</span>
                                     <span class="badge rounded-pill bg-primary shadow">HTML</span>
@@ -747,16 +738,16 @@
                 <div class="project-list">
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/alphaori.jpg" alt="Alpha Ori Technologies logo" loading="lazy" class="circle-img project-icon"/>Project Vendors</span>
+                            <span class="project-title"><img decoding="async" src="images/alphaori-28.jpg" alt="Alpha Ori Technologies logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/alphaori-28.jpg 1x, images/alphaori-56.jpg 2x" sizes="28px"/>Project Vendors</span>
                             <span class="project-meta">4 May - 31 Jul 2020 - Corporate</span>
                             <span class="project-toggle">Details</span>
                         </summary>
                         <div class="project-body">
                             <p class="project-description">Collection of data via API from 3 different vendors to determine which vendors the company should use.</p>
                             <div class="project-links">
-                                <a href="https://github.com/leonardwongly/VesselTracker-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
-                                <a href="https://github.com/leonardwongly/VesselFinder-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
-                                <a href="https://github.com/leonardwongly/BOD-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                                <a href="https://github.com/leonardwongly/VesselTracker-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub-28.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img" srcset="images/GitHub-28.png 1x, images/GitHub-56.png 2x" sizes="28px"/></a>
+                                <a href="https://github.com/leonardwongly/VesselFinder-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub-28.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img" srcset="images/GitHub-28.png 1x, images/GitHub-56.png 2x" sizes="28px"/></a>
+                                <a href="https://github.com/leonardwongly/BOD-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub-28.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img" srcset="images/GitHub-28.png 1x, images/GitHub-56.png 2x" sizes="28px"/></a>
                             </div>
                             <div class="project-tags">
                                 <span class="badge rounded-pill bg-primary">HTML</span>
@@ -773,14 +764,14 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/alphaori.jpg" alt="Alpha Ori Technologies logo" loading="lazy" class="circle-img project-icon"/>Project XMLData</span>
+                            <span class="project-title"><img decoding="async" src="images/alphaori-28.jpg" alt="Alpha Ori Technologies logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/alphaori-28.jpg 1x, images/alphaori-56.jpg 2x" sizes="28px"/>Project XMLData</span>
                             <span class="project-meta">4 May - 31 Jul 2020 - Corporate</span>
                             <span class="project-toggle">Details</span>
                         </summary>
                         <div class="project-body">
                             <p class="project-description">Conversion of billions of aggregated data and upload to AWS DynamoDB.</p>
                             <div class="project-links">
-                                <a href="https://github.com/leonardwongly/XMLData-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                                <a href="https://github.com/leonardwongly/XMLData-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub-28.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img" srcset="images/GitHub-28.png 1x, images/GitHub-56.png 2x" sizes="28px"/></a>
                             </div>
                             <div class="project-tags">
                                 <span class="badge rounded-pill bg-primary">HTML</span>
@@ -796,7 +787,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/alphaori.jpg" alt="Alpha Ori Technologies logo" loading="lazy" class="circle-img project-icon"/>rPiAIS</span>
+                            <span class="project-title"><img decoding="async" src="images/alphaori-28.jpg" alt="Alpha Ori Technologies logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/alphaori-28.jpg 1x, images/alphaori-56.jpg 2x" sizes="28px"/>rPiAIS</span>
                             <span class="project-meta">13 May - 2 Aug 2019 - Corporate</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -811,7 +802,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/thome.jpg" alt="Thome Group logo" loading="lazy" class="circle-img project-icon"/>Ship Agency Portal</span>
+                            <span class="project-title"><img decoding="async" src="images/thome-28.jpg" alt="Thome Group logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/thome-28.jpg 1x, images/thome-56.jpg 2x" sizes="28px"/>Ship Agency Portal</span>
                             <span class="project-meta">5 May - 5 Oct 2018 - Corporate</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -830,7 +821,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/thome.jpg" alt="Thome Group logo" loading="lazy" class="circle-img project-icon"/>Enterprise Analytics Portal</span>
+                            <span class="project-title"><img decoding="async" src="images/thome-28.jpg" alt="Thome Group logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/thome-28.jpg 1x, images/thome-56.jpg 2x" sizes="28px"/>Enterprise Analytics Portal</span>
                             <span class="project-meta">5 May - 5 Oct 2018 - Corporate</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -850,7 +841,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/thome.jpg" alt="Thome Group logo" loading="lazy" class="circle-img project-icon"/>Vessel Information Portal</span>
+                            <span class="project-title"><img decoding="async" src="images/thome-28.jpg" alt="Thome Group logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/thome-28.jpg 1x, images/thome-56.jpg 2x" sizes="28px"/>Vessel Information Portal</span>
                             <span class="project-meta">5 May - 5 Oct 2018 - Corporate</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -879,15 +870,15 @@
                 <div class="project-list">
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/smu.jpeg" alt="Singapore Management University logo" loading="lazy" class="circle-img project-icon"/>SMU Seat Occupancy Project</span>
+                            <span class="project-title"><img decoding="async" src="images/smu-28.jpeg" alt="Singapore Management University logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/smu-28.jpeg 1x, images/smu-56.jpeg 2x" sizes="28px"/>SMU Seat Occupancy Project</span>
                             <span class="project-meta">Jan - Apr 2021 - School</span>
                             <span class="project-toggle">Details</span>
                         </summary>
                         <div class="project-body">
                             <p class="project-description">IoT project that detects whether a seat has been occupied.</p>
                             <div class="project-links">
-                                <a href="https://github.com/leonardwongly/SMUSOP" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
-                                <a href="https://leonardwongly.medium.com/smusop-4fe9878f4e84" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/Medium-logo.jpg" alt="Medium" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                                <a href="https://github.com/leonardwongly/SMUSOP" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub-28.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img" srcset="images/GitHub-28.png 1x, images/GitHub-56.png 2x" sizes="28px"/></a>
+                                <a href="https://leonardwongly.medium.com/smusop-4fe9878f4e84" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/Medium-logo-28.jpg" alt="Medium" loading="lazy" width="28" height="28" class="circle-img" srcset="images/Medium-logo-28.jpg 1x, images/Medium-logo-56.jpg 2x" sizes="28px"/></a>
                             </div>
                             <div class="project-tags">
                                 <span class="badge rounded-pill bg-primary">HTML</span>
@@ -904,7 +895,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/smu.jpeg" alt="Singapore Management University logo" loading="lazy" class="circle-img project-icon"/>BIOS</span>
+                            <span class="project-title"><img decoding="async" src="images/smu-28.jpeg" alt="Singapore Management University logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/smu-28.jpeg 1x, images/smu-56.jpeg 2x" sizes="28px"/>BIOS</span>
                             <span class="project-meta">Aug - Dec 2019 - School</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -922,7 +913,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" class="circle-img project-icon"/>PMD Renting Platform</span>
+                            <span class="project-title"><img decoding="async" src="images/nyp-28.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/nyp-28.jpeg 1x, images/nyp-56.jpeg 2x" sizes="28px"/>PMD Renting Platform</span>
                             <span class="project-meta">Oct 2016 - Feb 2017 - School</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -951,7 +942,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" class="circle-img project-icon"/>NYP Student Attendance System</span>
+                            <span class="project-title"><img decoding="async" src="images/nyp-28.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/nyp-28.jpeg 1x, images/nyp-56.jpeg 2x" sizes="28px"/>NYP Student Attendance System</span>
                             <span class="project-meta">May - Jul 2016 - School</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -974,7 +965,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" class="circle-img project-icon"/>E-Business &amp; Project</span>
+                            <span class="project-title"><img decoding="async" src="images/nyp-28.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/nyp-28.jpeg 1x, images/nyp-56.jpeg 2x" sizes="28px"/>E-Business &amp; Project</span>
                             <span class="project-meta">Apr - Aug 2015 - School</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -996,7 +987,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" class="circle-img project-icon"/>Object-Oriented Programming</span>
+                            <span class="project-title"><img decoding="async" src="images/nyp-28.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/nyp-28.jpeg 1x, images/nyp-56.jpeg 2x" sizes="28px"/>Object-Oriented Programming</span>
                             <span class="project-meta">Oct 2014 - Feb 2015 - School</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -1009,7 +1000,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/nyp.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" class="circle-img project-icon"/>Web Applications Development</span>
+                            <span class="project-title"><img decoding="async" src="images/nyp-28.jpeg" alt="Nanyang Polytechnic logo" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/nyp-28.jpeg 1x, images/nyp-56.jpeg 2x" sizes="28px"/>Web Applications Development</span>
                             <span class="project-meta">Oct 2014 - Feb 2015 - School</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -1030,14 +1021,14 @@
                 <div class="project-list">
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" class="circle-img project-icon"/>myIPSW</span>
+                            <span class="project-title"><img decoding="async" src="images/l-28.jpeg" alt="Leonard Wong monogram" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/l-28.jpeg 1x, images/l-56.jpeg 2x" sizes="28px"/>myIPSW</span>
                             <span class="project-meta">Jan 2020 - Jan 2022 - Personal</span>
                             <span class="project-toggle">Details</span>
                         </summary>
                         <div class="project-body">
                             <p class="project-description">Using ipsw.me API to develop a website that provides download links to Apple firmwares.</p>
                             <div class="project-links">
-                                <a href="https://github.com/leonardwongly/MyIPSW" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                                <a href="https://github.com/leonardwongly/MyIPSW" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub-28.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img" srcset="images/GitHub-28.png 1x, images/GitHub-56.png 2x" sizes="28px"/></a>
                             </div>
                             <div class="project-tags">
                                 <span class="badge rounded-pill bg-primary shadow">HTML</span>
@@ -1053,7 +1044,7 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" class="circle-img project-icon"/>Custom URL Shortener</span>
+                            <span class="project-title"><img decoding="async" src="images/l-28.jpeg" alt="Leonard Wong monogram" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/l-28.jpeg 1x, images/l-56.jpeg 2x" sizes="28px"/>Custom URL Shortener</span>
                             <span class="project-meta">Jan 2020 - Present - Personal</span>
                             <span class="project-toggle">Details</span>
                         </summary>
@@ -1069,14 +1060,14 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" class="circle-img project-icon"/>Personal Portfolio v1</span>
+                            <span class="project-title"><img decoding="async" src="images/l-28.jpeg" alt="Leonard Wong monogram" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/l-28.jpeg 1x, images/l-56.jpeg 2x" sizes="28px"/>Personal Portfolio v1</span>
                             <span class="project-meta">Mar 2017 - Dec 2020 - Personal</span>
                             <span class="project-toggle">Details</span>
                         </summary>
                         <div class="project-body">
                             <p class="project-description">Presenting portfolio differently.</p>
                             <div class="project-links">
-                                <a href="https://github.com/leonardwongly/ProjectMe-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                                <a href="https://github.com/leonardwongly/ProjectMe-OpenSource" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub-28.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img" srcset="images/GitHub-28.png 1x, images/GitHub-56.png 2x" sizes="28px"/></a>
                             </div>
                             <div class="project-tags">
                                 <span class="badge rounded-pill bg-primary">MaterializeCSS</span>
@@ -1092,14 +1083,14 @@
                     </details>
                     <details class="project-item">
                         <summary>
-                            <span class="project-title"><img decoding="async" src="images/l.jpeg" alt="Leonard Wong monogram" loading="lazy" class="circle-img project-icon"/>ltl96 Telegram Bot</span>
+                            <span class="project-title"><img decoding="async" src="images/l-28.jpeg" alt="Leonard Wong monogram" loading="lazy" width="28" height="28" class="circle-img project-icon" srcset="images/l-28.jpeg 1x, images/l-56.jpeg 2x" sizes="28px"/>ltl96 Telegram Bot</span>
                             <span class="project-meta">May 2017 - Personal</span>
                             <span class="project-toggle">Details</span>
                         </summary>
                         <div class="project-body">
                             <p class="project-description">Presented portfolio differently via Telegram.</p>
                             <div class="project-links">
-                                <a href="https://github.com/leonardwongly/ltl96bot" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img"/></a>
+                                <a href="https://github.com/leonardwongly/ltl96bot" target="_blank" rel="noopener noreferrer"><img decoding="async" src="images/GitHub-28.png" alt="GitHub" loading="lazy" width="28" height="28" class="circle-img" srcset="images/GitHub-28.png 1x, images/GitHub-56.png 2x" sizes="28px"/></a>
                             </div>
                             <div class="project-tags">
                                 <span class="badge rounded-pill bg-primary">Node.js</span>
@@ -1126,8 +1117,7 @@
                     <h2 class="accordion-header" id="headingCDC">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                 data-bs-target="#collapseCDC" aria-expanded="false" aria-controls="collapseCDC">
-                            <img decoding="async" src="images/CDC.jpg" alt="Central Singapore CDC logo" loading="lazy" class="circle-img" width="30px"
-                                 height="30px"/>&nbsp;<strong>CDC
+                            <img decoding="async" src="images/CDC-30.jpg" alt="Central Singapore CDC logo" loading="lazy" class="circle-img" width="30" height="30" srcset="images/CDC-30.jpg 1x, images/CDC-60.jpg 2x" sizes="30px"/>&nbsp;<strong>CDC
                             (Central
                             Singapore)</strong>
                         </button>
@@ -1156,9 +1146,7 @@
                     <h2 class="accordion-header" id="headingSMU">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                 data-bs-target="#collapseSMU" aria-expanded="false" aria-controls="collapseSMU">
-                            <img decoding="async" src="images/apolitcal.jpg" alt="SMU Apolitical Society logo" loading="lazy" class="circle-img"
-                                 width="30px"
-                                 height="30px"/>&nbsp;<strong>SMU Apolitical Society</strong>
+                            <img decoding="async" src="images/apolitcal-30.jpg" alt="SMU Apolitical Society logo" loading="lazy" class="circle-img" width="30" height="30" srcset="images/apolitcal-30.jpg 1x, images/apolitcal-60.jpg 2x" sizes="30px"/>&nbsp;<strong>SMU Apolitical Society</strong>
                         </button>
                     </h2>
                     <div id="collapseSMU" class="accordion-collapse collapse" aria-labelledby="headingSMU"
@@ -1457,16 +1445,11 @@
         <div class="col-md-6 d-flex align-items-center">
             <span class="text-muted">&copy; 2020 - 2025 Leonard Wong</span>
         </div>
-        <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
-            <span class="text-muted" id="cloudflare-badge" aria-hidden="true"></span>
-        </div>
-        <br/>
-
-        <div class="col-md-6 d-flex align-items-center">
+        <div class="col-md-6 d-flex align-items-center justify-content-end">
             <span class="text-muted">All Rights Reserved</span>
         </div>
-        <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
-            <ul class="list-unstyled d-flex flex-wrap align-items-center social-links">
+        <div class="col-12 mt-3">
+            <ul class="list-unstyled d-flex flex-wrap align-items-center social-links justify-content-end">
                 <li>
                     <a class="social-icon social-icon--github" href="https://github.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="GitHub">
                         <svg class="social-icon__graphic" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
@@ -1532,6 +1515,7 @@
     </footer>
 </div>
 <!-- End Footer -->
+
 </body>
 
 </html>

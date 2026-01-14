@@ -3,12 +3,10 @@
 <head>
     <script type="module" src="js/pwa-update.js"></script>
     <link rel="manifest" href="manifest.json" />
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="preconnect" href="https://ajax.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
     <link rel="stylesheet" href="css/custom.css"/>
-    <link rel="preload" href="fonts/SF-Pro-Display-Regular.otf" as="font" type="font/otf" crossorigin>
-    <link rel="preload" href="fonts/SF-Pro-Display-Semibold.otf" as="font" type="font/otf" crossorigin>
+    <link rel="preload" href="fonts/SF-Pro-Display-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/SF-Pro-Display-Semibold.woff2" as="font" type="font/woff2" crossorigin>
     <!-- favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png" class="circle-img"/>
     <link rel="apple-touch-icon" sizes="60x60" href="favicon/apple-icon-60x60.png" class="circle-img"/>
@@ -23,7 +21,6 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" class="circle-img"/>
     <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png" class="circle-img"/>
     <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" class="circle-img"/>
-    <link rel="manifest" href="favicon/manifest.json"/>
     <meta name="msapplication-TileColor" content="#ffffff"/>
     <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png" class="circle-img"/>
     <meta name="theme-color" content="#f3f6ff" media="(prefers-color-scheme: light)">
@@ -36,10 +33,22 @@
     <noscript>Your browser does not support JavaScript!</noscript>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://ajax.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://cdn.jsdelivr.net https://ajax.cloudflare.com; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <meta name="description" content="A portfolio of Leonard Wong"/>
-    <title>Leonard's Portfolio</title>
+    <meta name="description" content="Books read by Leonard Wong"/>
+    <link rel="canonical" href="https://leonardwong.tech/reading.html"/>
+    <meta property="og:title" content="Leonard Wong | Books Read"/>
+    <meta property="og:description" content="A curated list of books read by Leonard Wong."/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="https://leonardwong.tech/reading.html"/>
+    <meta property="og:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
+    <meta property="og:image:alt" content="Portrait of Leonard Wong"/>
+    <meta property="og:site_name" content="Leonard Wong"/>
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:title" content="Leonard Wong | Books Read"/>
+    <meta name="twitter:description" content="A curated list of books read by Leonard Wong."/>
+    <meta name="twitter:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
+    <title>Leonard Wong | Books Read</title>
 </head>
 <body class="page-bg">
 <h1 class="visually-hidden">hi</h1>
@@ -51,10 +60,10 @@
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="navbar-collapse offcanvas-collapse collapse" id="navbarCollapse">
+        <div class="navbar-collapse collapse" id="navbarCollapse">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" aria-current="page" href="/index.html">Home</a>
+                    <a class="nav-link" href="/index.html">Home</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/reading.html">Books Read</a>
@@ -69,71 +78,10 @@
                     <span class="theme-toggle__state" data-theme-label>Light</span>
                 </button>
             </div>
-            <ul class="list-unstyled d-flex flex-wrap align-items-center social-links">
-                <li>
-                    <a class="social-icon social-icon--github" href="https://github.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="GitHub">
-                        <svg class="social-icon__graphic" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                            <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
-                        </svg>
-                    </a>
-                </li>
-                <li>
-                    <a class="social-icon social-icon--twitter" href="https://twitter.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Twitter">
-                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <path fill="currentColor" d="M4 3h3.2l4.4 5.6L15.9 3H20l-6.1 7.5L20 20h-3.3l-4.7-6.1L7.4 20H4l6-7.5L4 3Z"></path>
-                        </svg>
-                    </a>
-                </li>
-                <li>
-                    <a class="social-icon social-icon--threads" href="https://threads.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Threads">
-                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
-                            <path d="M8.2 10.6c.2-1.8 1.4-3 3.4-3 2.3 0 3.9 1.4 3.9 4.1 0 2.6-1.6 4.2-3.9 4.2-1.5 0-2.6-.6-3.2-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
-                            <path d="M8.2 10.6c0 1.8 1.4 2.3 3 2.3 1.4 0 2.4-.6 2.4-1.6 0-1.1-.8-1.6-2.1-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
-                        </svg>
-                    </a>
-                </li>
-                <li>
-                    <a class="social-icon social-icon--mastodon" href="https://mastodon.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Mastodon">
-                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <path d="M12 4.2c-4.4 0-6.8 1.6-6.8 5.5v4.2c0 4 2.4 5.3 4.8 5.6 1.7.2 3.4.2 5.1 0 2.4-.3 4.8-1.6 4.8-5.6V9.7c0-3.9-2.6-5.5-7-5.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
-                            <path d="M8.7 9.9v3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
-                            <path d="M15.3 9.9v3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
-                            <path d="M8.7 9.9c0-1.3.9-2.1 2.3-2.1 1 0 1.7.4 2.1 1.1.4-.7 1.1-1.1 2.1-1.1 1.4 0 2.3.8 2.3 2.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
-                        </svg>
-                    </a>
-                </li>
-                <li>
-                    <a class="social-icon social-icon--linkedin" href="https://linkedin.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn">
-                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
-                            <circle cx="8" cy="8.5" r="1.4" fill="currentColor"></circle>
-                            <rect x="6.6" y="10.5" width="2.8" height="7.1" rx="1.2" fill="currentColor"></rect>
-                            <path fill="currentColor" d="M12.6 10.5h2.1c1.7 0 2.9 1 2.9 2.8V18h-2.7v-4.6c0-.8-.4-1.3-1.1-1.3-.7 0-1.1.5-1.1 1.3V18h-2.8v-7.5h2.7Z"></path>
-                        </svg>
-                    </a>
-                </li>
-                <li>
-                    <a class="social-icon social-icon--telegram" href="https://telegram.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Telegram">
-                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <path fill="currentColor" d="M4 11.6 19.4 4.4c.7-.3 1.2.3 1 1L17.2 21c-.2.7-.9 1-1.5.6l-4.1-3-2 2.1-.4-4.2 7.9-7.1c.3-.3-.1-.6-.4-.4l-9 5.6-3.9-1.3c-.8-.2-.8-1.3 0-1.7Z"></path>
-                        </svg>
-                    </a>
-                </li>
-                <li>
-                    <a class="social-icon social-icon--email" href="https://email.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Email">
-                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <rect x="3.5" y="5.5" width="17" height="13" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
-                            <path d="m5.2 7.2 6.3 5.4 6.3-5.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
-                            <path d="m5.2 16.8 4.6-3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
-                            <path d="m18.8 16.8-4.6-3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
-                        </svg>
-                    </a>
-                </li>
-            </ul>
         </div>
     </div>
 </nav>
+
 
 <main class="container-xxl py-5 content-section">
     <div class="row justify-content-center">
@@ -142,17 +90,26 @@
             <p class="page-hint">This page is best viewed on a large display</p>
         </div>
     </div>
+    <nav class="year-nav" aria-label="Books by year">
+        <a href="#year-2025">2025</a>
+        <a href="#year-2024">2024</a>
+        <a href="#year-2022">2022</a>
+        <a href="#year-2021">2021</a>
+        <a href="#year-2020">2020</a>
+        <a href="#year-2019">2019</a>
+        <a href="#year-2018">2018</a>
+    </nav>
     <!-- 2025 -->
     <div class="row justify-content-between align-items-center mb-3">
         <div class="col-auto">
-            <h3 class="year-heading">2025</h3>
+            <h3 class="year-heading" id="year-2025">2025</h3>
         </div>
     </div>
     <div class="row row-cols-2 row-cols-lg-5 g-4 book-grid">
         <div class="col">
             <div class="card h-100">
                 <a href="https://www.amazon.com/Apple-China-Capture-Greatest-Company/dp/1668053373" target="_blank" rel="noopener noreferrer">
-                    <img decoding="async" src="book/2025/2025-1.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                    <img decoding="async" src="book/2025/2025-1-300.jpg" class="card-img-top" srcset="book/2025/2025-1-300.jpg 1x, book/2025/2025-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                 </a>
                         <div class="card-body">
                             <h5 class="card-title">Apple in China: The Capture of the World's Greatest Company</h5>
@@ -166,14 +123,14 @@
     <!-- 2024 -->
     <div class="row justify-content-between align-items-center mb-3 mt-5">
         <div class="col-auto">
-            <h3 class="year-heading">2024</h3>
+            <h3 class="year-heading" id="year-2024">2024</h3>
         </div>
     </div>
     <div class="row row-cols-2 row-cols-lg-5 g-4 book-grid">
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.stbooks.sg/products/soft-cover-tony-tan-keng-yam-my-political-journey" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2024/2024-1.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2024/2024-1-300.jpg" class="card-img-top" srcset="book/2024/2024-1-300.jpg 1x, book/2024/2024-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Tony Tan Keng Yam: My Political Journey</h5>
@@ -186,14 +143,14 @@
     <!--2022-->
     <div class="row justify-content-between align-items-center mb-3 mt-5">
         <div class="col-auto">
-            <h3 class="year-heading">2022</h3>
+            <h3 class="year-heading" id="year-2022">2022</h3>
         </div>
     </div>
     <div class="row row-cols-2 row-cols-lg-5 g-4 book-grid">
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.stbooks.sg/products/in-this-together-singapore-s-covid-19-story" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2022/2022-1.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2022/2022-1-300.jpg" class="card-img-top" srcset="book/2022/2022-1-300.jpg 1x, book/2022/2022-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">In This Together: Singapore's Covid-19 Story</h5>
@@ -204,7 +161,7 @@
                <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.sg/Marvel-Studios-Story-Publisher-Hollywood/dp/1400232775/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2022/2022-2.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2022/2022-2-300.jpg" class="card-img-top" srcset="book/2022/2022-2-300.jpg 1x, book/2022/2022-2.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The Marvel Studios Story: How a Failing Comic Book Publisher Became a Hollywood Superhero</h5>
@@ -215,7 +172,7 @@
                   <div class="col">
                      <div class="card h-100">
                          <a href="https://www.amazon.sg/Build-Unorthodox-Guide-Making-Things/dp/0063046067" target="_blank" rel="noopener noreferrer">
-                             <img decoding="async" src="book/2022/2022-3.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                             <img decoding="async" src="book/2022/2022-3-300.jpg" class="card-img-top" srcset="book/2022/2022-3-300.jpg 1x, book/2022/2022-3.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                          </a>
                          <div class="card-body">
                              <h5 class="card-title">Build: An Unorthodox Guide to Making Things Worth Making</h5>
@@ -227,7 +184,7 @@
                  <div class="col">
                      <div class="card h-100">
                          <a href="https://www.amazon.sg/After-Steve-Became-Trillion-Dollar-Company/dp/0063009811/" target="_blank" rel="noopener noreferrer">
-                             <img decoding="async" src="book/2022/2022-4.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                             <img decoding="async" src="book/2022/2022-4-300.jpg" class="card-img-top" srcset="book/2022/2022-4-300.jpg 1x, book/2022/2022-4.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                          </a>
                          <div class="card-body">
                              <h5 class="card-title">After Steve: How Apple Became a Trillion-Dollar Company and Lost Its Soul</h5>
@@ -239,7 +196,7 @@
                  <div class="col">
                      <div class="card h-100">
                          <a href="https://www.amazon.sg/Play-Nice-but-Win-Journey/dp/0593087747/" target="_blank" rel="noopener noreferrer">
-                             <img decoding="async" src="book/2022/2022-5.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                             <img decoding="async" src="book/2022/2022-5-300.jpg" class="card-img-top" srcset="book/2022/2022-5-300.jpg 1x, book/2022/2022-5.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                          </a>
                          <div class="card-body">
                              <h5 class="card-title">Play Nice but Win: A CEO's Journey from Founder to Leader</h5>
@@ -251,7 +208,7 @@
                 <div class="col">
                       <div class="card h-100">
                           <a href="https://www.amazon.sg/LAST-FOOLS-IMMORTALS-LEE-KUAN/dp/9811843635" target="_blank" rel="noopener noreferrer">
-                              <img decoding="async" src="book/2022/2022-6.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                              <img decoding="async" src="book/2022/2022-6-300.jpg" class="card-img-top" srcset="book/2022/2022-6-300.jpg 1x, book/2022/2022-6.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                           </a>
                           <div class="card-body">
                               <h5 class="card-title">THE LAST FOOLS: 8 IMMORTALS OF LEE KUAN YEW</h5>
@@ -263,7 +220,7 @@
                   <div class="col">
                       <div class="card h-100">
                           <a href="https://epigrambookshop.sg/products/the-nominated-member-of-parliament-scheme-are-unelected-voices-still-necessary-in-parliament-a-collection-of-perspectives-and-personal-reflections-by-nmps" target="_blank" rel="noopener noreferrer">
-                              <img decoding="async" src="book/2022/2022-7.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                              <img decoding="async" src="book/2022/2022-7-300.jpg" class="card-img-top" srcset="book/2022/2022-7-300.jpg 1x, book/2022/2022-7.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                           </a>
                           <div class="card-body">
                               <h5 class="card-title">The Nominated Member of Parliament Scheme: Are Unelected Voices Still Necessary in Parliament? — A Collection of Perspectives and Personal Reflections by NMPs</h5>
@@ -275,7 +232,7 @@
                    <div class="col">
                       <div class="card h-100">
                           <a href="https://www.amazon.sg/Like-Comment-Subscribe-YouTubes-Domination/dp/0593296346" target="_blank" rel="noopener noreferrer">
-                              <img decoding="async" src="book/2022/2022-8.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                              <img decoding="async" src="book/2022/2022-8-300.jpg" class="card-img-top" srcset="book/2022/2022-8-300.jpg 1x, book/2022/2022-8.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                           </a>
                           <div class="card-body">
                               <h5 class="card-title">Like, Comment, Subscribe: Inside YouTube's Chaotic Rise to World Domination</h5>
@@ -286,7 +243,7 @@
                 <!--   <div class="col">
                       <div class="card h-100">
                           <a href="https://www.amazon.com/History-Peoples-Action-Party-1985-2015/dp/981325128X" target="_blank" rel="noopener noreferrer">
-                              <img decoding="async" src="book/2022/2022-9.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                              <img decoding="async" src="book/2022/2022-9-300.jpg" class="card-img-top" srcset="book/2022/2022-9-300.jpg 1x, book/2022/2022-9.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                           </a>
                           <div class="card-body">
                               <h5 class="card-title">A History of the People’s Action Party, 1985-2021</h5>
@@ -298,7 +255,7 @@
                 <!--   <div class="col">
                       <div class="card h-100">
                           <a href="https://www.amazon.com/History-Peoples-Action-Party-1985-2015/dp/981325128X" target="_blank" rel="noopener noreferrer">
-                              <img decoding="async" src="book/2022/2022-10.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                              <img decoding="async" src="book/2022/2022-10-300.jpg" class="card-img-top" srcset="book/2022/2022-10-300.jpg 1x, book/2022/2022-10.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                           </a>
                           <div class="card-body">
                               <h5 class="card-title">A History of the People’s Action Party, 1985-2021</h5>
@@ -320,7 +277,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/How-Avoid-Climate-Disaster-Breakthroughs/dp/0385546130/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2021/2021-1.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2021/2021-1-300.jpg" class="card-img-top" srcset="book/2021/2021-1-300.jpg 1x, book/2021/2021-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">How to Avoid a Climate Disaster: The Solutions We Have and the
@@ -332,7 +289,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Standing-Tall-Chok-Tong-Years/dp/9811234396/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-2.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2021/2021-2-300.jpg" class="card-img-top" srcset="book/2021/2021-2-300.jpg 1x, book/2021/2021-2.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                             <div class="card-body">
                             <h5 class="card-title">Standing Tall: The Goh Chok Tong Years</h5>
@@ -343,7 +300,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.sg/Amazon-Unbound-Invention-Global-Empire/dp/1982132612" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-3.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2021/2021-3-300.jpg" class="card-img-top" srcset="book/2021/2021-3-300.jpg 1x, book/2021/2021-3.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Amazon Unbound: Jeff Bezos and the Invention of a Global Empire</h5>
@@ -355,7 +312,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.sg/Masters-Scale-business-greatest-entrepreneurs/dp/1787634604" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-4.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2021/2021-4-300.jpg" class="card-img-top" srcset="book/2021/2021-4-300.jpg 1x, book/2021/2021-4.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Masters of Scale: Ten lessons on business from the world’s greatest entrepreneurs</h5>
@@ -367,7 +324,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://singapore.kinokuniya.com/bw/9789814901796" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-5.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2021/2021-5-300.jpg" class="card-img-top" srcset="book/2021/2021-5-300.jpg 1x, book/2021/2021-5.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Bold Vision: The Untold Story of Singapore's Reserves and Its Sovereign Wealth Fund</h5>
@@ -379,7 +336,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Invention-Life-James-Dyson/dp/1982188421/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-6.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2021/2021-6-300.jpg" class="card-img-top" srcset="book/2021/2021-6-300.jpg 1x, book/2021/2021-6.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Invention: A Life</h5>
@@ -391,7 +348,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/History-Peoples-Action-Party-1985-2015/dp/981325128X" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-7.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2021/2021-7-300.jpg" class="card-img-top" srcset="book/2021/2021-7-300.jpg 1x, book/2021/2021-7.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">A History of the People’s Action Party, 1985-2021</h5>
@@ -415,7 +372,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Girls-Sex-Navigating-Complicated-Landscape/dp/0062209728/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2020/2020-1.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2020/2020-1-300.jpg" class="card-img-top" srcset="book/2020/2020-1-300.jpg 1x, book/2020/2020-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Girls & Sex: Navigating the Complicated New Landscape</h5>
@@ -426,7 +383,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/This-What-Inequality-Looks-Like/dp/9811405956/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2020/2020-2.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2020/2020-2-300.jpg" class="card-img-top" srcset="book/2020/2020-2-300.jpg 1x, book/2020/2020-2.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">This is what Inequality Looks Like</h5>
@@ -437,7 +394,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Sex-Object-Memoir-Jessica-Valenti-ebook/dp/B015CYFEX6/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2020/2020-3.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2020/2020-3-300.jpg" class="card-img-top" srcset="book/2020/2020-3-300.jpg 1x, book/2020/2020-3.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Sex Object: A Memoir</h5>
@@ -448,7 +405,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/My-Story-Elizabeth-Smart/dp/1250055458/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2020/2020-4.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2020/2020-4-300.jpg" class="card-img-top" srcset="book/2020/2020-4-300.jpg 1x, book/2020/2020-4.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">My Story</h5>
@@ -459,7 +416,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Girls-Will-Dressing-Playing-Differently/dp/1409148742/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2020/2020-5.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2020/2020-5-300.jpg" class="card-img-top" srcset="book/2020/2020-5-300.jpg 1x, book/2020/2020-5.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Girls Will be Girls: Dressing Up, Playing Parts and Daring to Act
@@ -471,7 +428,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Scarred-Story-Escaped-NXIVM-Memoir/dp/1452184267/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-6.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-6-300.jpg" class="card-img-top" srcset="book/2020/2020-6-300.jpg 1x, book/2020/2020-6.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Scarred: The True Story of How I Escaped NXIVM, the Cult that Bound
@@ -484,7 +441,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Good-Habits-Bad-Science-Positive/dp/1250159091/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-7.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-7-300.jpg" class="card-img-top" srcset="book/2020/2020-7-300.jpg 1x, book/2020/2020-7.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Good Habits, Bad Habits: The Science of Making Positive Changes That
@@ -496,7 +453,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Surrounded-Idiots-Behavior-Effectively-Communicate/dp/1250179939/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-8.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-8-300.jpg" class="card-img-top" srcset="book/2020/2020-8-300.jpg 1x, book/2020/2020-8.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Surrounded by Idiots: The Four Types of Human Behaviour (or, How to
@@ -508,7 +465,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/FIFTY-SECRETS-SINGAPORES-SUCCESS-TOMMY/dp/9814827754/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-9.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-9-300.jpg" class="card-img-top" srcset="book/2020/2020-9-300.jpg 1x, book/2020/2020-9.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Fifty Secrets of Singapore’s Success</h5>
@@ -519,7 +476,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Trailblazer-Business-Greatest-Platform-Change/dp/1984825194/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-10.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-10-300.jpg" class="card-img-top" srcset="book/2020/2020-10-300.jpg 1x, book/2020/2020-10.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Trailblazer: The Power of Business as the Greatest Platform for
@@ -531,7 +488,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/No-Filter-Inside-Story-Instagram/dp/1982126809/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-11.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-11-300.jpg" class="card-img-top" srcset="book/2020/2020-11-300.jpg 1x, book/2020/2020-11.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">No Filter: The Inside Story of Instagram</h5>
@@ -542,7 +499,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Whistleblower-Journey-Silicon-Valley-Justice/dp/0525560122/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-12.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-12-300.jpg" class="card-img-top" srcset="book/2020/2020-12-300.jpg 1x, book/2020/2020-12.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Whistleblower: My Journey to Silicon Valley and Fight for Justice at
@@ -554,7 +511,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Start-Believing-Nassars-Institutions-Enabled/dp/0316532150/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-13.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-13-300.jpg" class="card-img-top" srcset="book/2020/2020-13-300.jpg 1x, book/2020/2020-13.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Start by Believing: Larry Nassar's Crimes, the Institutions that
@@ -566,7 +523,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Bite-Apple-Samsungs-Strategy-Conquer/dp/1101907258/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-14.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-14-300.jpg" class="card-img-top" srcset="book/2020/2020-14-300.jpg 1x, book/2020/2020-14.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Samsung Rising: The Inside Story of the South Korean Giant That Set
@@ -578,7 +535,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/GOVERNING-SINGAPORE-PERSPECTIVE-S-JAYAKUMAR/dp/9814827916/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-15.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-15-300.jpg" class="card-img-top" srcset="book/2020/2020-15-300.jpg 1x, book/2020/2020-15.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Governing : A Singapore Perspective</h5>
@@ -593,7 +550,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Promised-Land-Barack-Obama/dp/1524763160/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-16.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-16-300.jpg" class="card-img-top" srcset="book/2020/2020-16-300.jpg 1x, book/2020/2020-16.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">A Promised Land</h5>
@@ -604,7 +561,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Lee-Kuan-Yew-Insights-international/dp/0262019124/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-17.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-17-300.jpg" class="card-img-top" srcset="book/2020/2020-17-300.jpg 1x, book/2020/2020-17.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Lee Kuan Yew : The Grand Master's Insights on China, the United States, and the World</h5>
@@ -615,7 +572,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Billion-Dollar-Loser-Spectacular-Neumann/dp/0316461369/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-18.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2020/2020-18-300.jpg" class="card-img-top" srcset="book/2020/2020-18-300.jpg 1x, book/2020/2020-18.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Billion Dollar Loser: The Epic Rise and Spectacular Fall of Adam Neumann and WeWork</h5>
@@ -637,7 +594,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Connecting-Dots-Lessons-Leadership-Startup/dp/031648654X/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2019/2019-1.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2019/2019-1-300.jpg" class="card-img-top" srcset="book/2019/2019-1-300.jpg 1x, book/2019/2019-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Connect the dots : leadership lessons in a start-up world</h5>
@@ -648,7 +605,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Bloomberg-Revised-Updated-Michael-R/dp/1119554268/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2019/2019-2.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2019/2019-2-300.jpg" class="card-img-top" srcset="book/2019/2019-2-300.jpg 1x, book/2019/2019-2.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Bloomberg by Bloomberg</h5>
@@ -659,7 +616,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Transforming-NOKIA-Paranoid-Optimism-Colossal/dp/1260128725/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2019/2019-3.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2019/2019-3-300.jpg" class="card-img-top" srcset="book/2019/2019-3-300.jpg 1x, book/2019/2019-3.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Transforming NOKIA: The Power of Paranoid Optimism to Lead Through Colossal Change</h5>
@@ -670,7 +627,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Airbnb-Story-Ordinary-Disrupted-Controversy/dp/0544952669/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2019/2019-4.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2019/2019-4-300.jpg" class="card-img-top" srcset="book/2019/2019-4-300.jpg 1x, book/2019/2019-4.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The Airbnb Story: How Three Ordinary Guys Disrupted an Industry, Made Billions . . . and Created Plenty of Controversy</h5>
@@ -681,7 +638,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Google-Story-2018-Updated-Technology/dp/038534273X/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2019/2019-5.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2019/2019-5-300.jpg" class="card-img-top" srcset="book/2019/2019-5-300.jpg 1x, book/2019/2019-5.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The Google Story (2018 Updated Edition): Inside the Hottest Business, Media, and Technology Success of Our Time</h5>
@@ -692,7 +649,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Four-Hidden-Amazon-Facebook-Google/dp/0735213658/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-6.jpg" class="card-img-top" alt="Book cover" loading="lazy" />
+                            <img decoding="async" src="book/2019/2019-6-300.jpg" class="card-img-top" srcset="book/2019/2019-6-300.jpg 1x, book/2019/2019-6.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy" />
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The Four: The Hidden DNA of Amazon, Apple, Facebook and Google</h5>
@@ -703,7 +660,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Onward-Starbucks-Fought-without-Losing/dp/1605292885/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-7.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-7-300.jpg" class="card-img-top" srcset="book/2019/2019-7-300.jpg 1x, book/2019/2019-7.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Onward: How Starbucks Fought for its Life without Losing its Soul</h5>
@@ -714,7 +671,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Winning-Jack-Welch/dp/0060753943/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-8.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-8-300.jpg" class="card-img-top" srcset="book/2019/2019-8-300.jpg 1x, book/2019/2019-8.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Winning</h5>
@@ -725,7 +682,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Lehman-Brothers-Crisis-Oonagh-McDonald/dp/1784993409/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-9.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-9-300.jpg" class="card-img-top" srcset="book/2019/2019-9-300.jpg 1x, book/2019/2019-9.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Lehman Brothers: A Crisis of Value</h5>
@@ -736,7 +693,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Jony-Ive-Genius-Greatest-Products/dp/1591847060/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-10.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-10-300.jpg" class="card-img-top" srcset="book/2019/2019-10-300.jpg 1x, book/2019/2019-10.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Jony Ive: The Genius Behind Apple’s Greatest Products</h5>
@@ -747,7 +704,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Ground-Up-Journey-Reimagine-Promise/dp/0525509445/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-11.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-11-300.jpg" class="card-img-top" srcset="book/2019/2019-11-300.jpg 1x, book/2019/2019-11.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">From the Ground up: A Journey to Reimagine the Promise of America</h5>
@@ -758,7 +715,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Lean-Women-Work-Will-Lead/dp/0385349947/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-12.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-12-300.jpg" class="card-img-top" srcset="book/2019/2019-12-300.jpg 1x, book/2019/2019-12.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Lean In for Graduates: With New Chapters by Experts, Including Find Your First Job, Negotiate Your Salary, and Own Who You Are</h5>
@@ -769,7 +726,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Option-Adversity-Building-Resilience-Finding/dp/1524732680/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-13.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-13-300.jpg" class="card-img-top" srcset="book/2019/2019-13-300.jpg 1x, book/2019/2019-13.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Option B: Facing Adversity, Building Resilience, and Finding Joy</h5>
@@ -780,7 +737,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Everything-Store-Jeff-Bezos-Amazon/dp/0316219282/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-14.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-14-300.jpg" class="card-img-top" srcset="book/2019/2019-14-300.jpg 1x, book/2019/2019-14.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The Everything Store: Jeff Bezos and the Age of Amazon</h5>
@@ -791,7 +748,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Upstarts-B-Stone/dp/0552172588/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-15.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-15-300.jpg" class="card-img-top" srcset="book/2019/2019-15-300.jpg 1x, book/2019/2019-15.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The Upstarts: How Uber, Airbnb, and the Killer Companies of the New Silicon Valley Are Changing the World</h5>
@@ -802,7 +759,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Measure-What-Matters-Google-Foundation/dp/0525536221/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-16.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-16-300.jpg" class="card-img-top" srcset="book/2019/2019-16-300.jpg 1x, book/2019/2019-16.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Measure What Matters: How Google, Bono, and the Gates Foundation Rock the World with OKRs</h5>
@@ -813,7 +770,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Tim-Cook-Genius-Apple-Level/dp/0525537600/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-17.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-17-300.jpg" class="card-img-top" srcset="book/2019/2019-17-300.jpg 1x, book/2019/2019-17.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Tim Cook: The Genius Who Took Apple to the Next Level</h5>
@@ -824,7 +781,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Making-Manager-What-Everyone-Looks/dp/0735219567/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-18.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-18-300.jpg" class="card-img-top" srcset="book/2019/2019-18-300.jpg 1x, book/2019/2019-18.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The Making of a Manager: What to Do When Everyone Looks to You</h5>
@@ -835,7 +792,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Wise-Guy-Lessons-Life-Kawasaki/dp/0525538615/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-19.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-19-300.jpg" class="card-img-top" srcset="book/2019/2019-19-300.jpg 1x, book/2019/2019-19.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Wise Guy: Lessons from a Life</h5>
@@ -846,7 +803,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Radical-Candor-Revised-Kick-Ass-Humanity/dp/1250235375/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-20.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-20-300.jpg" class="card-img-top" srcset="book/2019/2019-20-300.jpg 1x, book/2019/2019-20.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Radical Candor: Be a Kick-Ass Boss Without Losing Your Humanity</h5>
@@ -857,7 +814,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/How-Google-Works-Eric-Schmidt/dp/1455582328/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-21.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-21-300.jpg" class="card-img-top" srcset="book/2019/2019-21-300.jpg 1x, book/2019/2019-21.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">How Google Works</h5>
@@ -868,7 +825,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Be-Table-Menu-Singapore-Memoir/dp/9814642061/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-22.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-22-300.jpg" class="card-img-top" srcset="book/2019/2019-22-300.jpg 1x, book/2019/2019-22.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Be At the Table or Be on the Menu a Singapore Memoir</h5>
@@ -879,7 +836,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Neither-Civil-Nor-Servant-Philip/dp/9814642630/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-23.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-23-300.jpg" class="card-img-top" srcset="book/2019/2019-23-300.jpg 1x, book/2019/2019-23.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Neither Civil Nor Servant : The Philip Yeo Story</h5>
@@ -890,7 +847,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Straight-Talk-Startups-Odds-Fundamentals/dp/006286906X/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-24.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-24-300.jpg" class="card-img-top" srcset="book/2019/2019-24-300.jpg 1x, book/2019/2019-24.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Straight Talk for Startups: 100 Insider Rules for Beating the Odds--From Mastering the Fundamentals to Selecting Investors, Fundraising, Managing Boards, and Achieving Liquidity</h5>
@@ -901,7 +858,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Trillion-Dollar-Coach-Leadership-Playbook/dp/0062839268/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-25.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-25-300.jpg" class="card-img-top" srcset="book/2019/2019-25-300.jpg 1x, book/2019/2019-25.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Trillion Dollar Coach: The Leadership Playbook of Silicon Valley's Bill Campbell</h5>
@@ -912,7 +869,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Moment-Lift-Empowering-Women-Changes/dp/1250313570/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-26.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-26-300.jpg" class="card-img-top" srcset="book/2019/2019-26-300.jpg 1x, book/2019/2019-26.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The Moment of Lift: How Empowering Women Changes the World</h5>
@@ -923,7 +880,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Girl-Wash-Your-Face-Believing/dp/1400201659/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-27.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-27-300.jpg" class="card-img-top" srcset="book/2019/2019-27-300.jpg 1x, book/2019/2019-27.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Girl, Wash Your Face: Stop Believing the Lies About Who You Are so You Can Become Who You Were Meant to Be</h5>
@@ -934,7 +891,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Girl-Stop-Apologizing-Shame-Free-Embracing/dp/1400209609/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-28.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-28-300.jpg" class="card-img-top" srcset="book/2019/2019-28-300.jpg 1x, book/2019/2019-28.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Girl, Stop Apologizing: A Shame-Free Plan for Embracing and Achieving Your Goals</h5>
@@ -945,7 +902,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Secrets-Sand-Hill-Road-Venture/dp/059308358X/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-29.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-29-300.jpg" class="card-img-top" srcset="book/2019/2019-29-300.jpg 1x, book/2019/2019-29.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Secrets of Sand Hill Road: Venture Capital and How to Get It</h5>
@@ -956,7 +913,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Dare-Lead-Brave-Conversations-Hearts/dp/0399592520/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-30.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-30-300.jpg" class="card-img-top" srcset="book/2019/2019-30-300.jpg 1x, book/2019/2019-30.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Dare to Lead: Brave Work. Tough Conversations. Whole Hearts.</h5>
@@ -967,7 +924,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Ride-Lifetime-Lessons-Learned-Company/dp/0399592091/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-31.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-31-300.jpg" class="card-img-top" srcset="book/2019/2019-31-300.jpg 1x, book/2019/2019-31.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The Ride of a Lifetime: Lessons Learned from 15 Years as CEO of the Walt Disney Company</h5>
@@ -978,7 +935,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Super-Pumped-Battle-Mike-Isaac/dp/0393358615/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-32.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-32-300.jpg" class="card-img-top" srcset="book/2019/2019-32-300.jpg 1x, book/2019/2019-32.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Super Pumped: The Battle for Uber</h5>
@@ -989,7 +946,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Tech-Titans-China-challenging-innovating/dp/1529374499/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-33.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-33-300.jpg" class="card-img-top" srcset="book/2019/2019-33-300.jpg 1x, book/2019/2019-33.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Tech Titans of China: How China's Tech Sector is challenging the world by innovating faster, working harder, and going global</h5>
@@ -1000,7 +957,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Tools-Weapons-Promise-Peril-Digital/dp/1984877712/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-34.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-34-300.jpg" class="card-img-top" srcset="book/2019/2019-34-300.jpg 1x, book/2019/2019-34.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Tools and Weapons: The Promise and the Peril of the Digital Age</h5>
@@ -1011,7 +968,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/That-Will-Never-Work-Netflix/dp/0316530204/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-35.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-35-300.jpg" class="card-img-top" srcset="book/2019/2019-35-300.jpg 1x, book/2019/2019-35.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">That Will Never Work: The Birth of Netflix and the Amazing Life of an Idea</h5>
@@ -1022,7 +979,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Love-Men-Vision-Mindful-Masculinity/dp/1250196248/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-36.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-36-300.jpg" class="card-img-top" srcset="book/2019/2019-36-300.jpg 1x, book/2019/2019-36.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">For the Love of Men: A New Vision for Mindful Masculinity</h5>
@@ -1033,7 +990,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Outspoken-Womens-Voices-Silenced-Them/dp/0062879340/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-37.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-37-300.jpg" class="card-img-top" srcset="book/2019/2019-37-300.jpg 1x, book/2019/2019-37.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Outspoken: Why Women's Voices Get Silenced and How to Set Them Free</h5>
@@ -1044,7 +1001,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/First-Wave-Loke-Hoe-Yeong-ebook/dp/B07Z5BK8JJ/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-38.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-38-300.jpg" class="card-img-top" srcset="book/2019/2019-38-300.jpg 1x, book/2019/2019-38.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The First Wave</h5>
@@ -1055,7 +1012,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Diplomacy-Singapore-Experience-S-Jayakumar-ebook/dp/B07XFDYBKM/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-39.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-39-300.jpg" class="card-img-top" srcset="book/2019/2019-39-300.jpg 1x, book/2019/2019-39.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Diplomacy: A Singapore Experience</h5>
@@ -1066,7 +1023,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/PEDRA-BRANCA-STORY-UNHEARD-CASES/dp/9814827150/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-40.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-40-300.jpg" class="card-img-top" srcset="book/2019/2019-40-300.jpg 1x, book/2019/2019-40.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Pedra Branca: Story Of The Unheard Cases</h5>
@@ -1077,7 +1034,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Alpha-Girls-Upstarts-Silicon-Lifetime/dp/0525573925/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-41.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-41-300.jpg" class="card-img-top" srcset="book/2019/2019-41-300.jpg 1x, book/2019/2019-41.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Alpha Girls: The Women Upstarts Who Took On Silicon Valley's Male Culture and Made the Deals of a Lifetime</h5>
@@ -1088,7 +1045,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Big-Nine-Thinking-Machines-Humanity/dp/154177373X/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-42.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-42-300.jpg" class="card-img-top" srcset="book/2019/2019-42-300.jpg 1x, book/2019/2019-42.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">The Big Nine: How the Tech Titans and Their Thinking Machines Could Warp Humanity</h5>
@@ -1099,7 +1056,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Know-My-Name-Chanel-Miller/dp/0735223726/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-43.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                            <img decoding="async" src="book/2019/2019-43-300.jpg" class="card-img-top" srcset="book/2019/2019-43-300.jpg 1x, book/2019/2019-43.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Know My Name: A Memoir</h5>
@@ -1120,7 +1077,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Brotopia-Breaking-Boys-Silicon-Valley/dp/0525540172/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2018/2018-1.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2018/2018-1-300.jpg" class="card-img-top" srcset="book/2018/2018-1-300.jpg 1x, book/2018/2018-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Brotopia : breaking up the boys' club of Silicon Valley</h5>
@@ -1131,7 +1088,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Tall-Order-Chok-Tong-Story/dp/9813276045/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2018/2018-2.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2018/2018-2-300.jpg" class="card-img-top" srcset="book/2018/2018-2-300.jpg 1x, book/2018/2018-2.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Tall order : the Goh Chok Tong story, Volume 1</h5>
@@ -1142,7 +1099,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Hit-Refresh-Rediscover-Microsofts-Everyone/dp/0062959727/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2018/2018-3.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2018/2018-3-300.jpg" class="card-img-top" srcset="book/2018/2018-3-300.jpg 1x, book/2018/2018-3.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Hit refresh : the quest to rediscover Microsoft's soul and imagine a better future for everyone</h5>
@@ -1153,7 +1110,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/Asking-Why-Kwon-Ping-Ho-ebook/dp/B07QCCFLD1/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2018/2018-4.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2018/2018-4-300.jpg" class="card-img-top" srcset="book/2018/2018-4-300.jpg 1x, book/2018/2018-4.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">Asking Why</h5>
@@ -1164,7 +1121,7 @@
                 <div class="col">
                     <div class="card h-100">
                         <a href="https://www.amazon.com/AI-Superpowers-China-Silicon-Valley/dp/132854639X/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2018/2018-5.jpg" class="card-img-top" alt="Book cover" loading="lazy"/>
+                        <img decoding="async" src="book/2018/2018-5-300.jpg" class="card-img-top" srcset="book/2018/2018-5-300.jpg 1x, book/2018/2018-5.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
                         </a>
                         <div class="card-body">
                             <h5 class="card-title">AI superpowers : China, Silicon Valley, and the new world order</h5>
@@ -1181,21 +1138,16 @@
 <br/>
 
 <!-- New Footer -->
-<div class="container">
+<div class="container section-block">
     <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
         <div class="col-md-6 d-flex align-items-center">
             <span class="text-muted">&copy; 2020 - 2025 Leonard Wong</span>
         </div>
-        <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
-            <span class="text-muted" id="cloudflare-badge" aria-hidden="true"></span>
-        </div>
-        <br/>
-
-        <div class="col-md-6 d-flex align-items-center">
+        <div class="col-md-6 d-flex align-items-center justify-content-end">
             <span class="text-muted">All Rights Reserved</span>
         </div>
-        <div class="nav col-md-6 justify-content-end list-unstyled d-flex">
-            <ul class="list-unstyled d-flex flex-wrap align-items-center social-links">
+        <div class="col-12 mt-3">
+            <ul class="list-unstyled d-flex flex-wrap align-items-center social-links justify-content-end">
                 <li>
                     <a class="social-icon social-icon--github" href="https://github.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="GitHub">
                         <svg class="social-icon__graphic" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
@@ -1261,5 +1213,6 @@
     </footer>
 </div>
 <!-- End Footer -->
+
 </body>
 </html>

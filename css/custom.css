@@ -77,7 +77,8 @@
 
 @font-face {
   font-family: 'SF-Pro-Display';
-  src: url('../fonts/SF-Pro-Display-Regular.otf') format('opentype');
+  src: url('../fonts/SF-Pro-Display-Regular.woff2') format('woff2'),
+    url('../fonts/SF-Pro-Display-Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -85,7 +86,8 @@
 
 @font-face {
   font-family: 'SF-Pro-Display';
-  src: url('../fonts/SF-Pro-Display-Medium.otf') format('opentype');
+  src: url('../fonts/SF-Pro-Display-Medium.woff2') format('woff2'),
+    url('../fonts/SF-Pro-Display-Medium.otf') format('opentype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -93,7 +95,8 @@
 
 @font-face {
   font-family: 'SF-Pro-Display';
-  src: url('../fonts/SF-Pro-Display-Semibold.otf') format('opentype');
+  src: url('../fonts/SF-Pro-Display-Semibold.woff2') format('woff2'),
+    url('../fonts/SF-Pro-Display-Semibold.otf') format('opentype');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -101,7 +104,8 @@
 
 @font-face {
   font-family: 'SF-Pro-Display';
-  src: url('../fonts/SF-Pro-Display-Bold.otf') format('opentype');
+  src: url('../fonts/SF-Pro-Display-Bold.woff2') format('woff2'),
+    url('../fonts/SF-Pro-Display-Bold.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -226,6 +230,11 @@ a:focus-visible {
 
 .navbar.glass-nav .nav-link:hover,
 .navbar.glass-nav .nav-link:focus {
+  color: #ffffff !important;
+  opacity: 1;
+}
+
+.navbar.glass-nav .nav-link.active {
   color: #ffffff !important;
   opacity: 1;
 }
@@ -726,6 +735,7 @@ a:focus-visible {
   font-weight: 600;
   color: var(--ink);
   letter-spacing: 0.05em;
+  scroll-margin-top: 6rem;
 }
 
 .page-hint {
@@ -733,6 +743,36 @@ a:focus-visible {
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: rgba(15, 23, 42, 0.55);
+}
+
+.year-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 1.5rem 0 2.25rem;
+}
+
+.year-nav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--paper-soft);
+  color: var(--ink);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.year-nav a:hover,
+.year-nav a:focus {
+  color: var(--accent-cool);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 22px -18px rgba(15, 23, 42, 0.45);
 }
 
 .book-grid {

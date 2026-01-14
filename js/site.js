@@ -30,6 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  const finePointer = window.matchMedia('(pointer: fine)');
+  if (!finePointer.matches) {
+    return;
+  }
+
   interactiveElements.forEach((element) => {
     element.addEventListener('mousemove', (event) => {
       const rect = element.getBoundingClientRect();

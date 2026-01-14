@@ -20,11 +20,33 @@ const COUNT_UP_CONFIGS = [
 const THEME_STORAGE_KEY = 'theme-preference';
 
 document.addEventListener('DOMContentLoaded', () => {
+  initNavActive();
   initThemeToggle();
   initCountUps();
   initRevealOnScroll();
-  initCloudflareBadge();
 });
+
+function initNavActive() {
+  const links = Array.from(document.querySelectorAll('.navbar .nav-link'));
+  if (!links.length) {
+    return;
+  }
+
+  const currentPath = window.location.pathname.replace(/\/$/, '');
+
+  links.forEach((link) => {
+    const targetPath = new URL(link.href, window.location.origin).pathname.replace(/\/$/, '');
+    const isHome = targetPath.endsWith('/index.html');
+    const isCurrent = isHome
+      ? currentPath === '' || currentPath === '/' || currentPath.endsWith('/index.html')
+      : currentPath.endsWith(targetPath);
+
+    if (isCurrent) {
+      link.setAttribute('aria-current', 'page');
+      link.classList.add('active');
+    }
+  });
+}
 
 function initThemeToggle() {
   const toggles = Array.from(document.querySelectorAll('[data-theme-toggle]'));
@@ -216,39 +238,5 @@ function initRevealOnScroll() {
         applyImmediate();
       }
     });
-  }
-}
-
-function initCloudflareBadge() {
-  const badgeHost = document.getElementById('cloudflare-badge');
-  if (!badgeHost) {
-    return;
-  }
-
-  try {
-    const badgeScript = document.createElement('script');
-    badgeScript.dataset.cfbadgetype = 'f';
-    badgeScript.dataset.cfbadgeskin = 'icon';
-    badgeHost.appendChild(badgeScript);
-
-    const queue = window.CloudFlare = window.CloudFlare || [];
-    queue.push((cloudflare) => {
-      cloudflare(['cloudflare/badge']);
-    });
-
-    if (!document.querySelector('script[data-cloudflare-badge="loader"]')) {
-      const loader = document.createElement('script');
-      loader.dataset.cloudflareBadge = 'loader';
-      loader.src = 'https://ajax.cloudflare.com/cdn-cgi/nexp/cloudflare.js';
-      loader.async = true;
-      loader.defer = true;
-      loader.crossOrigin = 'anonymous';
-      loader.referrerPolicy = 'no-referrer';
-      const firstScript = document.getElementsByTagName('script')[0];
-      const parent = (firstScript && firstScript.parentNode) ? firstScript.parentNode : (document.head || document.body);
-      parent.insertBefore(loader, firstScript || null);
-    }
-  } catch (error) {
-    console.error('Cloudflare badge code could not be loaded.', error);
   }
 }

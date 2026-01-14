@@ -1,4 +1,4 @@
-import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate';
+import './vendor/pwa-update.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.createElement('pwa-update');
