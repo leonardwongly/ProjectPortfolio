@@ -1,6 +1,5 @@
 const REVEAL_SELECTORS = [
   '.hero-section',
-  '.impact-strip',
   '.section-header',
   '.featured-card',
   '.skill-card',
@@ -16,7 +15,6 @@ const THEME_STORAGE_KEY = 'theme-preference';
 document.addEventListener('DOMContentLoaded', () => {
   initNavActive();
   initThemeToggle();
-  initCountUps();
   initRevealOnScroll();
   initReadingFilters();
   window.addEventListener('hashchange', initNavActive);
@@ -136,46 +134,6 @@ function updateThemeToggleLabels(theme, toggles) {
       'aria-label',
       theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
     );
-  });
-}
-
-function initCountUps() {
-  const elements = Array.from(document.querySelectorAll('[data-countup]'));
-  if (!elements.length) {
-    return;
-  }
-
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-  elements.forEach((element) => {
-    const target = Number.parseFloat(element.dataset.countup || '');
-    const unit = element.dataset.countupUnit || '';
-    if (!Number.isFinite(target)) {
-      return;
-    }
-
-    if (reduceMotion.matches) {
-      element.textContent = `${Math.round(target)}${unit}`;
-      return;
-    }
-
-    const duration = 900;
-    let start = null;
-
-    const step = (timestamp) => {
-      if (!start) {
-        start = timestamp;
-      }
-      const progress = Math.min((timestamp - start) / duration, 1);
-      const value = Math.round(target * progress);
-      element.textContent = `${value}${unit}`;
-
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
-      }
-    };
-
-    window.requestAnimationFrame(step);
   });
 }
 

@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   const interactiveSelectors = [
     '.hero-section',
-    '.impact-strip',
     '.featured-card',
     '.skill-card',
     '.experience-card',

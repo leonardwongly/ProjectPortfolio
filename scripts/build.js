@@ -81,31 +81,6 @@ function renderHero() {
 </section>`;
 }
 
-function renderImpactStrip(items) {
-  const cards = items
-    .map((item, index) => {
-      const value = Number.isFinite(item.value) ? item.value : escapeHtml(item.value);
-      const unit = item.unit ? escapeHtml(item.unit) : '';
-      const countupAttr = Number.isFinite(item.value) ? `data-countup="${item.value}" data-countup-unit="${unit}"` : '';
-      return `
-      <div class="impact-card" data-animate-order="${index}">
-        <span class="impact-value" ${countupAttr}>${value}${unit}</span>
-        <span class="impact-label">${escapeHtml(item.label)}</span>
-      </div>`;
-    })
-    .join('');
-
-  return `
-<section class="impact-strip" aria-label="Impact at a glance">
-  <div class="impact-inner">
-    <p class="eyebrow">Impact at a glance</p>
-    <div class="impact-grid">
-      ${cards}
-    </div>
-  </div>
-</section>`;
-}
-
 function renderFeaturedWork(items) {
   const cards = items
     .map((project) => {
@@ -415,7 +390,6 @@ function renderContact() {
 }
 
 const data = {
-  impact: readJson('impact.json'),
   featured: readJson('featured-projects.json'),
   skills: readJson('skills.json'),
   experience: readJson('experience.json'),
@@ -426,7 +400,6 @@ const data = {
 const tokens = {
   ...partials,
   HERO: renderHero(),
-  IMPACT_STRIP: renderImpactStrip(data.impact),
   FEATURED_WORK: renderFeaturedWork(data.featured),
   SKILLS: renderSkills(data.skills),
   EXPERIENCE: renderExperience(data.experience),

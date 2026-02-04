@@ -30,8 +30,8 @@
 
 :root[data-theme="dark"] {
   --ink: #f2efe9;
-  --ink-soft: #ded7cc;
-  --ink-quiet: #b4aa9f;
+  --ink-soft: #e7e0d8;
+  --ink-quiet: #d0c6b9;
   --paper: #12110f;
   --paper-strong: #1b1814;
   --paper-soft: #1f1c17;
@@ -55,8 +55,8 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     --ink: #f2efe9;
-    --ink-soft: #ded7cc;
-    --ink-quiet: #b4aa9f;
+    --ink-soft: #e7e0d8;
+    --ink-quiet: #d0c6b9;
     --paper: #12110f;
     --paper-strong: #1b1814;
     --paper-soft: #1f1c17;
@@ -1342,47 +1342,6 @@ footer {
   margin: 0;
 }
 
-.impact-strip {
-  margin-top: 2rem;
-  background: var(--paper-strong);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-}
-
-.impact-inner {
-  display: grid;
-  gap: 1.5rem;
-}
-
-.impact-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-}
-
-.impact-card {
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--paper-soft);
-  display: grid;
-  gap: 0.25rem;
-}
-
-.impact-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--accent-strong);
-  font-variant-numeric: tabular-nums;
-}
-
-.impact-label {
-  font-size: 0.85rem;
-  color: var(--ink-quiet);
-}
-
 .featured-grid {
   display: grid;
   gap: 1.5rem;
@@ -1445,6 +1404,20 @@ footer {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-quiet);
+}
+
+:root[data-theme="dark"] .chip {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-strong);
+  color: var(--ink-soft);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .chip {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--border-strong);
+    color: var(--ink-soft);
+  }
 }
 
 .skills-grid {
