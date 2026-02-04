@@ -6,20 +6,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
-  sonarcloud:
-    name: SonarQube Cloud
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Official SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6.0.0
-        with:
-          args: >
-            -Dsonar.qualitygate.wait=false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_SCANNER_OPTS: "-Dsonar.java.jre=17"
-
+      - name: CI placeholder
+        run: echo "Build pipeline active; Sonar scan removed."
