@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="module" src="js/pwa-update.js"></script>
+    <link rel="manifest" href="manifest.json"/>
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/custom.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta name="theme-color" content="#f7f1ea" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#12110f" media="(prefers-color-scheme: dark)">
+    <title>Offline | Leonard Wong</title>
+</head>
+<body class="page-bg">
+<h1 class="visually-hidden">Offline</h1>
+{{NAV}}
+
+<main id="content" class="container-xxl">
+    <section class="section-block">
+        <div class="contact-card">
+            <div>
+                <p class="eyebrow">Offline</p>
+                <h2>You’re offline right now.</h2>
+                <p class="section-lede">This page is available offline. Once you reconnect, refresh to see the latest updates.</p>
+            </div>
+            <div class="contact-actions">
+                <a class="btn btn-primary" href="/index.html">Back to Home</a>
+                <a class="btn btn-ghost" href="/reading.html">Reading List</a>
+            </div>
+        </div>
+    </section>
+</main>
+
+{{FOOTER}}
+</body>
+</html>

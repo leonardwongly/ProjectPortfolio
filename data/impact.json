@@ -1,0 +1,22 @@
+[
+  {
+    "label": "Data points processed",
+    "value": 3,
+    "unit": "B+"
+  },
+  {
+    "label": "Projects security-scanned",
+    "value": 88,
+    "unit": "+"
+  },
+  {
+    "label": "Emails/hour automated",
+    "value": 160,
+    "unit": "+"
+  },
+  {
+    "label": "Companies onboarded",
+    "value": 500,
+    "unit": "+"
+  }
+]

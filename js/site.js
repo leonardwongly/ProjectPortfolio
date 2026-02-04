@@ -1,12 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
   const interactiveSelectors = [
-    '.hero-panel',
-    '.summary-card',
-    '.main-timeline .timeline-content',
-    '.card',
+    '.hero-section',
+    '.impact-strip',
+    '.featured-card',
+    '.skill-card',
+    '.experience-card',
+    '.credentials-grid .card',
     '.accordion-item',
-    '.project-item',
-    '.book-grid .card'
+    '.book-card',
+    '.contact-card'
   ];
 
   const interactiveElements = new Set();

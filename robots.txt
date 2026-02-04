@@ -34,3 +34,4 @@ User-agent: scoop.it
 User-agent: Seekr
 User-agent: YouBot
 Disallow: /
+Sitemap: https://leonardwong.tech/sitemap.xml

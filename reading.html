@@ -21,10 +21,10 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" class="circle-img"/>
     <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png" class="circle-img"/>
     <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" class="circle-img"/>
-    <meta name="msapplication-TileColor" content="#ffffff"/>
+    <meta name="msapplication-TileColor" content="#f7f1ea"/>
     <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png" class="circle-img"/>
-    <meta name="theme-color" content="#f3f6ff" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#f7f1ea" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#12110f" media="(prefers-color-scheme: dark)">
     <!-- End favicon -->
     <script src="js/bootstrap.min.js" defer></script>
     <script src="js/main.js" defer></script>
@@ -37,7 +37,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="description" content="Books read by Leonard Wong"/>
     <link rel="canonical" href="https://leonardwong.tech/reading.html"/>
-    <meta property="og:title" content="Leonard Wong | Books Read"/>
+    <meta property="og:title" content="Leonard Wong | Reading"/>
     <meta property="og:description" content="A curated list of books read by Leonard Wong."/>
     <meta property="og:type" content="website"/>
     <meta property="og:url" content="https://leonardwong.tech/reading.html"/>
@@ -45,16 +45,17 @@
     <meta property="og:image:alt" content="Portrait of Leonard Wong"/>
     <meta property="og:site_name" content="Leonard Wong"/>
     <meta name="twitter:card" content="summary_large_image"/>
-    <meta name="twitter:title" content="Leonard Wong | Books Read"/>
+    <meta name="twitter:title" content="Leonard Wong | Reading"/>
     <meta name="twitter:description" content="A curated list of books read by Leonard Wong."/>
     <meta name="twitter:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
-    <title>Leonard Wong | Books Read</title>
+    <title>Leonard Wong | Reading</title>
 </head>
 <body class="page-bg">
-<h1 class="visually-hidden">hi</h1>
-<nav class="navbar navbar-expand-lg fixed-top navbar-dark glass-nav shadow-sm" aria-label="Main navigation">
+<h1 class="visually-hidden">Leonard Wong Reading</h1>
+<a class="skip-link" href="#content">Skip to content</a>
+<nav class="navbar navbar-expand-lg fixed-top navbar-dark glass-nav" aria-label="Main navigation">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/index.html">Leonard Portfolio</a>
+        <a class="navbar-brand" href="/index.html">Leonard Wong</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -63,13 +64,25 @@
         <div class="navbar-collapse collapse" id="navbarCollapse">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="/index.html">Home</a>
+                    <a class="nav-link" href="/index.html#home">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/reading.html">Books Read</a>
+                    <a class="nav-link" href="/index.html#work">Work</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">View Resume</a>
+                    <a class="nav-link" href="/index.html#skills">Skills</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#experience">Experience</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/reading.html">Reading</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#contact">Contact</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">Resume</a>
                 </li>
             </ul>
             <div class="navbar-actions d-flex align-items-center gap-2 mt-3 mt-lg-0 ms-lg-auto">
@@ -83,1068 +96,1237 @@
 </nav>
 
 
-<main class="container-xxl py-5 content-section">
-    <div class="row justify-content-center">
-        <div class="col-12 text-center">
-            <h2 class="section-title">Books Read</h2>
-            <p class="page-hint">This page is best viewed on a large display</p>
+<main id="content" class="container-xxl">
+    
+<section class="section-block reading-section" data-reading>
+  <div class="section-header">
+    <p class="eyebrow">Reading</p>
+    <h2>Books that shaped my thinking</h2>
+    <p class="section-lede">Search by title, author, ISBN, or filter by year and tag.</p>
+  </div>
+
+  <div class="reading-controls">
+    <label class="search-field">
+      <span>Search</span>
+      <input type="search" id="readingSearch" placeholder="Search by title, author, ISBN" autocomplete="off" />
+    </label>
+    <div class="filter-group">
+      <p class="filter-label">Year</p>
+      <div class="filter-pills" data-filter-group="year"><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="All">All years</button><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="2025">2025</button><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="2024">2024</button><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="2022">2022</button></div>
+      <p class="filter-label">Tags</p><div class="filter-pills" data-filter-group="tag"><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="All">All tags</button><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="Biography">Biography</button><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="Business">Business</button><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="Data">Data</button></div>
+    </div>
+    <div class="view-toggle" role="group" aria-label="Toggle reading view">
+      <button type="button" class="view-pill" data-view="grid" aria-pressed="true">Grid</button>
+      <button type="button" class="view-pill" data-view="list" aria-pressed="false">List</button>
+    </div>
+  </div>
+
+  <div class="reading-grid" data-reading-grid data-view="grid">
+    
+      <article class="book-card" data-reading-item data-year="2025" data-tags="business" data-title="Apple in China: The Capture of the World&#39;s Greatest Company" data-author="Patrick McGee" data-isbn="978-1668053379">
+        <div class="book-media"><a href="https://www.amazon.com/Apple-China-Capture-Greatest-Company/dp/1668053373" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2025/2025-1-300.webp 1x, book/2025/2025-1.webp 2x" />
+        <img decoding="async" src="book/2025/2025-1-300.jpg" class="book-cover" srcset="book/2025/2025-1-300.jpg 1x, book/2025/2025-1.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Apple in China: The Capture of the World&#39;s Greatest Company" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2025</p>
+          <h3>Apple in China: The Capture of the World&#39;s Greatest Company</h3>
+          <p class="book-author">Patrick McGee</p>
+          <p class="book-isbn">ISBN 978-1668053379</p>
+          <div class="chip-row"><span class="chip">Business</span></div>
         </div>
-    </div>
-    <nav class="year-nav" aria-label="Books by year">
-        <a href="#year-2025">2025</a>
-        <a href="#year-2024">2024</a>
-        <a href="#year-2022">2022</a>
-        <a href="#year-2021">2021</a>
-        <a href="#year-2020">2020</a>
-        <a href="#year-2019">2019</a>
-        <a href="#year-2018">2018</a>
-    </nav>
-    <!-- 2025 -->
-    <div class="row justify-content-between align-items-center mb-3">
-        <div class="col-auto">
-            <h3 class="year-heading" id="year-2025">2025</h3>
+      </article>
+      <article class="book-card" data-reading-item data-year="2024" data-tags="biography" data-title="Tony Tan Keng Yam: My Political Journey" data-author="Leslie Koh" data-isbn="978-9815081138">
+        <div class="book-media"><a href="https://www.stbooks.sg/products/soft-cover-tony-tan-keng-yam-my-political-journey" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2024/2024-1-300.webp 1x, book/2024/2024-1.webp 2x" />
+        <img decoding="async" src="book/2024/2024-1-300.jpg" class="book-cover" srcset="book/2024/2024-1-300.jpg 1x, book/2024/2024-1.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Tony Tan Keng Yam: My Political Journey" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2024</p>
+          <h3>Tony Tan Keng Yam: My Political Journey</h3>
+          <p class="book-author">Leslie Koh</p>
+          <p class="book-isbn">ISBN 978-9815081138</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
         </div>
-    </div>
-    <div class="row row-cols-2 row-cols-lg-5 g-4 book-grid">
-        <div class="col">
-            <div class="card h-100">
-                <a href="https://www.amazon.com/Apple-China-Capture-Greatest-Company/dp/1668053373" target="_blank" rel="noopener noreferrer">
-                    <img decoding="async" src="book/2025/2025-1-300.jpg" class="card-img-top" srcset="book/2025/2025-1-300.jpg 1x, book/2025/2025-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Apple in China: The Capture of the World's Greatest Company</h5>
-                            <p class="card-text">ISBN: 978-1668053379<br/>Author: Patrick McGee</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-    </div>
-
-    <!-- 2024 -->
-    <div class="row justify-content-between align-items-center mb-3 mt-5">
-        <div class="col-auto">
-            <h3 class="year-heading" id="year-2024">2024</h3>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="In This Together: Singapore&#39;s Covid-19 Story" data-author="The Straits Times Covid-19 Team" data-isbn="978-9814827966">
+        <div class="book-media"><a href="https://www.stbooks.sg/products/in-this-together-singapore-s-covid-19-story" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2022/2022-1-300.webp 1x, book/2022/2022-1.webp 2x" />
+        <img decoding="async" src="book/2022/2022-1-300.jpg" class="book-cover" srcset="book/2022/2022-1-300.jpg 1x, book/2022/2022-1.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of In This Together: Singapore&#39;s Covid-19 Story" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>In This Together: Singapore&#39;s Covid-19 Story</h3>
+          <p class="book-author">The Straits Times Covid-19 Team</p>
+          <p class="book-isbn">ISBN 978-9814827966</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
         </div>
-    </div>
-    <div class="row row-cols-2 row-cols-lg-5 g-4 book-grid">
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.stbooks.sg/products/soft-cover-tony-tan-keng-yam-my-political-journey" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2024/2024-1-300.jpg" class="card-img-top" srcset="book/2024/2024-1-300.jpg 1x, book/2024/2024-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Tony Tan Keng Yam: My Political Journey</h5>
-                            <p class="card-text">ISBN: 978-9815081138<br/>Author: Leslie Koh</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-    <!--2022-->
-    <div class="row justify-content-between align-items-center mb-3 mt-5">
-        <div class="col-auto">
-            <h3 class="year-heading" id="year-2022">2022</h3>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="data,biography" data-title="The Marvel Studios Story: How a Failing Comic Book Publisher Became a Hollywood Superhero" data-author="Charlie Wetzel &amp; Stephanie Wetzel" data-isbn="978-1400232772">
+        <div class="book-media"><a href="https://www.amazon.sg/Marvel-Studios-Story-Publisher-Hollywood/dp/1400232775/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2022/2022-2-300.webp 1x, book/2022/2022-2.webp 2x" />
+        <img decoding="async" src="book/2022/2022-2-300.jpg" class="book-cover" srcset="book/2022/2022-2-300.jpg 1x, book/2022/2022-2.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Marvel Studios Story: How a Failing Comic Book Publisher Became a Hollywood Superhero" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Marvel Studios Story: How a Failing Comic Book Publisher Became a Hollywood Superhero</h3>
+          <p class="book-author">Charlie Wetzel &amp; Stephanie Wetzel</p>
+          <p class="book-isbn">ISBN 978-1400232772</p>
+          <div class="chip-row"><span class="chip">Data</span><span class="chip">Biography</span></div>
         </div>
-    </div>
-    <div class="row row-cols-2 row-cols-lg-5 g-4 book-grid">
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.stbooks.sg/products/in-this-together-singapore-s-covid-19-story" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2022/2022-1-300.jpg" class="card-img-top" srcset="book/2022/2022-1-300.jpg 1x, book/2022/2022-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">In This Together: Singapore's Covid-19 Story</h5>
-                            <p class="card-text">ISBN: 978-9814827966<br/>Author: The Straits Times Covid-19 Team</p>
-                        </div>
-                    </div>
-                </div>
-               <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.sg/Marvel-Studios-Story-Publisher-Hollywood/dp/1400232775/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2022/2022-2-300.jpg" class="card-img-top" srcset="book/2022/2022-2-300.jpg 1x, book/2022/2022-2.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The Marvel Studios Story: How a Failing Comic Book Publisher Became a Hollywood Superhero</h5>
-                            <p class="card-text">ISBN: 978-1400232772<br/>Author: Charlie Wetzel & Stephanie Wetzel</p>
-                        </div>
-                    </div>
-                </div>
-                  <div class="col">
-                     <div class="card h-100">
-                         <a href="https://www.amazon.sg/Build-Unorthodox-Guide-Making-Things/dp/0063046067" target="_blank" rel="noopener noreferrer">
-                             <img decoding="async" src="book/2022/2022-3-300.jpg" class="card-img-top" srcset="book/2022/2022-3-300.jpg 1x, book/2022/2022-3.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                         </a>
-                         <div class="card-body">
-                             <h5 class="card-title">Build: An Unorthodox Guide to Making Things Worth Making</h5>
-                             <p class="card-text">ISBN: 978-0063046061<br/>Author: Tony Fadell</p>
-                         </div>
-                     </div>
-                 </div>
-
-                 <div class="col">
-                     <div class="card h-100">
-                         <a href="https://www.amazon.sg/After-Steve-Became-Trillion-Dollar-Company/dp/0063009811/" target="_blank" rel="noopener noreferrer">
-                             <img decoding="async" src="book/2022/2022-4-300.jpg" class="card-img-top" srcset="book/2022/2022-4-300.jpg 1x, book/2022/2022-4.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                         </a>
-                         <div class="card-body">
-                             <h5 class="card-title">After Steve: How Apple Became a Trillion-Dollar Company and Lost Its Soul</h5>
-                             <p class="card-text">ISBN: 978-0063009813<br/>Author: Tripp Mickle</p>
-                         </div>
-                     </div>
-                 </div>
-
-                 <div class="col">
-                     <div class="card h-100">
-                         <a href="https://www.amazon.sg/Play-Nice-but-Win-Journey/dp/0593087747/" target="_blank" rel="noopener noreferrer">
-                             <img decoding="async" src="book/2022/2022-5-300.jpg" class="card-img-top" srcset="book/2022/2022-5-300.jpg 1x, book/2022/2022-5.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                         </a>
-                         <div class="card-body">
-                             <h5 class="card-title">Play Nice but Win: A CEO's Journey from Founder to Leader</h5>
-                             <p class="card-text">ISBN: 978-0593087749<br/>Author: Michael Dell & James Kaplan</p>
-                         </div>
-                     </div>
-                 </div>
-
-                <div class="col">
-                      <div class="card h-100">
-                          <a href="https://www.amazon.sg/LAST-FOOLS-IMMORTALS-LEE-KUAN/dp/9811843635" target="_blank" rel="noopener noreferrer">
-                              <img decoding="async" src="book/2022/2022-6-300.jpg" class="card-img-top" srcset="book/2022/2022-6-300.jpg 1x, book/2022/2022-6.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                          </a>
-                          <div class="card-body">
-                              <h5 class="card-title">THE LAST FOOLS: 8 IMMORTALS OF LEE KUAN YEW</h5>
-                              <p class="card-text">ISBN: 978-9811843631<br/>Author: Peh Shing Huei</p>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div class="col">
-                      <div class="card h-100">
-                          <a href="https://epigrambookshop.sg/products/the-nominated-member-of-parliament-scheme-are-unelected-voices-still-necessary-in-parliament-a-collection-of-perspectives-and-personal-reflections-by-nmps" target="_blank" rel="noopener noreferrer">
-                              <img decoding="async" src="book/2022/2022-7-300.jpg" class="card-img-top" srcset="book/2022/2022-7-300.jpg 1x, book/2022/2022-7.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                          </a>
-                          <div class="card-body">
-                              <h5 class="card-title">The Nominated Member of Parliament Scheme: Are Unelected Voices Still Necessary in Parliament? — A Collection of Perspectives and Personal Reflections by NMPs</h5>
-                              <p class="card-text">ISBN: 978-9811258428<br/>Author: Anthea Ong</p>
-                          </div>
-                      </div>
-                  </div>
-
-                   <div class="col">
-                      <div class="card h-100">
-                          <a href="https://www.amazon.sg/Like-Comment-Subscribe-YouTubes-Domination/dp/0593296346" target="_blank" rel="noopener noreferrer">
-                              <img decoding="async" src="book/2022/2022-8-300.jpg" class="card-img-top" srcset="book/2022/2022-8-300.jpg 1x, book/2022/2022-8.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                          </a>
-                          <div class="card-body">
-                              <h5 class="card-title">Like, Comment, Subscribe: Inside YouTube's Chaotic Rise to World Domination</h5>
-                              <p class="card-text">ISBN: 978-0593296349<br/>Author: Mark Bergen</p>
-                          </div>
-                      </div>
-                  </div>
-                <!--   <div class="col">
-                      <div class="card h-100">
-                          <a href="https://www.amazon.com/History-Peoples-Action-Party-1985-2015/dp/981325128X" target="_blank" rel="noopener noreferrer">
-                              <img decoding="async" src="book/2022/2022-9-300.jpg" class="card-img-top" srcset="book/2022/2022-9-300.jpg 1x, book/2022/2022-9.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                          </a>
-                          <div class="card-body">
-                              <h5 class="card-title">A History of the People’s Action Party, 1985-2021</h5>
-                              <p class="card-text">ISBN: 978-9813251281<br/>Author: Shashi Jayakumar</p>
-                          </div>
-                      </div>
-                  </div>-->
-
-                <!--   <div class="col">
-                      <div class="card h-100">
-                          <a href="https://www.amazon.com/History-Peoples-Action-Party-1985-2015/dp/981325128X" target="_blank" rel="noopener noreferrer">
-                              <img decoding="async" src="book/2022/2022-10-300.jpg" class="card-img-top" srcset="book/2022/2022-10-300.jpg 1x, book/2022/2022-10.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                          </a>
-                          <div class="card-body">
-                              <h5 class="card-title">A History of the People’s Action Party, 1985-2021</h5>
-                              <p class="card-text">ISBN: 978-9813251281<br/>Author: Shashi Jayakumar</p>
-                          </div>
-                      </div>
-                  </div>-->
-
-
-            </div>
-            <!--End 2022-->
-            <br/>
-            <hr>
-            <br/>
-            <!--2021-->
-            <h3>2021</h3>
-            <br/>
-            <div class="row row-cols-2 row-cols-lg-5 g-4 book-grid">
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/How-Avoid-Climate-Disaster-Breakthroughs/dp/0385546130/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2021/2021-1-300.jpg" class="card-img-top" srcset="book/2021/2021-1-300.jpg 1x, book/2021/2021-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">How to Avoid a Climate Disaster: The Solutions We Have and the
-                                Breakthroughs We Need</h5>
-                            <p class="card-text">ISBN: 978-0241448304<br/>Author: Bill Gates</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Standing-Tall-Chok-Tong-Years/dp/9811234396/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-2-300.jpg" class="card-img-top" srcset="book/2021/2021-2-300.jpg 1x, book/2021/2021-2.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                            <div class="card-body">
-                            <h5 class="card-title">Standing Tall: The Goh Chok Tong Years</h5>
-                            <p class="card-text">ISBN: 978-9811234392<br/>Author: Shing Huei Peh</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.sg/Amazon-Unbound-Invention-Global-Empire/dp/1982132612" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-3-300.jpg" class="card-img-top" srcset="book/2021/2021-3-300.jpg 1x, book/2021/2021-3.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Amazon Unbound: Jeff Bezos and the Invention of a Global Empire</h5>
-                            <p class="card-text">ISBN: 978-1982132613<br/>Author: Brad Stone</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.sg/Masters-Scale-business-greatest-entrepreneurs/dp/1787634604" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-4-300.jpg" class="card-img-top" srcset="book/2021/2021-4-300.jpg 1x, book/2021/2021-4.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Masters of Scale: Ten lessons on business from the world’s greatest entrepreneurs</h5>
-                            <p class="card-text">ISBN: 978-1787634602<br/>Author: June Cohen, Deron Triff, Reid Hoffman</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://singapore.kinokuniya.com/bw/9789814901796" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-5-300.jpg" class="card-img-top" srcset="book/2021/2021-5-300.jpg 1x, book/2021/2021-5.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Bold Vision: The Untold Story of Singapore's Reserves and Its Sovereign Wealth Fund</h5>
-                            <p class="card-text">ISBN: 978-9814901796<br/>Author: Freddy Orchard</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Invention-Life-James-Dyson/dp/1982188421/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-6-300.jpg" class="card-img-top" srcset="book/2021/2021-6-300.jpg 1x, book/2021/2021-6.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Invention: A Life</h5>
-                            <p class="card-text">ISBN: 978-1982188429<br/>Author: James Dyson</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/History-Peoples-Action-Party-1985-2015/dp/981325128X" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2021/2021-7-300.jpg" class="card-img-top" srcset="book/2021/2021-7-300.jpg 1x, book/2021/2021-7.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">A History of the People’s Action Party, 1985-2021</h5>
-                            <p class="card-text">ISBN: 978-9813251281<br/>Author: Shashi Jayakumar</p>
-                        </div>
-                    </div>
-                </div>
-
-
-            </div>
-
-
-            <!--End 2021-->
-            <br/>
-            <hr>
-            <br/>
-            <!--2020-->
-            <h3>2020</h3>
-            <br/>
-            <div class="row row-cols-2 row-cols-lg-5 g-4 book-grid">
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Girls-Sex-Navigating-Complicated-Landscape/dp/0062209728/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2020/2020-1-300.jpg" class="card-img-top" srcset="book/2020/2020-1-300.jpg 1x, book/2020/2020-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Girls & Sex: Navigating the Complicated New Landscape</h5>
-                            <p class="card-text">ISBN: 978-0062209740<br/>Author: Peggy Orenstein</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/This-What-Inequality-Looks-Like/dp/9811405956/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2020/2020-2-300.jpg" class="card-img-top" srcset="book/2020/2020-2-300.jpg 1x, book/2020/2020-2.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">This is what Inequality Looks Like</h5>
-                            <p class="card-text">ISBN: 978-9811437496<br/>Author: Teo You Yenn</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Sex-Object-Memoir-Jessica-Valenti-ebook/dp/B015CYFEX6/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2020/2020-3-300.jpg" class="card-img-top" srcset="book/2020/2020-3-300.jpg 1x, book/2020/2020-3.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Sex Object: A Memoir</h5>
-                            <p class="card-text">ISBN: 978-0062435095<br/>Author: Jessica Valenti</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/My-Story-Elizabeth-Smart/dp/1250055458/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2020/2020-4-300.jpg" class="card-img-top" srcset="book/2020/2020-4-300.jpg 1x, book/2020/2020-4.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">My Story</h5>
-                            <p class="card-text">ISBN: 978-1250055453<br/>Author: Elizabeth Smart</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Girls-Will-Dressing-Playing-Differently/dp/1409148742/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2020/2020-5-300.jpg" class="card-img-top" srcset="book/2020/2020-5-300.jpg 1x, book/2020/2020-5.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Girls Will be Girls: Dressing Up, Playing Parts and Daring to Act
-                                Differently</h5>
-                            <p class="card-text">ISBN: 978-1409148746<br/>Author: Emer O’Toole</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Scarred-Story-Escaped-NXIVM-Memoir/dp/1452184267/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-6-300.jpg" class="card-img-top" srcset="book/2020/2020-6-300.jpg 1x, book/2020/2020-6.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Scarred: The True Story of How I Escaped NXIVM, the Cult that Bound
-                                My Life (True Crime Memoir, Cult Books)</h5>
-                            <p class="card-text">ISBN: 978-1452184265<br/>Author: Sarah Edmondson with Kristine Gasbarre
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Good-Habits-Bad-Science-Positive/dp/1250159091/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-7-300.jpg" class="card-img-top" srcset="book/2020/2020-7-300.jpg 1x, book/2020/2020-7.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Good Habits, Bad Habits: The Science of Making Positive Changes That
-                                Stick</h5>
-                            <p class="card-text">ISBN: 978-1250159076<br/>Author: Wendy Wood</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Surrounded-Idiots-Behavior-Effectively-Communicate/dp/1250179939/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-8-300.jpg" class="card-img-top" srcset="book/2020/2020-8-300.jpg 1x, book/2020/2020-8.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Surrounded by Idiots: The Four Types of Human Behaviour (or, How to
-                                Understand Those Who Cannot Be Understood)</h5>
-                            <p class="card-text">ISBN: 978-1785042188<br/>Author: Thomas Erikson</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/FIFTY-SECRETS-SINGAPORES-SUCCESS-TOMMY/dp/9814827754/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-9-300.jpg" class="card-img-top" srcset="book/2020/2020-9-300.jpg 1x, book/2020/2020-9.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Fifty Secrets of Singapore’s Success</h5>
-                            <p class="card-text">ISBN: 978-9814827751<br/>Author: Tommy Koh</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Trailblazer-Business-Greatest-Platform-Change/dp/1984825194/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-10-300.jpg" class="card-img-top" srcset="book/2020/2020-10-300.jpg 1x, book/2020/2020-10.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Trailblazer: The Power of Business as the Greatest Platform for
-                                Change</h5>
-                            <p class="card-text">ISBN: 978-1984825193<br/>Author: Marc Benioff & Monica Langley</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/No-Filter-Inside-Story-Instagram/dp/1982126809/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-11-300.jpg" class="card-img-top" srcset="book/2020/2020-11-300.jpg 1x, book/2020/2020-11.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">No Filter: The Inside Story of Instagram</h5>
-                            <p class="card-text">ISBN: 978-1982126803<br/>Author: Sarah Frier</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Whistleblower-Journey-Silicon-Valley-Justice/dp/0525560122/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-12-300.jpg" class="card-img-top" srcset="book/2020/2020-12-300.jpg 1x, book/2020/2020-12.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Whistleblower: My Journey to Silicon Valley and Fight for Justice at
-                                Uber</h5>
-                            <p class="card-text">ISBN: 978-0525560128<br/>Author: Susan Fowler</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Start-Believing-Nassars-Institutions-Enabled/dp/0316532150/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-13-300.jpg" class="card-img-top" srcset="book/2020/2020-13-300.jpg 1x, book/2020/2020-13.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Start by Believing: Larry Nassar's Crimes, the Institutions that
-                                Enabled Him, and the Brave Women Who Stopped a Monster</h5>
-                            <p class="card-text">ISBN: 978-0316532150<br/>Author: John Barr & Dan Murphy</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Bite-Apple-Samsungs-Strategy-Conquer/dp/1101907258/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-14-300.jpg" class="card-img-top" srcset="book/2020/2020-14-300.jpg 1x, book/2020/2020-14.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Samsung Rising: The Inside Story of the South Korean Giant That Set
-                                Out to Beat Apple and Conquer Tech</h5>
-                            <p class="card-text">ISBN: 978-1101907252<br/>Author:Geoffrey Cain</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/GOVERNING-SINGAPORE-PERSPECTIVE-S-JAYAKUMAR/dp/9814827916/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-15-300.jpg" class="card-img-top" srcset="book/2020/2020-15-300.jpg 1x, book/2020/2020-15.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Governing : A Singapore Perspective</h5>
-                            <p class="card-text">ISBN: 978-9814827911<br/>Author: S. Jayakumar</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <br/>
-            <div class="row row-cols-2 row-cols-md-5">
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Promised-Land-Barack-Obama/dp/1524763160/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-16-300.jpg" class="card-img-top" srcset="book/2020/2020-16-300.jpg 1x, book/2020/2020-16.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">A Promised Land</h5>
-                            <p class="card-text">ISBN: 978-1524763169<br/>Author: Barack Obama</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Lee-Kuan-Yew-Insights-international/dp/0262019124/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-17-300.jpg" class="card-img-top" srcset="book/2020/2020-17-300.jpg 1x, book/2020/2020-17.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Lee Kuan Yew : The Grand Master's Insights on China, the United States, and the World</h5>
-                            <p class="card-text">ISBN: 978-0262539500<br/>Author: Allison and Blackwill</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Billion-Dollar-Loser-Spectacular-Neumann/dp/0316461369/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2020/2020-18-300.jpg" class="card-img-top" srcset="book/2020/2020-18-300.jpg 1x, book/2020/2020-18.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Billion Dollar Loser: The Epic Rise and Spectacular Fall of Adam Neumann and WeWork</h5>
-                            <p class="card-text">ISBN: 978-0316461368<br/>Author: Reeves Wiedeman</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!--End 2020-->
-            <br/>
-            <hr>
-            <br/>
-
-            <!--2019-->
-            <h3>2019</h3>
-            <br/>
-            <div class="row row-cols-2 row-cols-lg-5">
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Connecting-Dots-Lessons-Leadership-Startup/dp/031648654X/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2019/2019-1-300.jpg" class="card-img-top" srcset="book/2019/2019-1-300.jpg 1x, book/2019/2019-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Connect the dots : leadership lessons in a start-up world</h5>
-                            <p class="card-text">ISBN: 0008297037<br/>Author: John Chambers with Diane Brady]</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Bloomberg-Revised-Updated-Michael-R/dp/1119554268/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2019/2019-2-300.jpg" class="card-img-top" srcset="book/2019/2019-2-300.jpg 1x, book/2019/2019-2.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Bloomberg by Bloomberg</h5>
-                            <p class="card-text">ISBN: 978-1119554264<br/>Author: Michael R. Bloomberg</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Transforming-NOKIA-Paranoid-Optimism-Colossal/dp/1260128725/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2019/2019-3-300.jpg" class="card-img-top" srcset="book/2019/2019-3-300.jpg 1x, book/2019/2019-3.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Transforming NOKIA: The Power of Paranoid Optimism to Lead Through Colossal Change</h5>
-                            <p class="card-text">ISBN: 978-1260128727<br/>Author: Risto Siilasmaa with Catherine Fredman</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Airbnb-Story-Ordinary-Disrupted-Controversy/dp/0544952669/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2019/2019-4-300.jpg" class="card-img-top" srcset="book/2019/2019-4-300.jpg 1x, book/2019/2019-4.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The Airbnb Story: How Three Ordinary Guys Disrupted an Industry, Made Billions . . . and Created Plenty of Controversy</h5>
-                            <p class="card-text">ISBN: 978-0544952669<br/>Author: Leigh Gallagher</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Google-Story-2018-Updated-Technology/dp/038534273X/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2019/2019-5-300.jpg" class="card-img-top" srcset="book/2019/2019-5-300.jpg 1x, book/2019/2019-5.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The Google Story (2018 Updated Edition): Inside the Hottest Business, Media, and Technology Success of Our Time</h5>
-                            <p class="card-text">ISBN: 978-0385342735<br/>Author: David A. Vise and Mark Malseed</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Four-Hidden-Amazon-Facebook-Google/dp/0735213658/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-6-300.jpg" class="card-img-top" srcset="book/2019/2019-6-300.jpg 1x, book/2019/2019-6.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy" />
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The Four: The Hidden DNA of Amazon, Apple, Facebook and Google</h5>
-                            <p class="card-text">ISBN: 978-0552173438<br/>Author: Scott Galoway</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Onward-Starbucks-Fought-without-Losing/dp/1605292885/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-7-300.jpg" class="card-img-top" srcset="book/2019/2019-7-300.jpg 1x, book/2019/2019-7.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Onward: How Starbucks Fought for its Life without Losing its Soul</h5>
-                            <p class="card-text">ISBN:978-1605292885<br/>Author: Howard Schultz with Joanne Gordon</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Winning-Jack-Welch/dp/0060753943/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-8-300.jpg" class="card-img-top" srcset="book/2019/2019-8-300.jpg 1x, book/2019/2019-8.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Winning</h5>
-                            <p class="card-text">ISBN:978-0060759384<br/>Jack Welch with Suzy Welch</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Lehman-Brothers-Crisis-Oonagh-McDonald/dp/1784993409/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-9-300.jpg" class="card-img-top" srcset="book/2019/2019-9-300.jpg 1x, book/2019/2019-9.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Lehman Brothers: A Crisis of Value</h5>
-                            <p class="card-text">ISBN:978-1784993405<br/>Author: Oonagh McDonald</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Jony-Ive-Genius-Greatest-Products/dp/1591847060/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-10-300.jpg" class="card-img-top" srcset="book/2019/2019-10-300.jpg 1x, book/2019/2019-10.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Jony Ive: The Genius Behind Apple’s Greatest Products</h5>
-                            <p class="card-text">ISBN:978-1591846178<br/>Author: Leander Kahney</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Ground-Up-Journey-Reimagine-Promise/dp/0525509445/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-11-300.jpg" class="card-img-top" srcset="book/2019/2019-11-300.jpg 1x, book/2019/2019-11.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">From the Ground up: A Journey to Reimagine the Promise of America</h5>
-                            <p class="card-text">ISBN: 978-0525509448<br/>Author: Howard Schultz</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Lean-Women-Work-Will-Lead/dp/0385349947/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-12-300.jpg" class="card-img-top" srcset="book/2019/2019-12-300.jpg 1x, book/2019/2019-12.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Lean In for Graduates: With New Chapters by Experts, Including Find Your First Job, Negotiate Your Salary, and Own Who You Are</h5>
-                            <p class="card-text">ISBN: 978-0385353670<br/>Author: Sheryl Sandberg</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Option-Adversity-Building-Resilience-Finding/dp/1524732680/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-13-300.jpg" class="card-img-top" srcset="book/2019/2019-13-300.jpg 1x, book/2019/2019-13.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Option B: Facing Adversity, Building Resilience, and Finding Joy</h5>
-                            <p class="card-text">ISBN: 978-1524732684<br/>Author: Sheryl Sandberg & Adam Grant</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Everything-Store-Jeff-Bezos-Amazon/dp/0316219282/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-14-300.jpg" class="card-img-top" srcset="book/2019/2019-14-300.jpg 1x, book/2019/2019-14.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The Everything Store: Jeff Bezos and the Age of Amazon</h5>
-                            <p class="card-text">ISBN: 978-0593070475<br/>Author: Brad Stone</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Upstarts-B-Stone/dp/0552172588/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-15-300.jpg" class="card-img-top" srcset="book/2019/2019-15-300.jpg 1x, book/2019/2019-15.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The Upstarts: How Uber, Airbnb, and the Killer Companies of the New Silicon Valley Are Changing the World</h5>
-                            <p class="card-text">ISBN: 978-0316388399<br/>Author: Brad Stone</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Measure-What-Matters-Google-Foundation/dp/0525536221/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-16-300.jpg" class="card-img-top" srcset="book/2019/2019-16-300.jpg 1x, book/2019/2019-16.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Measure What Matters: How Google, Bono, and the Gates Foundation Rock the World with OKRs</h5>
-                            <p class="card-text">ISBN: 978-0525536222<br/>Author: John Doerr</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Tim-Cook-Genius-Apple-Level/dp/0525537600/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-17-300.jpg" class="card-img-top" srcset="book/2019/2019-17-300.jpg 1x, book/2019/2019-17.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Tim Cook: The Genius Who Took Apple to the Next Level</h5>
-                            <p class="card-text">ISBN: 978-0525537601<br/>Author: Leander Kahney</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Making-Manager-What-Everyone-Looks/dp/0735219567/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-18-300.jpg" class="card-img-top" srcset="book/2019/2019-18-300.jpg 1x, book/2019/2019-18.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The Making of a Manager: What to Do When Everyone Looks to You</h5>
-                            <p class="card-text">ISBN: 978-0735219564<br/>Julie Zhuo</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Wise-Guy-Lessons-Life-Kawasaki/dp/0525538615/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-19-300.jpg" class="card-img-top" srcset="book/2019/2019-19-300.jpg 1x, book/2019/2019-19.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Wise Guy: Lessons from a Life</h5>
-                            <p class="card-text">ISBN: 978-0525538615<br/>Author: Guy Kawasaki</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Radical-Candor-Revised-Kick-Ass-Humanity/dp/1250235375/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-20-300.jpg" class="card-img-top" srcset="book/2019/2019-20-300.jpg 1x, book/2019/2019-20.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Radical Candor: Be a Kick-Ass Boss Without Losing Your Humanity</h5>
-                            <p class="card-text">ISBN: 978-1250103505<br/>Author:Kim Scott</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/How-Google-Works-Eric-Schmidt/dp/1455582328/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-21-300.jpg" class="card-img-top" srcset="book/2019/2019-21-300.jpg 1x, book/2019/2019-21.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">How Google Works</h5>
-                            <p class="card-text">ISBN: 978-1455582341<br/>Author: Eric Schmidt & Jonathan Rosenberg</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Be-Table-Menu-Singapore-Memoir/dp/9814642061/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-22-300.jpg" class="card-img-top" srcset="book/2019/2019-22-300.jpg 1x, book/2019/2019-22.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Be At the Table or Be on the Menu a Singapore Memoir</h5>
-                            <p class="card-text">ISBN: 978-9814642064<br/>Author: S Jayakumar</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Neither-Civil-Nor-Servant-Philip/dp/9814642630/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-23-300.jpg" class="card-img-top" srcset="book/2019/2019-23-300.jpg 1x, book/2019/2019-23.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Neither Civil Nor Servant : The Philip Yeo Story</h5>
-                            <p class="card-text">ISBN: 978-9814642637<br/>Author: Peh Shing Huei</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Straight-Talk-Startups-Odds-Fundamentals/dp/006286906X/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-24-300.jpg" class="card-img-top" srcset="book/2019/2019-24-300.jpg 1x, book/2019/2019-24.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Straight Talk for Startups: 100 Insider Rules for Beating the Odds--From Mastering the Fundamentals to Selecting Investors, Fundraising, Managing Boards, and Achieving Liquidity</h5>
-                            <p class="card-text">ISBN: 978-0062869067<br/>Author: Randy Komisar & Jantoon Reigersman</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Trillion-Dollar-Coach-Leadership-Playbook/dp/0062839268/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-25-300.jpg" class="card-img-top" srcset="book/2019/2019-25-300.jpg 1x, book/2019/2019-25.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Trillion Dollar Coach: The Leadership Playbook of Silicon Valley's Bill Campbell</h5>
-                            <p class="card-text">ISBN: 978-0062839268<br/>Author: Eric Schmidt, Jonathan Rosenberg & Alan Eagle</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Moment-Lift-Empowering-Women-Changes/dp/1250313570/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-26-300.jpg" class="card-img-top" srcset="book/2019/2019-26-300.jpg 1x, book/2019/2019-26.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The Moment of Lift: How Empowering Women Changes the World</h5>
-                            <p class="card-text">ISBN: 978-1250313577<br/>Author: Melinda Gates</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Girl-Wash-Your-Face-Believing/dp/1400201659/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-27-300.jpg" class="card-img-top" srcset="book/2019/2019-27-300.jpg 1x, book/2019/2019-27.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Girl, Wash Your Face: Stop Believing the Lies About Who You Are so You Can Become Who You Were Meant to Be</h5>
-                            <p class="card-text">ISBN: 978-1400201655<br/>Rachel Hollis</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Girl-Stop-Apologizing-Shame-Free-Embracing/dp/1400209609/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-28-300.jpg" class="card-img-top" srcset="book/2019/2019-28-300.jpg 1x, book/2019/2019-28.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Girl, Stop Apologizing: A Shame-Free Plan for Embracing and Achieving Your Goals</h5>
-                            <p class="card-text">ISBN: 978-1400209606<br/>Author: Rachel Hollis</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Secrets-Sand-Hill-Road-Venture/dp/059308358X/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-29-300.jpg" class="card-img-top" srcset="book/2019/2019-29-300.jpg 1x, book/2019/2019-29.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Secrets of Sand Hill Road: Venture Capital and How to Get It</h5>
-                            <p class="card-text">ISBN: 978-0593083581<br/>Author: Scott Kupor</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Dare-Lead-Brave-Conversations-Hearts/dp/0399592520/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-30-300.jpg" class="card-img-top" srcset="book/2019/2019-30-300.jpg 1x, book/2019/2019-30.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Dare to Lead: Brave Work. Tough Conversations. Whole Hearts.</h5>
-                            <p class="card-text">ISBN: 978-1785042140<br/>Author: Brené Brown</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Ride-Lifetime-Lessons-Learned-Company/dp/0399592091/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-31-300.jpg" class="card-img-top" srcset="book/2019/2019-31-300.jpg 1x, book/2019/2019-31.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The Ride of a Lifetime: Lessons Learned from 15 Years as CEO of the Walt Disney Company</h5>
-                            <p class="card-text">ISBN: 978-0399592096<br/>Author: Robert Iger</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Super-Pumped-Battle-Mike-Isaac/dp/0393358615/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-32-300.jpg" class="card-img-top" srcset="book/2019/2019-32-300.jpg 1x, book/2019/2019-32.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Super Pumped: The Battle for Uber</h5>
-                            <p class="card-text">ISBN: 978-0393652246<br/>Author: Mike Isaac</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Tech-Titans-China-challenging-innovating/dp/1529374499/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-33-300.jpg" class="card-img-top" srcset="book/2019/2019-33-300.jpg 1x, book/2019/2019-33.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Tech Titans of China: How China's Tech Sector is challenging the world by innovating faster, working harder, and going global</h5>
-                            <p class="card-text">ISBN: 978-1529374490<br/>Author: Rebecca A. Fannin</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Tools-Weapons-Promise-Peril-Digital/dp/1984877712/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-34-300.jpg" class="card-img-top" srcset="book/2019/2019-34-300.jpg 1x, book/2019/2019-34.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Tools and Weapons: The Promise and the Peril of the Digital Age</h5>
-                            <p class="card-text">ISBN: 978-1984877710<br/>Author: Brad Smith AND Carol Ann Browne</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/That-Will-Never-Work-Netflix/dp/0316530204/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-35-300.jpg" class="card-img-top" srcset="book/2019/2019-35-300.jpg 1x, book/2019/2019-35.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">That Will Never Work: The Birth of Netflix and the Amazing Life of an Idea</h5>
-                            <p class="card-text">ISBN: 978-0316530200<br/>Author: Marc Randolph</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Love-Men-Vision-Mindful-Masculinity/dp/1250196248/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-36-300.jpg" class="card-img-top" srcset="book/2019/2019-36-300.jpg 1x, book/2019/2019-36.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">For the Love of Men: A New Vision for Mindful Masculinity</h5>
-                            <p class="card-text">ISBN: 978-1250196248<br/>Author: Liz Plank</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Outspoken-Womens-Voices-Silenced-Them/dp/0062879340/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-37-300.jpg" class="card-img-top" srcset="book/2019/2019-37-300.jpg 1x, book/2019/2019-37.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Outspoken: Why Women's Voices Get Silenced and How to Set Them Free</h5>
-                            <p class="card-text">ISBN: 978-0062879349<br/>Author: Veronica Rueckert</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/First-Wave-Loke-Hoe-Yeong-ebook/dp/B07Z5BK8JJ/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-38-300.jpg" class="card-img-top" srcset="book/2019/2019-38-300.jpg 1x, book/2019/2019-38.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The First Wave</h5>
-                            <p class="card-text">ISBN: 978-9814845427<br/>Author: Loke Hoe Yeong</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Diplomacy-Singapore-Experience-S-Jayakumar-ebook/dp/B07XFDYBKM/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-39-300.jpg" class="card-img-top" srcset="book/2019/2019-39-300.jpg 1x, book/2019/2019-39.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Diplomacy: A Singapore Experience</h5>
-                            <p class="card-text">ISBN: 978-9814827546<br/>Author: S Jayakumar</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/PEDRA-BRANCA-STORY-UNHEARD-CASES/dp/9814827150/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-40-300.jpg" class="card-img-top" srcset="book/2019/2019-40-300.jpg 1x, book/2019/2019-40.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Pedra Branca: Story Of The Unheard Cases</h5>
-                            <p class="card-text">ISBN: 978-9814827157<br/>Author: S Jayakumar, Tommy Koh & Lionel Yee</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Alpha-Girls-Upstarts-Silicon-Lifetime/dp/0525573925/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-41-300.jpg" class="card-img-top" srcset="book/2019/2019-41-300.jpg 1x, book/2019/2019-41.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Alpha Girls: The Women Upstarts Who Took On Silicon Valley's Male Culture and Made the Deals of a Lifetime</h5>
-                            <p class="card-text">ISBN: 978-0525573920<br/>Author: Julian Guthrie</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Big-Nine-Thinking-Machines-Humanity/dp/154177373X/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-42-300.jpg" class="card-img-top" srcset="book/2019/2019-42-300.jpg 1x, book/2019/2019-42.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">The Big Nine: How the Tech Titans and Their Thinking Machines Could Warp Humanity</h5>
-                            <p class="card-text">ISBN: 978-1541773752<br/>Author: Amy Webb</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Know-My-Name-Chanel-Miller/dp/0735223726/" target="_blank" rel="noopener noreferrer">
-                            <img decoding="async" src="book/2019/2019-43-300.jpg" class="card-img-top" srcset="book/2019/2019-43-300.jpg 1x, book/2019/2019-43.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Know My Name: A Memoir</h5>
-                            <p class="card-text">ISBN: 978-0735223707<br/>Author: Chanel Miller</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--End 2019 -->
-            <br/>
-            <hr>
-            <br/>
-
-            <!--2018-->
-            <h3>2018</h3>
-            <br/>
-            <div class="row row-cols-2 row-cols-lg-5">
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Brotopia-Breaking-Boys-Silicon-Valley/dp/0525540172/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2018/2018-1-300.jpg" class="card-img-top" srcset="book/2018/2018-1-300.jpg 1x, book/2018/2018-1.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Brotopia : breaking up the boys' club of Silicon Valley</h5>
-                            <p class="card-text">ISBN: 978-0735213531<br/>Author: Emily Chang</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Tall-Order-Chok-Tong-Story/dp/9813276045/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2018/2018-2-300.jpg" class="card-img-top" srcset="book/2018/2018-2-300.jpg 1x, book/2018/2018-2.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Tall order : the Goh Chok Tong story, Volume 1</h5>
-                            <p class="card-text">ISBN: 978-9813276048<br/>Author: Peh Shing Huei</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Hit-Refresh-Rediscover-Microsofts-Everyone/dp/0062959727/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2018/2018-3-300.jpg" class="card-img-top" srcset="book/2018/2018-3-300.jpg 1x, book/2018/2018-3.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Hit refresh : the quest to rediscover Microsoft's soul and imagine a better future for everyone</h5>
-                            <p class="card-text">ISBN: 978-0062959720<br/>Author: Satya Nadella, with Greg Shaw and Jill Tracie Nichols</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/Asking-Why-Kwon-Ping-Ho-ebook/dp/B07QCCFLD1/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2018/2018-4-300.jpg" class="card-img-top" srcset="book/2018/2018-4-300.jpg 1x, book/2018/2018-4.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">Asking Why</h5>
-                            <p class="card-text">ISBN: 978-9814827003<br/>Author: Ho Kwon Ping</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card h-100">
-                        <a href="https://www.amazon.com/AI-Superpowers-China-Silicon-Valley/dp/132854639X/" target="_blank" rel="noopener noreferrer">
-                        <img decoding="async" src="book/2018/2018-5-300.jpg" class="card-img-top" srcset="book/2018/2018-5-300.jpg 1x, book/2018/2018-5.jpg 2x" sizes="(min-width: 992px) 20vw, 45vw" alt="Book cover" loading="lazy"/>
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title">AI superpowers : China, Silicon Valley, and the new world order</h5>
-                            <p class="card-text">ISBN: 978-1328546395<br/>Author: Kai-Fu Lee</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!--End 2018 -->
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Build: An Unorthodox Guide to Making Things Worth Making" data-author="Tony Fadell" data-isbn="978-0063046061">
+        <div class="book-media"><a href="https://www.amazon.sg/Build-Unorthodox-Guide-Making-Things/dp/0063046067" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2022/2022-3-300.webp 1x, book/2022/2022-3.webp 2x" />
+        <img decoding="async" src="book/2022/2022-3-300.jpg" class="book-cover" srcset="book/2022/2022-3-300.jpg 1x, book/2022/2022-3.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Build: An Unorthodox Guide to Making Things Worth Making" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Build: An Unorthodox Guide to Making Things Worth Making</h3>
+          <p class="book-author">Tony Fadell</p>
+          <p class="book-isbn">ISBN 978-0063046061</p>
+          
         </div>
-    </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="After Steve: How Apple Became a Trillion-Dollar Company and Lost Its Soul" data-author="Tripp Mickle" data-isbn="978-0063009813">
+        <div class="book-media"><a href="https://www.amazon.sg/After-Steve-Became-Trillion-Dollar-Company/dp/0063009811/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2022/2022-4-300.webp 1x, book/2022/2022-4.webp 2x" />
+        <img decoding="async" src="book/2022/2022-4-300.jpg" class="book-cover" srcset="book/2022/2022-4-300.jpg 1x, book/2022/2022-4.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of After Steve: How Apple Became a Trillion-Dollar Company and Lost Its Soul" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>After Steve: How Apple Became a Trillion-Dollar Company and Lost Its Soul</h3>
+          <p class="book-author">Tripp Mickle</p>
+          <p class="book-isbn">ISBN 978-0063009813</p>
+          <div class="chip-row"><span class="chip">Business</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business,biography" data-title="Play Nice but Win: A CEO&#39;s Journey from Founder to Leader" data-author="Michael Dell &amp; James Kaplan" data-isbn="978-0593087749">
+        <div class="book-media"><a href="https://www.amazon.sg/Play-Nice-but-Win-Journey/dp/0593087747/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2022/2022-5-300.webp 1x, book/2022/2022-5.webp 2x" />
+        <img decoding="async" src="book/2022/2022-5-300.jpg" class="book-cover" srcset="book/2022/2022-5-300.jpg 1x, book/2022/2022-5.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Play Nice but Win: A CEO&#39;s Journey from Founder to Leader" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Play Nice but Win: A CEO&#39;s Journey from Founder to Leader</h3>
+          <p class="book-author">Michael Dell &amp; James Kaplan</p>
+          <p class="book-isbn">ISBN 978-0593087749</p>
+          <div class="chip-row"><span class="chip">Business</span><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="THE LAST FOOLS: 8 IMMORTALS OF LEE KUAN YEW" data-author="Peh Shing Huei" data-isbn="978-9811843631">
+        <div class="book-media"><a href="https://www.amazon.sg/LAST-FOOLS-IMMORTALS-LEE-KUAN/dp/9811843635" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2022/2022-6-300.webp 1x, book/2022/2022-6.webp 2x" />
+        <img decoding="async" src="book/2022/2022-6-300.jpg" class="book-cover" srcset="book/2022/2022-6-300.jpg 1x, book/2022/2022-6.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of THE LAST FOOLS: 8 IMMORTALS OF LEE KUAN YEW" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>THE LAST FOOLS: 8 IMMORTALS OF LEE KUAN YEW</h3>
+          <p class="book-author">Peh Shing Huei</p>
+          <p class="book-isbn">ISBN 978-9811843631</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="The Nominated Member of Parliament Scheme: Are Unelected Voices Still Necessary in Parliament? — A Collection of Perspectives and Personal Reflections by NMPs" data-author="Anthea Ong" data-isbn="978-9811258428">
+        <div class="book-media"><a href="https://epigrambookshop.sg/products/the-nominated-member-of-parliament-scheme-are-unelected-voices-still-necessary-in-parliament-a-collection-of-perspectives-and-personal-reflections-by-nmps" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2022/2022-7-300.webp 1x, book/2022/2022-7.webp 2x" />
+        <img decoding="async" src="book/2022/2022-7-300.jpg" class="book-cover" srcset="book/2022/2022-7-300.jpg 1x, book/2022/2022-7.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Nominated Member of Parliament Scheme: Are Unelected Voices Still Necessary in Parliament? — A Collection of Perspectives and Personal Reflections by NMPs" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Nominated Member of Parliament Scheme: Are Unelected Voices Still Necessary in Parliament? — A Collection of Perspectives and Personal Reflections by NMPs</h3>
+          <p class="book-author">Anthea Ong</p>
+          <p class="book-isbn">ISBN 978-9811258428</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Like, Comment, Subscribe: Inside YouTube&#39;s Chaotic Rise to World Domination" data-author="Mark Bergen" data-isbn="978-0593296349">
+        <div class="book-media"><a href="https://www.amazon.sg/Like-Comment-Subscribe-YouTubes-Domination/dp/0593296346" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2022/2022-8-300.webp 1x, book/2022/2022-8.webp 2x" />
+        <img decoding="async" src="book/2022/2022-8-300.jpg" class="book-cover" srcset="book/2022/2022-8-300.jpg 1x, book/2022/2022-8.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Like, Comment, Subscribe: Inside YouTube&#39;s Chaotic Rise to World Domination" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Like, Comment, Subscribe: Inside YouTube&#39;s Chaotic Rise to World Domination</h3>
+          <p class="book-author">Mark Bergen</p>
+          <p class="book-isbn">ISBN 978-0593296349</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="A History of the People’s Action Party, 1985-2021" data-author="Shashi Jayakumar" data-isbn="978-9813251281">
+        <div class="book-media"><a href="https://www.amazon.com/History-Peoples-Action-Party-1985-2015/dp/981325128X" target="_blank" rel="noopener noreferrer">
+      <div class="book-placeholder">
+        <p class="book-placeholder-title">A History of the People’s Action Party, 1985-2021</p>
+        <p class="book-placeholder-author">Shashi Jayakumar</p>
+        <p class="book-placeholder-isbn">ISBN 978-9813251281</p>
+      </div></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>A History of the People’s Action Party, 1985-2021</h3>
+          <p class="book-author">Shashi Jayakumar</p>
+          <p class="book-isbn">ISBN 978-9813251281</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="A History of the People’s Action Party, 1985-2021" data-author="Shashi Jayakumar" data-isbn="978-9813251281">
+        <div class="book-media"><a href="https://www.amazon.com/History-Peoples-Action-Party-1985-2015/dp/981325128X" target="_blank" rel="noopener noreferrer">
+      <div class="book-placeholder">
+        <p class="book-placeholder-title">A History of the People’s Action Party, 1985-2021</p>
+        <p class="book-placeholder-author">Shashi Jayakumar</p>
+        <p class="book-placeholder-isbn">ISBN 978-9813251281</p>
+      </div></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>A History of the People’s Action Party, 1985-2021</h3>
+          <p class="book-author">Shashi Jayakumar</p>
+          <p class="book-isbn">ISBN 978-9813251281</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="How to Avoid a Climate Disaster: The Solutions We Have and the Breakthroughs We Need" data-author="Bill Gates" data-isbn="978-0241448304">
+        <div class="book-media"><a href="https://www.amazon.com/How-Avoid-Climate-Disaster-Breakthroughs/dp/0385546130/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2021/2021-1-300.webp 1x, book/2021/2021-1.webp 2x" />
+        <img decoding="async" src="book/2021/2021-1-300.jpg" class="book-cover" srcset="book/2021/2021-1-300.jpg 1x, book/2021/2021-1.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of How to Avoid a Climate Disaster: The Solutions We Have and the Breakthroughs We Need" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>How to Avoid a Climate Disaster: The Solutions We Have and the Breakthroughs We Need</h3>
+          <p class="book-author">Bill Gates</p>
+          <p class="book-isbn">ISBN 978-0241448304</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Standing Tall: The Goh Chok Tong Years" data-author="Shing Huei Peh" data-isbn="978-9811234392">
+        <div class="book-media"><a href="https://www.amazon.com/Standing-Tall-Chok-Tong-Years/dp/9811234396/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2021/2021-2-300.webp 1x, book/2021/2021-2.webp 2x" />
+        <img decoding="async" src="book/2021/2021-2-300.jpg" class="book-cover" srcset="book/2021/2021-2-300.jpg 1x, book/2021/2021-2.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Standing Tall: The Goh Chok Tong Years" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Standing Tall: The Goh Chok Tong Years</h3>
+          <p class="book-author">Shing Huei Peh</p>
+          <p class="book-isbn">ISBN 978-9811234392</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Amazon Unbound: Jeff Bezos and the Invention of a Global Empire" data-author="Brad Stone" data-isbn="978-1982132613">
+        <div class="book-media"><a href="https://www.amazon.sg/Amazon-Unbound-Invention-Global-Empire/dp/1982132612" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2021/2021-3-300.webp 1x, book/2021/2021-3.webp 2x" />
+        <img decoding="async" src="book/2021/2021-3-300.jpg" class="book-cover" srcset="book/2021/2021-3-300.jpg 1x, book/2021/2021-3.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Amazon Unbound: Jeff Bezos and the Invention of a Global Empire" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Amazon Unbound: Jeff Bezos and the Invention of a Global Empire</h3>
+          <p class="book-author">Brad Stone</p>
+          <p class="book-isbn">ISBN 978-1982132613</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="Masters of Scale: Ten lessons on business from the world’s greatest entrepreneurs" data-author="June Cohen, Deron Triff, Reid Hoffman" data-isbn="978-1787634602">
+        <div class="book-media"><a href="https://www.amazon.sg/Masters-Scale-business-greatest-entrepreneurs/dp/1787634604" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2021/2021-4-300.webp 1x, book/2021/2021-4.webp 2x" />
+        <img decoding="async" src="book/2021/2021-4-300.jpg" class="book-cover" srcset="book/2021/2021-4-300.jpg 1x, book/2021/2021-4.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Masters of Scale: Ten lessons on business from the world’s greatest entrepreneurs" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Masters of Scale: Ten lessons on business from the world’s greatest entrepreneurs</h3>
+          <p class="book-author">June Cohen, Deron Triff, Reid Hoffman</p>
+          <p class="book-isbn">ISBN 978-1787634602</p>
+          <div class="chip-row"><span class="chip">Business</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Bold Vision: The Untold Story of Singapore&#39;s Reserves and Its Sovereign Wealth Fund" data-author="Freddy Orchard" data-isbn="978-9814901796">
+        <div class="book-media"><a href="https://singapore.kinokuniya.com/bw/9789814901796" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2021/2021-5-300.webp 1x, book/2021/2021-5.webp 2x" />
+        <img decoding="async" src="book/2021/2021-5-300.jpg" class="book-cover" srcset="book/2021/2021-5-300.jpg 1x, book/2021/2021-5.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Bold Vision: The Untold Story of Singapore&#39;s Reserves and Its Sovereign Wealth Fund" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Bold Vision: The Untold Story of Singapore&#39;s Reserves and Its Sovereign Wealth Fund</h3>
+          <p class="book-author">Freddy Orchard</p>
+          <p class="book-isbn">ISBN 978-9814901796</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Invention: A Life" data-author="James Dyson" data-isbn="978-1982188429">
+        <div class="book-media"><a href="https://www.amazon.com/Invention-Life-James-Dyson/dp/1982188421/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2021/2021-6-300.webp 1x, book/2021/2021-6.webp 2x" />
+        <img decoding="async" src="book/2021/2021-6-300.jpg" class="book-cover" srcset="book/2021/2021-6-300.jpg 1x, book/2021/2021-6.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Invention: A Life" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Invention: A Life</h3>
+          <p class="book-author">James Dyson</p>
+          <p class="book-isbn">ISBN 978-1982188429</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="A History of the People’s Action Party, 1985-2021" data-author="Shashi Jayakumar" data-isbn="978-9813251281">
+        <div class="book-media"><a href="https://www.amazon.com/History-Peoples-Action-Party-1985-2015/dp/981325128X" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2021/2021-7-300.webp 1x, book/2021/2021-7.webp 2x" />
+        <img decoding="async" src="book/2021/2021-7-300.jpg" class="book-cover" srcset="book/2021/2021-7-300.jpg 1x, book/2021/2021-7.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of A History of the People’s Action Party, 1985-2021" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>A History of the People’s Action Party, 1985-2021</h3>
+          <p class="book-author">Shashi Jayakumar</p>
+          <p class="book-isbn">ISBN 978-9813251281</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Girls &amp; Sex: Navigating the Complicated New Landscape" data-author="Peggy Orenstein" data-isbn="978-0062209740">
+        <div class="book-media"><a href="https://www.amazon.com/Girls-Sex-Navigating-Complicated-Landscape/dp/0062209728/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-1-300.webp 1x, book/2020/2020-1.webp 2x" />
+        <img decoding="async" src="book/2020/2020-1-300.jpg" class="book-cover" srcset="book/2020/2020-1-300.jpg 1x, book/2020/2020-1.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Girls &amp; Sex: Navigating the Complicated New Landscape" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Girls &amp; Sex: Navigating the Complicated New Landscape</h3>
+          <p class="book-author">Peggy Orenstein</p>
+          <p class="book-isbn">ISBN 978-0062209740</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="This is what Inequality Looks Like" data-author="Teo You Yenn" data-isbn="978-9811437496">
+        <div class="book-media"><a href="https://www.amazon.com/This-What-Inequality-Looks-Like/dp/9811405956/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-2-300.webp 1x, book/2020/2020-2.webp 2x" />
+        <img decoding="async" src="book/2020/2020-2-300.jpg" class="book-cover" srcset="book/2020/2020-2-300.jpg 1x, book/2020/2020-2.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of This is what Inequality Looks Like" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>This is what Inequality Looks Like</h3>
+          <p class="book-author">Teo You Yenn</p>
+          <p class="book-isbn">ISBN 978-9811437496</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Sex Object: A Memoir" data-author="Jessica Valenti" data-isbn="978-0062435095">
+        <div class="book-media"><a href="https://www.amazon.com/Sex-Object-Memoir-Jessica-Valenti-ebook/dp/B015CYFEX6/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-3-300.webp 1x, book/2020/2020-3.webp 2x" />
+        <img decoding="async" src="book/2020/2020-3-300.jpg" class="book-cover" srcset="book/2020/2020-3-300.jpg 1x, book/2020/2020-3.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Sex Object: A Memoir" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Sex Object: A Memoir</h3>
+          <p class="book-author">Jessica Valenti</p>
+          <p class="book-isbn">ISBN 978-0062435095</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="My Story" data-author="Elizabeth Smart" data-isbn="978-1250055453">
+        <div class="book-media"><a href="https://www.amazon.com/My-Story-Elizabeth-Smart/dp/1250055458/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-4-300.webp 1x, book/2020/2020-4.webp 2x" />
+        <img decoding="async" src="book/2020/2020-4-300.jpg" class="book-cover" srcset="book/2020/2020-4-300.jpg 1x, book/2020/2020-4.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of My Story" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>My Story</h3>
+          <p class="book-author">Elizabeth Smart</p>
+          <p class="book-isbn">ISBN 978-1250055453</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Girls Will be Girls: Dressing Up, Playing Parts and Daring to Act Differently" data-author="Emer O’Toole" data-isbn="978-1409148746">
+        <div class="book-media"><a href="https://www.amazon.com/Girls-Will-Dressing-Playing-Differently/dp/1409148742/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-5-300.webp 1x, book/2020/2020-5.webp 2x" />
+        <img decoding="async" src="book/2020/2020-5-300.jpg" class="book-cover" srcset="book/2020/2020-5-300.jpg 1x, book/2020/2020-5.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Girls Will be Girls: Dressing Up, Playing Parts and Daring to Act Differently" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Girls Will be Girls: Dressing Up, Playing Parts and Daring to Act Differently</h3>
+          <p class="book-author">Emer O’Toole</p>
+          <p class="book-isbn">ISBN 978-1409148746</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Scarred: The True Story of How I Escaped NXIVM, the Cult that Bound My Life (True Crime Memoir, Cult Books)" data-author="Sarah Edmondson with Kristine Gasbarre" data-isbn="978-1452184265">
+        <div class="book-media"><a href="https://www.amazon.com/Scarred-Story-Escaped-NXIVM-Memoir/dp/1452184267/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-6-300.webp 1x, book/2020/2020-6.webp 2x" />
+        <img decoding="async" src="book/2020/2020-6-300.jpg" class="book-cover" srcset="book/2020/2020-6-300.jpg 1x, book/2020/2020-6.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Scarred: The True Story of How I Escaped NXIVM, the Cult that Bound My Life (True Crime Memoir, Cult Books)" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Scarred: The True Story of How I Escaped NXIVM, the Cult that Bound My Life (True Crime Memoir, Cult Books)</h3>
+          <p class="book-author">Sarah Edmondson with Kristine Gasbarre</p>
+          <p class="book-isbn">ISBN 978-1452184265</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Good Habits, Bad Habits: The Science of Making Positive Changes That Stick" data-author="Wendy Wood" data-isbn="978-1250159076">
+        <div class="book-media"><a href="https://www.amazon.com/Good-Habits-Bad-Science-Positive/dp/1250159091/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-7-300.webp 1x, book/2020/2020-7.webp 2x" />
+        <img decoding="async" src="book/2020/2020-7-300.jpg" class="book-cover" srcset="book/2020/2020-7-300.jpg 1x, book/2020/2020-7.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Good Habits, Bad Habits: The Science of Making Positive Changes That Stick" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Good Habits, Bad Habits: The Science of Making Positive Changes That Stick</h3>
+          <p class="book-author">Wendy Wood</p>
+          <p class="book-isbn">ISBN 978-1250159076</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Surrounded by Idiots: The Four Types of Human Behaviour (or, How to Understand Those Who Cannot Be Understood)" data-author="Thomas Erikson" data-isbn="978-1785042188">
+        <div class="book-media"><a href="https://www.amazon.com/Surrounded-Idiots-Behavior-Effectively-Communicate/dp/1250179939/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-8-300.webp 1x, book/2020/2020-8.webp 2x" />
+        <img decoding="async" src="book/2020/2020-8-300.jpg" class="book-cover" srcset="book/2020/2020-8-300.jpg 1x, book/2020/2020-8.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Surrounded by Idiots: The Four Types of Human Behaviour (or, How to Understand Those Who Cannot Be Understood)" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Surrounded by Idiots: The Four Types of Human Behaviour (or, How to Understand Those Who Cannot Be Understood)</h3>
+          <p class="book-author">Thomas Erikson</p>
+          <p class="book-isbn">ISBN 978-1785042188</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Fifty Secrets of Singapore’s Success" data-author="Tommy Koh" data-isbn="978-9814827751">
+        <div class="book-media"><a href="https://www.amazon.com/FIFTY-SECRETS-SINGAPORES-SUCCESS-TOMMY/dp/9814827754/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-9-300.webp 1x, book/2020/2020-9.webp 2x" />
+        <img decoding="async" src="book/2020/2020-9-300.jpg" class="book-cover" srcset="book/2020/2020-9-300.jpg 1x, book/2020/2020-9.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Fifty Secrets of Singapore’s Success" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Fifty Secrets of Singapore’s Success</h3>
+          <p class="book-author">Tommy Koh</p>
+          <p class="book-isbn">ISBN 978-9814827751</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="data,business" data-title="Trailblazer: The Power of Business as the Greatest Platform for Change" data-author="Marc Benioff &amp; Monica Langley" data-isbn="978-1984825193">
+        <div class="book-media"><a href="https://www.amazon.com/Trailblazer-Business-Greatest-Platform-Change/dp/1984825194/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-10-300.webp 1x, book/2020/2020-10.webp 2x" />
+        <img decoding="async" src="book/2020/2020-10-300.jpg" class="book-cover" srcset="book/2020/2020-10-300.jpg 1x, book/2020/2020-10.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Trailblazer: The Power of Business as the Greatest Platform for Change" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Trailblazer: The Power of Business as the Greatest Platform for Change</h3>
+          <p class="book-author">Marc Benioff &amp; Monica Langley</p>
+          <p class="book-isbn">ISBN 978-1984825193</p>
+          <div class="chip-row"><span class="chip">Data</span><span class="chip">Business</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="No Filter: The Inside Story of Instagram" data-author="Sarah Frier" data-isbn="978-1982126803">
+        <div class="book-media"><a href="https://www.amazon.com/No-Filter-Inside-Story-Instagram/dp/1982126809/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-11-300.webp 1x, book/2020/2020-11.webp 2x" />
+        <img decoding="async" src="book/2020/2020-11-300.jpg" class="book-cover" srcset="book/2020/2020-11-300.jpg 1x, book/2020/2020-11.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of No Filter: The Inside Story of Instagram" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>No Filter: The Inside Story of Instagram</h3>
+          <p class="book-author">Sarah Frier</p>
+          <p class="book-isbn">ISBN 978-1982126803</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Whistleblower: My Journey to Silicon Valley and Fight for Justice at Uber" data-author="Susan Fowler" data-isbn="978-0525560128">
+        <div class="book-media"><a href="https://www.amazon.com/Whistleblower-Journey-Silicon-Valley-Justice/dp/0525560122/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-12-300.webp 1x, book/2020/2020-12.webp 2x" />
+        <img decoding="async" src="book/2020/2020-12-300.jpg" class="book-cover" srcset="book/2020/2020-12-300.jpg 1x, book/2020/2020-12.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Whistleblower: My Journey to Silicon Valley and Fight for Justice at Uber" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Whistleblower: My Journey to Silicon Valley and Fight for Justice at Uber</h3>
+          <p class="book-author">Susan Fowler</p>
+          <p class="book-isbn">ISBN 978-0525560128</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Start by Believing: Larry Nassar&#39;s Crimes, the Institutions that Enabled Him, and the Brave Women Who Stopped a Monster" data-author="John Barr &amp; Dan Murphy" data-isbn="978-0316532150">
+        <div class="book-media"><a href="https://www.amazon.com/Start-Believing-Nassars-Institutions-Enabled/dp/0316532150/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-13-300.webp 1x, book/2020/2020-13.webp 2x" />
+        <img decoding="async" src="book/2020/2020-13-300.jpg" class="book-cover" srcset="book/2020/2020-13-300.jpg 1x, book/2020/2020-13.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Start by Believing: Larry Nassar&#39;s Crimes, the Institutions that Enabled Him, and the Brave Women Who Stopped a Monster" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Start by Believing: Larry Nassar&#39;s Crimes, the Institutions that Enabled Him, and the Brave Women Who Stopped a Monster</h3>
+          <p class="book-author">John Barr &amp; Dan Murphy</p>
+          <p class="book-isbn">ISBN 978-0316532150</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business,biography" data-title="Samsung Rising: The Inside Story of the South Korean Giant That Set Out to Beat Apple and Conquer Tech" data-author="Geoffrey Cain" data-isbn="978-1101907252">
+        <div class="book-media"><a href="https://www.amazon.com/Bite-Apple-Samsungs-Strategy-Conquer/dp/1101907258/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-14-300.webp 1x, book/2020/2020-14.webp 2x" />
+        <img decoding="async" src="book/2020/2020-14-300.jpg" class="book-cover" srcset="book/2020/2020-14-300.jpg 1x, book/2020/2020-14.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Samsung Rising: The Inside Story of the South Korean Giant That Set Out to Beat Apple and Conquer Tech" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Samsung Rising: The Inside Story of the South Korean Giant That Set Out to Beat Apple and Conquer Tech</h3>
+          <p class="book-author">Geoffrey Cain</p>
+          <p class="book-isbn">ISBN 978-1101907252</p>
+          <div class="chip-row"><span class="chip">Business</span><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Governing : A Singapore Perspective" data-author="S. Jayakumar" data-isbn="978-9814827911">
+        <div class="book-media"><a href="https://www.amazon.com/GOVERNING-SINGAPORE-PERSPECTIVE-S-JAYAKUMAR/dp/9814827916/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-15-300.webp 1x, book/2020/2020-15.webp 2x" />
+        <img decoding="async" src="book/2020/2020-15-300.jpg" class="book-cover" srcset="book/2020/2020-15-300.jpg 1x, book/2020/2020-15.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Governing : A Singapore Perspective" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Governing : A Singapore Perspective</h3>
+          <p class="book-author">S. Jayakumar</p>
+          <p class="book-isbn">ISBN 978-9814827911</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="A Promised Land" data-author="Barack Obama" data-isbn="978-1524763169">
+        <div class="book-media"><a href="https://www.amazon.com/Promised-Land-Barack-Obama/dp/1524763160/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-16-300.webp 1x, book/2020/2020-16.webp 2x" />
+        <img decoding="async" src="book/2020/2020-16-300.jpg" class="book-cover" srcset="book/2020/2020-16-300.jpg 1x, book/2020/2020-16.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of A Promised Land" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>A Promised Land</h3>
+          <p class="book-author">Barack Obama</p>
+          <p class="book-isbn">ISBN 978-1524763169</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Lee Kuan Yew : The Grand Master&#39;s Insights on China, the United States, and the World" data-author="Allison and Blackwill" data-isbn="978-0262539500">
+        <div class="book-media"><a href="https://www.amazon.com/Lee-Kuan-Yew-Insights-international/dp/0262019124/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-17-300.webp 1x, book/2020/2020-17.webp 2x" />
+        <img decoding="async" src="book/2020/2020-17-300.jpg" class="book-cover" srcset="book/2020/2020-17-300.jpg 1x, book/2020/2020-17.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Lee Kuan Yew : The Grand Master&#39;s Insights on China, the United States, and the World" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Lee Kuan Yew : The Grand Master&#39;s Insights on China, the United States, and the World</h3>
+          <p class="book-author">Allison and Blackwill</p>
+          <p class="book-isbn">ISBN 978-0262539500</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Billion Dollar Loser: The Epic Rise and Spectacular Fall of Adam Neumann and WeWork" data-author="Reeves Wiedeman" data-isbn="978-0316461368">
+        <div class="book-media"><a href="https://www.amazon.com/Billion-Dollar-Loser-Spectacular-Neumann/dp/0316461369/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2020/2020-18-300.webp 1x, book/2020/2020-18.webp 2x" />
+        <img decoding="async" src="book/2020/2020-18-300.jpg" class="book-cover" srcset="book/2020/2020-18-300.jpg 1x, book/2020/2020-18.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Billion Dollar Loser: The Epic Rise and Spectacular Fall of Adam Neumann and WeWork" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Billion Dollar Loser: The Epic Rise and Spectacular Fall of Adam Neumann and WeWork</h3>
+          <p class="book-author">Reeves Wiedeman</p>
+          <p class="book-isbn">ISBN 978-0316461368</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="Connect the dots : leadership lessons in a start-up world" data-author="John Chambers with Diane Brady]" data-isbn="0008297037">
+        <div class="book-media"><a href="https://www.amazon.com/Connecting-Dots-Lessons-Leadership-Startup/dp/031648654X/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-1-300.webp 1x, book/2019/2019-1.webp 2x" />
+        <img decoding="async" src="book/2019/2019-1-300.jpg" class="book-cover" srcset="book/2019/2019-1-300.jpg 1x, book/2019/2019-1.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Connect the dots : leadership lessons in a start-up world" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Connect the dots : leadership lessons in a start-up world</h3>
+          <p class="book-author">John Chambers with Diane Brady]</p>
+          <p class="book-isbn">ISBN 0008297037</p>
+          <div class="chip-row"><span class="chip">Business</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Bloomberg by Bloomberg" data-author="Michael R. Bloomberg" data-isbn="978-1119554264">
+        <div class="book-media"><a href="https://www.amazon.com/Bloomberg-Revised-Updated-Michael-R/dp/1119554268/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-2-300.webp 1x, book/2019/2019-2.webp 2x" />
+        <img decoding="async" src="book/2019/2019-2-300.jpg" class="book-cover" srcset="book/2019/2019-2-300.jpg 1x, book/2019/2019-2.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Bloomberg by Bloomberg" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Bloomberg by Bloomberg</h3>
+          <p class="book-author">Michael R. Bloomberg</p>
+          <p class="book-isbn">ISBN 978-1119554264</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Transforming NOKIA: The Power of Paranoid Optimism to Lead Through Colossal Change" data-author="Risto Siilasmaa with Catherine Fredman" data-isbn="978-1260128727">
+        <div class="book-media"><a href="https://www.amazon.com/Transforming-NOKIA-Paranoid-Optimism-Colossal/dp/1260128725/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-3-300.webp 1x, book/2019/2019-3.webp 2x" />
+        <img decoding="async" src="book/2019/2019-3-300.jpg" class="book-cover" srcset="book/2019/2019-3-300.jpg 1x, book/2019/2019-3.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Transforming NOKIA: The Power of Paranoid Optimism to Lead Through Colossal Change" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Transforming NOKIA: The Power of Paranoid Optimism to Lead Through Colossal Change</h3>
+          <p class="book-author">Risto Siilasmaa with Catherine Fredman</p>
+          <p class="book-isbn">ISBN 978-1260128727</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="data,biography" data-title="The Airbnb Story: How Three Ordinary Guys Disrupted an Industry, Made Billions . . . and Created Plenty of Controversy" data-author="Leigh Gallagher" data-isbn="978-0544952669">
+        <div class="book-media"><a href="https://www.amazon.com/Airbnb-Story-Ordinary-Disrupted-Controversy/dp/0544952669/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-4-300.webp 1x, book/2019/2019-4.webp 2x" />
+        <img decoding="async" src="book/2019/2019-4-300.jpg" class="book-cover" srcset="book/2019/2019-4-300.jpg 1x, book/2019/2019-4.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Airbnb Story: How Three Ordinary Guys Disrupted an Industry, Made Billions . . . and Created Plenty of Controversy" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Airbnb Story: How Three Ordinary Guys Disrupted an Industry, Made Billions . . . and Created Plenty of Controversy</h3>
+          <p class="book-author">Leigh Gallagher</p>
+          <p class="book-isbn">ISBN 978-0544952669</p>
+          <div class="chip-row"><span class="chip">Data</span><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business,biography" data-title="The Google Story (2018 Updated Edition): Inside the Hottest Business, Media, and Technology Success of Our Time" data-author="David A. Vise and Mark Malseed" data-isbn="978-0385342735">
+        <div class="book-media"><a href="https://www.amazon.com/Google-Story-2018-Updated-Technology/dp/038534273X/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-5-300.webp 1x, book/2019/2019-5.webp 2x" />
+        <img decoding="async" src="book/2019/2019-5-300.jpg" class="book-cover" srcset="book/2019/2019-5-300.jpg 1x, book/2019/2019-5.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Google Story (2018 Updated Edition): Inside the Hottest Business, Media, and Technology Success of Our Time" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Google Story (2018 Updated Edition): Inside the Hottest Business, Media, and Technology Success of Our Time</h3>
+          <p class="book-author">David A. Vise and Mark Malseed</p>
+          <p class="book-isbn">ISBN 978-0385342735</p>
+          <div class="chip-row"><span class="chip">Business</span><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="The Four: The Hidden DNA of Amazon, Apple, Facebook and Google" data-author="Scott Galoway" data-isbn="978-0552173438">
+        <div class="book-media"><a href="https://www.amazon.com/Four-Hidden-Amazon-Facebook-Google/dp/0735213658/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-6-300.webp 1x, book/2019/2019-6.webp 2x" />
+        <img decoding="async" src="book/2019/2019-6-300.jpg" class="book-cover" srcset="book/2019/2019-6-300.jpg 1x, book/2019/2019-6.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Four: The Hidden DNA of Amazon, Apple, Facebook and Google" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Four: The Hidden DNA of Amazon, Apple, Facebook and Google</h3>
+          <p class="book-author">Scott Galoway</p>
+          <p class="book-isbn">ISBN 978-0552173438</p>
+          <div class="chip-row"><span class="chip">Business</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Onward: How Starbucks Fought for its Life without Losing its Soul" data-author="Howard Schultz with Joanne Gordon" data-isbn="978-1605292885">
+        <div class="book-media"><a href="https://www.amazon.com/Onward-Starbucks-Fought-without-Losing/dp/1605292885/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-7-300.webp 1x, book/2019/2019-7.webp 2x" />
+        <img decoding="async" src="book/2019/2019-7-300.jpg" class="book-cover" srcset="book/2019/2019-7-300.jpg 1x, book/2019/2019-7.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Onward: How Starbucks Fought for its Life without Losing its Soul" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Onward: How Starbucks Fought for its Life without Losing its Soul</h3>
+          <p class="book-author">Howard Schultz with Joanne Gordon</p>
+          <p class="book-isbn">ISBN 978-1605292885</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Winning" data-author="" data-isbn="978-0060759384">
+        <div class="book-media"><a href="https://www.amazon.com/Winning-Jack-Welch/dp/0060753943/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-8-300.webp 1x, book/2019/2019-8.webp 2x" />
+        <img decoding="async" src="book/2019/2019-8-300.jpg" class="book-cover" srcset="book/2019/2019-8-300.jpg 1x, book/2019/2019-8.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Winning" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Winning</h3>
+          <p class="book-author"></p>
+          <p class="book-isbn">ISBN 978-0060759384</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Lehman Brothers: A Crisis of Value" data-author="Oonagh McDonald" data-isbn="978-1784993405">
+        <div class="book-media"><a href="https://www.amazon.com/Lehman-Brothers-Crisis-Oonagh-McDonald/dp/1784993409/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-9-300.webp 1x, book/2019/2019-9.webp 2x" />
+        <img decoding="async" src="book/2019/2019-9-300.jpg" class="book-cover" srcset="book/2019/2019-9-300.jpg 1x, book/2019/2019-9.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Lehman Brothers: A Crisis of Value" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Lehman Brothers: A Crisis of Value</h3>
+          <p class="book-author">Oonagh McDonald</p>
+          <p class="book-isbn">ISBN 978-1784993405</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="Jony Ive: The Genius Behind Apple’s Greatest Products" data-author="Leander Kahney" data-isbn="978-1591846178">
+        <div class="book-media"><a href="https://www.amazon.com/Jony-Ive-Genius-Greatest-Products/dp/1591847060/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-10-300.webp 1x, book/2019/2019-10.webp 2x" />
+        <img decoding="async" src="book/2019/2019-10-300.jpg" class="book-cover" srcset="book/2019/2019-10-300.jpg 1x, book/2019/2019-10.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Jony Ive: The Genius Behind Apple’s Greatest Products" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Jony Ive: The Genius Behind Apple’s Greatest Products</h3>
+          <p class="book-author">Leander Kahney</p>
+          <p class="book-isbn">ISBN 978-1591846178</p>
+          <div class="chip-row"><span class="chip">Business</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="From the Ground up: A Journey to Reimagine the Promise of America" data-author="Howard Schultz" data-isbn="978-0525509448">
+        <div class="book-media"><a href="https://www.amazon.com/Ground-Up-Journey-Reimagine-Promise/dp/0525509445/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-11-300.webp 1x, book/2019/2019-11.webp 2x" />
+        <img decoding="async" src="book/2019/2019-11-300.jpg" class="book-cover" srcset="book/2019/2019-11-300.jpg 1x, book/2019/2019-11.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of From the Ground up: A Journey to Reimagine the Promise of America" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>From the Ground up: A Journey to Reimagine the Promise of America</h3>
+          <p class="book-author">Howard Schultz</p>
+          <p class="book-isbn">ISBN 978-0525509448</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Lean In for Graduates: With New Chapters by Experts, Including Find Your First Job, Negotiate Your Salary, and Own Who You Are" data-author="Sheryl Sandberg" data-isbn="978-0385353670">
+        <div class="book-media"><a href="https://www.amazon.com/Lean-Women-Work-Will-Lead/dp/0385349947/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-12-300.webp 1x, book/2019/2019-12.webp 2x" />
+        <img decoding="async" src="book/2019/2019-12-300.jpg" class="book-cover" srcset="book/2019/2019-12-300.jpg 1x, book/2019/2019-12.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Lean In for Graduates: With New Chapters by Experts, Including Find Your First Job, Negotiate Your Salary, and Own Who You Are" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Lean In for Graduates: With New Chapters by Experts, Including Find Your First Job, Negotiate Your Salary, and Own Who You Are</h3>
+          <p class="book-author">Sheryl Sandberg</p>
+          <p class="book-isbn">ISBN 978-0385353670</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Option B: Facing Adversity, Building Resilience, and Finding Joy" data-author="Sheryl Sandberg &amp; Adam Grant" data-isbn="978-1524732684">
+        <div class="book-media"><a href="https://www.amazon.com/Option-Adversity-Building-Resilience-Finding/dp/1524732680/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-13-300.webp 1x, book/2019/2019-13.webp 2x" />
+        <img decoding="async" src="book/2019/2019-13-300.jpg" class="book-cover" srcset="book/2019/2019-13-300.jpg 1x, book/2019/2019-13.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Option B: Facing Adversity, Building Resilience, and Finding Joy" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Option B: Facing Adversity, Building Resilience, and Finding Joy</h3>
+          <p class="book-author">Sheryl Sandberg &amp; Adam Grant</p>
+          <p class="book-isbn">ISBN 978-1524732684</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="The Everything Store: Jeff Bezos and the Age of Amazon" data-author="Brad Stone" data-isbn="978-0593070475">
+        <div class="book-media"><a href="https://www.amazon.com/Everything-Store-Jeff-Bezos-Amazon/dp/0316219282/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-14-300.webp 1x, book/2019/2019-14.webp 2x" />
+        <img decoding="async" src="book/2019/2019-14-300.jpg" class="book-cover" srcset="book/2019/2019-14-300.jpg 1x, book/2019/2019-14.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Everything Store: Jeff Bezos and the Age of Amazon" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Everything Store: Jeff Bezos and the Age of Amazon</h3>
+          <p class="book-author">Brad Stone</p>
+          <p class="book-isbn">ISBN 978-0593070475</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="data" data-title="The Upstarts: How Uber, Airbnb, and the Killer Companies of the New Silicon Valley Are Changing the World" data-author="Brad Stone" data-isbn="978-0316388399">
+        <div class="book-media"><a href="https://www.amazon.com/Upstarts-B-Stone/dp/0552172588/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-15-300.webp 1x, book/2019/2019-15.webp 2x" />
+        <img decoding="async" src="book/2019/2019-15-300.jpg" class="book-cover" srcset="book/2019/2019-15-300.jpg 1x, book/2019/2019-15.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Upstarts: How Uber, Airbnb, and the Killer Companies of the New Silicon Valley Are Changing the World" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Upstarts: How Uber, Airbnb, and the Killer Companies of the New Silicon Valley Are Changing the World</h3>
+          <p class="book-author">Brad Stone</p>
+          <p class="book-isbn">ISBN 978-0316388399</p>
+          <div class="chip-row"><span class="chip">Data</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Measure What Matters: How Google, Bono, and the Gates Foundation Rock the World with OKRs" data-author="John Doerr" data-isbn="978-0525536222">
+        <div class="book-media"><a href="https://www.amazon.com/Measure-What-Matters-Google-Foundation/dp/0525536221/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-16-300.webp 1x, book/2019/2019-16.webp 2x" />
+        <img decoding="async" src="book/2019/2019-16-300.jpg" class="book-cover" srcset="book/2019/2019-16-300.jpg 1x, book/2019/2019-16.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Measure What Matters: How Google, Bono, and the Gates Foundation Rock the World with OKRs" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Measure What Matters: How Google, Bono, and the Gates Foundation Rock the World with OKRs</h3>
+          <p class="book-author">John Doerr</p>
+          <p class="book-isbn">ISBN 978-0525536222</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="Tim Cook: The Genius Who Took Apple to the Next Level" data-author="Leander Kahney" data-isbn="978-0525537601">
+        <div class="book-media"><a href="https://www.amazon.com/Tim-Cook-Genius-Apple-Level/dp/0525537600/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-17-300.webp 1x, book/2019/2019-17.webp 2x" />
+        <img decoding="async" src="book/2019/2019-17-300.jpg" class="book-cover" srcset="book/2019/2019-17-300.jpg 1x, book/2019/2019-17.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Tim Cook: The Genius Who Took Apple to the Next Level" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Tim Cook: The Genius Who Took Apple to the Next Level</h3>
+          <p class="book-author">Leander Kahney</p>
+          <p class="book-isbn">ISBN 978-0525537601</p>
+          <div class="chip-row"><span class="chip">Business</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="The Making of a Manager: What to Do When Everyone Looks to You" data-author="" data-isbn="978-0735219564">
+        <div class="book-media"><a href="https://www.amazon.com/Making-Manager-What-Everyone-Looks/dp/0735219567/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-18-300.webp 1x, book/2019/2019-18.webp 2x" />
+        <img decoding="async" src="book/2019/2019-18-300.jpg" class="book-cover" srcset="book/2019/2019-18-300.jpg 1x, book/2019/2019-18.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Making of a Manager: What to Do When Everyone Looks to You" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Making of a Manager: What to Do When Everyone Looks to You</h3>
+          <p class="book-author"></p>
+          <p class="book-isbn">ISBN 978-0735219564</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Wise Guy: Lessons from a Life" data-author="Guy Kawasaki" data-isbn="978-0525538615">
+        <div class="book-media"><a href="https://www.amazon.com/Wise-Guy-Lessons-Life-Kawasaki/dp/0525538615/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-19-300.webp 1x, book/2019/2019-19.webp 2x" />
+        <img decoding="async" src="book/2019/2019-19-300.jpg" class="book-cover" srcset="book/2019/2019-19-300.jpg 1x, book/2019/2019-19.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Wise Guy: Lessons from a Life" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Wise Guy: Lessons from a Life</h3>
+          <p class="book-author">Guy Kawasaki</p>
+          <p class="book-isbn">ISBN 978-0525538615</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Radical Candor: Be a Kick-Ass Boss Without Losing Your Humanity" data-author="Kim Scott" data-isbn="978-1250103505">
+        <div class="book-media"><a href="https://www.amazon.com/Radical-Candor-Revised-Kick-Ass-Humanity/dp/1250235375/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-20-300.webp 1x, book/2019/2019-20.webp 2x" />
+        <img decoding="async" src="book/2019/2019-20-300.jpg" class="book-cover" srcset="book/2019/2019-20-300.jpg 1x, book/2019/2019-20.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Radical Candor: Be a Kick-Ass Boss Without Losing Your Humanity" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Radical Candor: Be a Kick-Ass Boss Without Losing Your Humanity</h3>
+          <p class="book-author">Kim Scott</p>
+          <p class="book-isbn">ISBN 978-1250103505</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="How Google Works" data-author="Eric Schmidt &amp; Jonathan Rosenberg" data-isbn="978-1455582341">
+        <div class="book-media"><a href="https://www.amazon.com/How-Google-Works-Eric-Schmidt/dp/1455582328/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-21-300.webp 1x, book/2019/2019-21.webp 2x" />
+        <img decoding="async" src="book/2019/2019-21-300.jpg" class="book-cover" srcset="book/2019/2019-21-300.jpg 1x, book/2019/2019-21.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of How Google Works" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>How Google Works</h3>
+          <p class="book-author">Eric Schmidt &amp; Jonathan Rosenberg</p>
+          <p class="book-isbn">ISBN 978-1455582341</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Be At the Table or Be on the Menu a Singapore Memoir" data-author="S Jayakumar" data-isbn="978-9814642064">
+        <div class="book-media"><a href="https://www.amazon.com/Be-Table-Menu-Singapore-Memoir/dp/9814642061/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-22-300.webp 1x, book/2019/2019-22.webp 2x" />
+        <img decoding="async" src="book/2019/2019-22-300.jpg" class="book-cover" srcset="book/2019/2019-22-300.jpg 1x, book/2019/2019-22.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Be At the Table or Be on the Menu a Singapore Memoir" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Be At the Table or Be on the Menu a Singapore Memoir</h3>
+          <p class="book-author">S Jayakumar</p>
+          <p class="book-isbn">ISBN 978-9814642064</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Neither Civil Nor Servant : The Philip Yeo Story" data-author="Peh Shing Huei" data-isbn="978-9814642637">
+        <div class="book-media"><a href="https://www.amazon.com/Neither-Civil-Nor-Servant-Philip/dp/9814642630/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-23-300.webp 1x, book/2019/2019-23.webp 2x" />
+        <img decoding="async" src="book/2019/2019-23-300.jpg" class="book-cover" srcset="book/2019/2019-23-300.jpg 1x, book/2019/2019-23.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Neither Civil Nor Servant : The Philip Yeo Story" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Neither Civil Nor Servant : The Philip Yeo Story</h3>
+          <p class="book-author">Peh Shing Huei</p>
+          <p class="book-isbn">ISBN 978-9814642637</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="data" data-title="Straight Talk for Startups: 100 Insider Rules for Beating the Odds--From Mastering the Fundamentals to Selecting Investors, Fundraising, Managing Boards, and Achieving Liquidity" data-author="Randy Komisar &amp; Jantoon Reigersman" data-isbn="978-0062869067">
+        <div class="book-media"><a href="https://www.amazon.com/Straight-Talk-Startups-Odds-Fundamentals/dp/006286906X/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-24-300.webp 1x, book/2019/2019-24.webp 2x" />
+        <img decoding="async" src="book/2019/2019-24-300.jpg" class="book-cover" srcset="book/2019/2019-24-300.jpg 1x, book/2019/2019-24.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Straight Talk for Startups: 100 Insider Rules for Beating the Odds--From Mastering the Fundamentals to Selecting Investors, Fundraising, Managing Boards, and Achieving Liquidity" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Straight Talk for Startups: 100 Insider Rules for Beating the Odds--From Mastering the Fundamentals to Selecting Investors, Fundraising, Managing Boards, and Achieving Liquidity</h3>
+          <p class="book-author">Randy Komisar &amp; Jantoon Reigersman</p>
+          <p class="book-isbn">ISBN 978-0062869067</p>
+          <div class="chip-row"><span class="chip">Data</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="Trillion Dollar Coach: The Leadership Playbook of Silicon Valley&#39;s Bill Campbell" data-author="Eric Schmidt, Jonathan Rosenberg &amp; Alan Eagle" data-isbn="978-0062839268">
+        <div class="book-media"><a href="https://www.amazon.com/Trillion-Dollar-Coach-Leadership-Playbook/dp/0062839268/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-25-300.webp 1x, book/2019/2019-25.webp 2x" />
+        <img decoding="async" src="book/2019/2019-25-300.jpg" class="book-cover" srcset="book/2019/2019-25-300.jpg 1x, book/2019/2019-25.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Trillion Dollar Coach: The Leadership Playbook of Silicon Valley&#39;s Bill Campbell" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Trillion Dollar Coach: The Leadership Playbook of Silicon Valley&#39;s Bill Campbell</h3>
+          <p class="book-author">Eric Schmidt, Jonathan Rosenberg &amp; Alan Eagle</p>
+          <p class="book-isbn">ISBN 978-0062839268</p>
+          <div class="chip-row"><span class="chip">Business</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="The Moment of Lift: How Empowering Women Changes the World" data-author="Melinda Gates" data-isbn="978-1250313577">
+        <div class="book-media"><a href="https://www.amazon.com/Moment-Lift-Empowering-Women-Changes/dp/1250313570/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-26-300.webp 1x, book/2019/2019-26.webp 2x" />
+        <img decoding="async" src="book/2019/2019-26-300.jpg" class="book-cover" srcset="book/2019/2019-26-300.jpg 1x, book/2019/2019-26.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Moment of Lift: How Empowering Women Changes the World" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Moment of Lift: How Empowering Women Changes the World</h3>
+          <p class="book-author">Melinda Gates</p>
+          <p class="book-isbn">ISBN 978-1250313577</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Girl, Wash Your Face: Stop Believing the Lies About Who You Are so You Can Become Who You Were Meant to Be" data-author="" data-isbn="978-1400201655">
+        <div class="book-media"><a href="https://www.amazon.com/Girl-Wash-Your-Face-Believing/dp/1400201659/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-27-300.webp 1x, book/2019/2019-27.webp 2x" />
+        <img decoding="async" src="book/2019/2019-27-300.jpg" class="book-cover" srcset="book/2019/2019-27-300.jpg 1x, book/2019/2019-27.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Girl, Wash Your Face: Stop Believing the Lies About Who You Are so You Can Become Who You Were Meant to Be" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Girl, Wash Your Face: Stop Believing the Lies About Who You Are so You Can Become Who You Were Meant to Be</h3>
+          <p class="book-author"></p>
+          <p class="book-isbn">ISBN 978-1400201655</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Girl, Stop Apologizing: A Shame-Free Plan for Embracing and Achieving Your Goals" data-author="Rachel Hollis" data-isbn="978-1400209606">
+        <div class="book-media"><a href="https://www.amazon.com/Girl-Stop-Apologizing-Shame-Free-Embracing/dp/1400209609/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-28-300.webp 1x, book/2019/2019-28.webp 2x" />
+        <img decoding="async" src="book/2019/2019-28-300.jpg" class="book-cover" srcset="book/2019/2019-28-300.jpg 1x, book/2019/2019-28.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Girl, Stop Apologizing: A Shame-Free Plan for Embracing and Achieving Your Goals" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Girl, Stop Apologizing: A Shame-Free Plan for Embracing and Achieving Your Goals</h3>
+          <p class="book-author">Rachel Hollis</p>
+          <p class="book-isbn">ISBN 978-1400209606</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Secrets of Sand Hill Road: Venture Capital and How to Get It" data-author="Scott Kupor" data-isbn="978-0593083581">
+        <div class="book-media"><a href="https://www.amazon.com/Secrets-Sand-Hill-Road-Venture/dp/059308358X/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-29-300.webp 1x, book/2019/2019-29.webp 2x" />
+        <img decoding="async" src="book/2019/2019-29-300.jpg" class="book-cover" srcset="book/2019/2019-29-300.jpg 1x, book/2019/2019-29.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Secrets of Sand Hill Road: Venture Capital and How to Get It" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Secrets of Sand Hill Road: Venture Capital and How to Get It</h3>
+          <p class="book-author">Scott Kupor</p>
+          <p class="book-isbn">ISBN 978-0593083581</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Dare to Lead: Brave Work. Tough Conversations. Whole Hearts." data-author="Brené Brown" data-isbn="978-1785042140">
+        <div class="book-media"><a href="https://www.amazon.com/Dare-Lead-Brave-Conversations-Hearts/dp/0399592520/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-30-300.webp 1x, book/2019/2019-30.webp 2x" />
+        <img decoding="async" src="book/2019/2019-30-300.jpg" class="book-cover" srcset="book/2019/2019-30-300.jpg 1x, book/2019/2019-30.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Dare to Lead: Brave Work. Tough Conversations. Whole Hearts." loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Dare to Lead: Brave Work. Tough Conversations. Whole Hearts.</h3>
+          <p class="book-author">Brené Brown</p>
+          <p class="book-isbn">ISBN 978-1785042140</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="The Ride of a Lifetime: Lessons Learned from 15 Years as CEO of the Walt Disney Company" data-author="Robert Iger" data-isbn="978-0399592096">
+        <div class="book-media"><a href="https://www.amazon.com/Ride-Lifetime-Lessons-Learned-Company/dp/0399592091/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-31-300.webp 1x, book/2019/2019-31.webp 2x" />
+        <img decoding="async" src="book/2019/2019-31-300.jpg" class="book-cover" srcset="book/2019/2019-31-300.jpg 1x, book/2019/2019-31.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Ride of a Lifetime: Lessons Learned from 15 Years as CEO of the Walt Disney Company" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Ride of a Lifetime: Lessons Learned from 15 Years as CEO of the Walt Disney Company</h3>
+          <p class="book-author">Robert Iger</p>
+          <p class="book-isbn">ISBN 978-0399592096</p>
+          <div class="chip-row"><span class="chip">Business</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Super Pumped: The Battle for Uber" data-author="Mike Isaac" data-isbn="978-0393652246">
+        <div class="book-media"><a href="https://www.amazon.com/Super-Pumped-Battle-Mike-Isaac/dp/0393358615/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-32-300.webp 1x, book/2019/2019-32.webp 2x" />
+        <img decoding="async" src="book/2019/2019-32-300.jpg" class="book-cover" srcset="book/2019/2019-32-300.jpg 1x, book/2019/2019-32.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Super Pumped: The Battle for Uber" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Super Pumped: The Battle for Uber</h3>
+          <p class="book-author">Mike Isaac</p>
+          <p class="book-isbn">ISBN 978-0393652246</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Tech Titans of China: How China&#39;s Tech Sector is challenging the world by innovating faster, working harder, and going global" data-author="Rebecca A. Fannin" data-isbn="978-1529374490">
+        <div class="book-media"><a href="https://www.amazon.com/Tech-Titans-China-challenging-innovating/dp/1529374499/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-33-300.webp 1x, book/2019/2019-33.webp 2x" />
+        <img decoding="async" src="book/2019/2019-33-300.jpg" class="book-cover" srcset="book/2019/2019-33-300.jpg 1x, book/2019/2019-33.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Tech Titans of China: How China&#39;s Tech Sector is challenging the world by innovating faster, working harder, and going global" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Tech Titans of China: How China&#39;s Tech Sector is challenging the world by innovating faster, working harder, and going global</h3>
+          <p class="book-author">Rebecca A. Fannin</p>
+          <p class="book-isbn">ISBN 978-1529374490</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Tools and Weapons: The Promise and the Peril of the Digital Age" data-author="Brad Smith AND Carol Ann Browne" data-isbn="978-1984877710">
+        <div class="book-media"><a href="https://www.amazon.com/Tools-Weapons-Promise-Peril-Digital/dp/1984877712/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-34-300.webp 1x, book/2019/2019-34.webp 2x" />
+        <img decoding="async" src="book/2019/2019-34-300.jpg" class="book-cover" srcset="book/2019/2019-34-300.jpg 1x, book/2019/2019-34.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Tools and Weapons: The Promise and the Peril of the Digital Age" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Tools and Weapons: The Promise and the Peril of the Digital Age</h3>
+          <p class="book-author">Brad Smith AND Carol Ann Browne</p>
+          <p class="book-isbn">ISBN 978-1984877710</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="That Will Never Work: The Birth of Netflix and the Amazing Life of an Idea" data-author="Marc Randolph" data-isbn="978-0316530200">
+        <div class="book-media"><a href="https://www.amazon.com/That-Will-Never-Work-Netflix/dp/0316530204/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-35-300.webp 1x, book/2019/2019-35.webp 2x" />
+        <img decoding="async" src="book/2019/2019-35-300.jpg" class="book-cover" srcset="book/2019/2019-35-300.jpg 1x, book/2019/2019-35.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of That Will Never Work: The Birth of Netflix and the Amazing Life of an Idea" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>That Will Never Work: The Birth of Netflix and the Amazing Life of an Idea</h3>
+          <p class="book-author">Marc Randolph</p>
+          <p class="book-isbn">ISBN 978-0316530200</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="For the Love of Men: A New Vision for Mindful Masculinity" data-author="Liz Plank" data-isbn="978-1250196248">
+        <div class="book-media"><a href="https://www.amazon.com/Love-Men-Vision-Mindful-Masculinity/dp/1250196248/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-36-300.webp 1x, book/2019/2019-36.webp 2x" />
+        <img decoding="async" src="book/2019/2019-36-300.jpg" class="book-cover" srcset="book/2019/2019-36-300.jpg 1x, book/2019/2019-36.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of For the Love of Men: A New Vision for Mindful Masculinity" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>For the Love of Men: A New Vision for Mindful Masculinity</h3>
+          <p class="book-author">Liz Plank</p>
+          <p class="book-isbn">ISBN 978-1250196248</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Outspoken: Why Women&#39;s Voices Get Silenced and How to Set Them Free" data-author="Veronica Rueckert" data-isbn="978-0062879349">
+        <div class="book-media"><a href="https://www.amazon.com/Outspoken-Womens-Voices-Silenced-Them/dp/0062879340/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-37-300.webp 1x, book/2019/2019-37.webp 2x" />
+        <img decoding="async" src="book/2019/2019-37-300.jpg" class="book-cover" srcset="book/2019/2019-37-300.jpg 1x, book/2019/2019-37.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Outspoken: Why Women&#39;s Voices Get Silenced and How to Set Them Free" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Outspoken: Why Women&#39;s Voices Get Silenced and How to Set Them Free</h3>
+          <p class="book-author">Veronica Rueckert</p>
+          <p class="book-isbn">ISBN 978-0062879349</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="The First Wave" data-author="Loke Hoe Yeong" data-isbn="978-9814845427">
+        <div class="book-media"><a href="https://www.amazon.com/First-Wave-Loke-Hoe-Yeong-ebook/dp/B07Z5BK8JJ/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-38-300.webp 1x, book/2019/2019-38.webp 2x" />
+        <img decoding="async" src="book/2019/2019-38-300.jpg" class="book-cover" srcset="book/2019/2019-38-300.jpg 1x, book/2019/2019-38.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The First Wave" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The First Wave</h3>
+          <p class="book-author">Loke Hoe Yeong</p>
+          <p class="book-isbn">ISBN 978-9814845427</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Diplomacy: A Singapore Experience" data-author="S Jayakumar" data-isbn="978-9814827546">
+        <div class="book-media"><a href="https://www.amazon.com/Diplomacy-Singapore-Experience-S-Jayakumar-ebook/dp/B07XFDYBKM/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-39-300.webp 1x, book/2019/2019-39.webp 2x" />
+        <img decoding="async" src="book/2019/2019-39-300.jpg" class="book-cover" srcset="book/2019/2019-39-300.jpg 1x, book/2019/2019-39.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Diplomacy: A Singapore Experience" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Diplomacy: A Singapore Experience</h3>
+          <p class="book-author">S Jayakumar</p>
+          <p class="book-isbn">ISBN 978-9814827546</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Pedra Branca: Story Of The Unheard Cases" data-author="S Jayakumar, Tommy Koh &amp; Lionel Yee" data-isbn="978-9814827157">
+        <div class="book-media"><a href="https://www.amazon.com/PEDRA-BRANCA-STORY-UNHEARD-CASES/dp/9814827150/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-40-300.webp 1x, book/2019/2019-40.webp 2x" />
+        <img decoding="async" src="book/2019/2019-40-300.jpg" class="book-cover" srcset="book/2019/2019-40-300.jpg 1x, book/2019/2019-40.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Pedra Branca: Story Of The Unheard Cases" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Pedra Branca: Story Of The Unheard Cases</h3>
+          <p class="book-author">S Jayakumar, Tommy Koh &amp; Lionel Yee</p>
+          <p class="book-isbn">ISBN 978-9814827157</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Alpha Girls: The Women Upstarts Who Took On Silicon Valley&#39;s Male Culture and Made the Deals of a Lifetime" data-author="Julian Guthrie" data-isbn="978-0525573920">
+        <div class="book-media"><a href="https://www.amazon.com/Alpha-Girls-Upstarts-Silicon-Lifetime/dp/0525573925/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-41-300.webp 1x, book/2019/2019-41.webp 2x" />
+        <img decoding="async" src="book/2019/2019-41-300.jpg" class="book-cover" srcset="book/2019/2019-41-300.jpg 1x, book/2019/2019-41.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Alpha Girls: The Women Upstarts Who Took On Silicon Valley&#39;s Male Culture and Made the Deals of a Lifetime" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Alpha Girls: The Women Upstarts Who Took On Silicon Valley&#39;s Male Culture and Made the Deals of a Lifetime</h3>
+          <p class="book-author">Julian Guthrie</p>
+          <p class="book-isbn">ISBN 978-0525573920</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="The Big Nine: How the Tech Titans and Their Thinking Machines Could Warp Humanity" data-author="Amy Webb" data-isbn="978-1541773752">
+        <div class="book-media"><a href="https://www.amazon.com/Big-Nine-Thinking-Machines-Humanity/dp/154177373X/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-42-300.webp 1x, book/2019/2019-42.webp 2x" />
+        <img decoding="async" src="book/2019/2019-42-300.jpg" class="book-cover" srcset="book/2019/2019-42-300.jpg 1x, book/2019/2019-42.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Big Nine: How the Tech Titans and Their Thinking Machines Could Warp Humanity" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>The Big Nine: How the Tech Titans and Their Thinking Machines Could Warp Humanity</h3>
+          <p class="book-author">Amy Webb</p>
+          <p class="book-isbn">ISBN 978-1541773752</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Know My Name: A Memoir" data-author="Chanel Miller" data-isbn="978-0735223707">
+        <div class="book-media"><a href="https://www.amazon.com/Know-My-Name-Chanel-Miller/dp/0735223726/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2019/2019-43-300.webp 1x, book/2019/2019-43.webp 2x" />
+        <img decoding="async" src="book/2019/2019-43-300.jpg" class="book-cover" srcset="book/2019/2019-43-300.jpg 1x, book/2019/2019-43.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Know My Name: A Memoir" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Know My Name: A Memoir</h3>
+          <p class="book-author">Chanel Miller</p>
+          <p class="book-isbn">ISBN 978-0735223707</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Brotopia : breaking up the boys&#39; club of Silicon Valley" data-author="Emily Chang" data-isbn="978-0735213531">
+        <div class="book-media"><a href="https://www.amazon.com/Brotopia-Breaking-Boys-Silicon-Valley/dp/0525540172/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2018/2018-1-300.webp 1x, book/2018/2018-1.webp 2x" />
+        <img decoding="async" src="book/2018/2018-1-300.jpg" class="book-cover" srcset="book/2018/2018-1-300.jpg 1x, book/2018/2018-1.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Brotopia : breaking up the boys&#39; club of Silicon Valley" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Brotopia : breaking up the boys&#39; club of Silicon Valley</h3>
+          <p class="book-author">Emily Chang</p>
+          <p class="book-isbn">ISBN 978-0735213531</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Tall order : the Goh Chok Tong story, Volume 1" data-author="Peh Shing Huei" data-isbn="978-9813276048">
+        <div class="book-media"><a href="https://www.amazon.com/Tall-Order-Chok-Tong-Story/dp/9813276045/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2018/2018-2-300.webp 1x, book/2018/2018-2.webp 2x" />
+        <img decoding="async" src="book/2018/2018-2-300.jpg" class="book-cover" srcset="book/2018/2018-2-300.jpg 1x, book/2018/2018-2.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Tall order : the Goh Chok Tong story, Volume 1" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Tall order : the Goh Chok Tong story, Volume 1</h3>
+          <p class="book-author">Peh Shing Huei</p>
+          <p class="book-isbn">ISBN 978-9813276048</p>
+          <div class="chip-row"><span class="chip">Biography</span></div>
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Hit refresh : the quest to rediscover Microsoft&#39;s soul and imagine a better future for everyone" data-author="Satya Nadella, with Greg Shaw and Jill Tracie Nichols" data-isbn="978-0062959720">
+        <div class="book-media"><a href="https://www.amazon.com/Hit-Refresh-Rediscover-Microsofts-Everyone/dp/0062959727/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2018/2018-3-300.webp 1x, book/2018/2018-3.webp 2x" />
+        <img decoding="async" src="book/2018/2018-3-300.jpg" class="book-cover" srcset="book/2018/2018-3-300.jpg 1x, book/2018/2018-3.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Hit refresh : the quest to rediscover Microsoft&#39;s soul and imagine a better future for everyone" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Hit refresh : the quest to rediscover Microsoft&#39;s soul and imagine a better future for everyone</h3>
+          <p class="book-author">Satya Nadella, with Greg Shaw and Jill Tracie Nichols</p>
+          <p class="book-isbn">ISBN 978-0062959720</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Asking Why" data-author="Ho Kwon Ping" data-isbn="978-9814827003">
+        <div class="book-media"><a href="https://www.amazon.com/Asking-Why-Kwon-Ping-Ho-ebook/dp/B07QCCFLD1/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2018/2018-4-300.webp 1x, book/2018/2018-4.webp 2x" />
+        <img decoding="async" src="book/2018/2018-4-300.jpg" class="book-cover" srcset="book/2018/2018-4-300.jpg 1x, book/2018/2018-4.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Asking Why" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>Asking Why</h3>
+          <p class="book-author">Ho Kwon Ping</p>
+          <p class="book-isbn">ISBN 978-9814827003</p>
+          
+        </div>
+      </article>
+      <article class="book-card" data-reading-item data-year="2022" data-tags="data" data-title="AI superpowers : China, Silicon Valley, and the new world order" data-author="Kai-Fu Lee" data-isbn="978-1328546395">
+        <div class="book-media"><a href="https://www.amazon.com/AI-Superpowers-China-Silicon-Valley/dp/132854639X/" target="_blank" rel="noopener noreferrer">
+      <picture>
+        <source type="image/webp" srcset="book/2018/2018-5-300.webp 1x, book/2018/2018-5.webp 2x" />
+        <img decoding="async" src="book/2018/2018-5-300.jpg" class="book-cover" srcset="book/2018/2018-5-300.jpg 1x, book/2018/2018-5.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of AI superpowers : China, Silicon Valley, and the new world order" loading="lazy" />
+      </picture></a></div>
+        <div class="book-body">
+          <p class="book-year">2022</p>
+          <h3>AI superpowers : China, Silicon Valley, and the new world order</h3>
+          <p class="book-author">Kai-Fu Lee</p>
+          <p class="book-isbn">ISBN 978-1328546395</p>
+          <div class="chip-row"><span class="chip">Data</span></div>
+        </div>
+      </article>
+  </div>
+  <p class="reading-empty" data-reading-empty hidden>No matches yet. Try clearing filters.</p>
+</section>
 </main>
-<br/>
-<br/>
 
-<!-- New Footer -->
 <div class="container section-block">
     <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
         <div class="col-md-6 d-flex align-items-center">
-            <span class="text-muted">&copy; 2020 - 2025 Leonard Wong</span>
+            <span class="text-muted">© 2020 - 2026 Leonard Wong</span>
         </div>
         <div class="col-md-6 d-flex align-items-center justify-content-end">
-            <span class="text-muted">All Rights Reserved</span>
+            <span class="text-muted">Based in Singapore</span>
         </div>
         <div class="col-12 mt-3">
             <ul class="list-unstyled d-flex flex-wrap align-items-center social-links justify-content-end">
@@ -1212,7 +1394,6 @@
         </div>
     </footer>
 </div>
-<!-- End Footer -->
 
 </body>
 </html>

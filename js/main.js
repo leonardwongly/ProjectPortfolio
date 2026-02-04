@@ -1,20 +1,14 @@
 const REVEAL_SELECTORS = [
-  '.hero-panel',
-  '.summary-card',
-  '.section-title',
-  '.main-timeline .timeline',
-  '.card.animate__animated',
-  '.project-item',
-  '.year-heading',
-  '.page-hint',
-  '.book-grid .card',
-  '.badge.shadow',
-  '.badge.shadow-sm'
-];
-
-const COUNT_UP_CONFIGS = [
-  { id: 'countUpJob', from: 'Jan 4, 2022 00:00:00' },
-  { id: 'countUpProject', from: 'Dec 1, 2020 00:00:00' }
+  '.hero-section',
+  '.impact-strip',
+  '.section-header',
+  '.featured-card',
+  '.skill-card',
+  '.experience-card',
+  '.credentials-grid .card',
+  '.accordion-item',
+  '.book-card',
+  '.contact-card'
 ];
 
 const THEME_STORAGE_KEY = 'theme-preference';
@@ -24,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initThemeToggle();
   initCountUps();
   initRevealOnScroll();
+  initReadingFilters();
+  window.addEventListener('hashchange', initNavActive);
 });
 
 function initNavActive() {
@@ -33,13 +29,30 @@ function initNavActive() {
   }
 
   const currentPath = window.location.pathname.replace(/\/$/, '');
+  const currentHash = window.location.hash;
 
   links.forEach((link) => {
-    const targetPath = new URL(link.href, window.location.origin).pathname.replace(/\/$/, '');
+    link.classList.remove('active');
+    link.removeAttribute('aria-current');
+  });
+
+  links.forEach((link) => {
+    const url = new URL(link.href, window.location.origin);
+    const targetPath = url.pathname.replace(/\/$/, '');
+    const targetHash = url.hash;
     const isHome = targetPath.endsWith('/index.html');
-    const isCurrent = isHome
+    const pathMatches = isHome
       ? currentPath === '' || currentPath === '/' || currentPath.endsWith('/index.html')
       : currentPath.endsWith(targetPath);
+
+    let isCurrent = false;
+    if (pathMatches) {
+      if (targetHash) {
+        isCurrent = currentHash === targetHash || (!currentHash && targetHash === '#home');
+      } else {
+        isCurrent = true;
+      }
+    }
 
     if (isCurrent) {
       link.setAttribute('aria-current', 'page');
@@ -127,46 +140,42 @@ function updateThemeToggleLabels(theme, toggles) {
 }
 
 function initCountUps() {
-  COUNT_UP_CONFIGS.forEach(({ id, from }) => {
-    const container = document.getElementById(id);
-    if (!container) {
+  const elements = Array.from(document.querySelectorAll('[data-countup]'));
+  if (!elements.length) {
+    return;
+  }
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  elements.forEach((element) => {
+    const target = Number.parseFloat(element.dataset.countup || '');
+    const unit = element.dataset.countupUnit || '';
+    if (!Number.isFinite(target)) {
       return;
     }
 
-    const start = new Date(from);
-    if (Number.isNaN(start.getTime())) {
+    if (reduceMotion.matches) {
+      element.textContent = `${Math.round(target)}${unit}`;
       return;
     }
 
-    const update = () => {
-      const now = new Date();
-      const diff = now - start;
+    const duration = 900;
+    let start = null;
 
-      const msYear = 31536000000;
-      const msMonth = 2592000000;
-      const msDay = 86400000;
-
-      const years = Math.floor(diff / msYear);
-      const months = Math.floor((diff % msYear) / msMonth);
-      const days = Math.floor(((diff % msYear) % msMonth) / msDay);
-
-      const yearsEl = container.querySelector('.years');
-      const monthsEl = container.querySelector('.months');
-      const daysEl = container.querySelector('.days');
-
-      if (yearsEl) {
-        yearsEl.textContent = String(years).padStart(2, '0');
+    const step = (timestamp) => {
+      if (!start) {
+        start = timestamp;
       }
-      if (monthsEl) {
-        monthsEl.textContent = String(months).padStart(2, '0');
-      }
-      if (daysEl) {
-        daysEl.textContent = String(days).padStart(2, '0');
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const value = Math.round(target * progress);
+      element.textContent = `${value}${unit}`;
+
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
       }
     };
 
-    update();
-    window.setInterval(update, 1000);
+    window.requestAnimationFrame(step);
   });
 }
 
@@ -239,4 +248,99 @@ function initRevealOnScroll() {
       }
     });
   }
+}
+
+function initReadingFilters() {
+  const section = document.querySelector('[data-reading]');
+  if (!section) {
+    return;
+  }
+
+  const searchInput = section.querySelector('#readingSearch');
+  const items = Array.from(section.querySelectorAll('[data-reading-item]'));
+  const emptyState = section.querySelector('[data-reading-empty]');
+  const grid = section.querySelector('[data-reading-grid]');
+  const filterButtons = Array.from(section.querySelectorAll('.filter-pill'));
+  const viewButtons = Array.from(section.querySelectorAll('.view-pill'));
+
+  let activeYear = 'All';
+  let activeTag = 'All';
+  let query = '';
+
+  const updateFilters = () => {
+    let visibleCount = 0;
+    const normalizedQuery = query.trim().toLowerCase();
+
+    items.forEach((item) => {
+      const year = item.dataset.year;
+      const tags = (item.dataset.tags || '').split(',').filter(Boolean);
+      const text = `${item.dataset.title || ''} ${item.dataset.author || ''} ${item.dataset.isbn || ''}`.toLowerCase();
+
+      const matchesYear = activeYear === 'All' || year === activeYear;
+      const matchesTag = activeTag === 'All' || tags.includes(activeTag.toLowerCase());
+      const matchesQuery = !normalizedQuery || text.includes(normalizedQuery);
+
+      const shouldShow = matchesYear && matchesTag && matchesQuery;
+      item.hidden = !shouldShow;
+      if (shouldShow) {
+        visibleCount += 1;
+      }
+    });
+
+    if (emptyState) {
+      emptyState.hidden = visibleCount !== 0;
+    }
+  };
+
+  filterButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const group = button.dataset.filterGroup;
+      const value = button.dataset.filterValue || 'All';
+      if (group === 'year') {
+        activeYear = value;
+      } else if (group === 'tag') {
+        activeTag = value;
+      }
+
+      filterButtons.forEach((btn) => {
+        if (btn.dataset.filterGroup === group) {
+          btn.classList.toggle('is-active', btn === button);
+        }
+      });
+
+      updateFilters();
+    });
+  });
+
+  if (filterButtons.length) {
+    const firstYear = filterButtons.find((btn) => btn.dataset.filterGroup === 'year');
+    if (firstYear) {
+      firstYear.classList.add('is-active');
+    }
+    const firstTag = filterButtons.find((btn) => btn.dataset.filterGroup === 'tag');
+    if (firstTag) {
+      firstTag.classList.add('is-active');
+    }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (event) => {
+      query = event.target.value;
+      updateFilters();
+    });
+  }
+
+  viewButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const view = button.dataset.view;
+      if (grid) {
+        grid.dataset.view = view;
+      }
+      viewButtons.forEach((btn) => {
+        btn.setAttribute('aria-pressed', btn === button ? 'true' : 'false');
+      });
+    });
+  });
+
+  updateFilters();
 }

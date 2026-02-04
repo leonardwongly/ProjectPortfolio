@@ -1,0 +1,46 @@
+[
+  {
+    "id": "project-vendors",
+    "title": "Project Vendors",
+    "timeframe": "May–Jul 2020",
+    "problem": "Needed to evaluate three AIS data vendors to select a reliable data source.",
+    "impact": "Built a multi-vendor ingestion pipeline and comparison workflow to support a data-driven vendor decision.",
+    "tech": ["C#", "ASP.NET", "AWS DynamoDB", "JSON", "APIs"],
+    "links": [
+      { "label": "VesselTracker", "url": "https://github.com/leonardwongly/VesselTracker-OpenSource" },
+      { "label": "VesselFinder", "url": "https://github.com/leonardwongly/VesselFinder-OpenSource" },
+      { "label": "BOD", "url": "https://github.com/leonardwongly/BOD-OpenSource" }
+    ]
+  },
+  {
+    "id": "project-xmldata",
+    "title": "Project XMLData",
+    "timeframe": "May–Jul 2020",
+    "problem": "Large XML datasets needed to be normalized and loaded for analytics.",
+    "impact": "Automated conversion and upload of aggregated data into AWS DynamoDB to enable downstream analysis.",
+    "tech": ["C#", "ASP.NET", "AWS DynamoDB", "JSON", "jQuery"],
+    "links": [
+      { "label": "GitHub", "url": "https://github.com/leonardwongly/XMLData-OpenSource" }
+    ]
+  },
+  {
+    "id": "ship-agency-portal",
+    "title": "Ship Agency Portal",
+    "timeframe": "May–Oct 2018",
+    "problem": "Agency operations relied on manual email triage at high volume.",
+    "impact": "Built a system to streamline agency workflows handling 160+ emails/hour.",
+    "tech": ["Web Apps", "APIs", "Workflow Automation"],
+    "links": []
+  },
+  {
+    "id": "myipsw",
+    "title": "myIPSW",
+    "timeframe": "Jan 2020–Jan 2022",
+    "problem": "Finding official Apple firmware downloads was fragmented and manual.",
+    "impact": "Built a site using the ipsw.me API to surface firmware downloads quickly.",
+    "tech": ["C#", "ASP.NET", "JavaScript", "ipsw.me API"],
+    "links": [
+      { "label": "GitHub", "url": "https://github.com/leonardwongly/MyIPSW" }
+    ]
+  }
+]

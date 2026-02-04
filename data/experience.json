@@ -1,0 +1,67 @@
+[
+  {
+    "org": "NCS Pte. Ltd.",
+    "role": "Software Engineer · Young Leaders · Brand Ambassador",
+    "dates": "Jan 2022–Present",
+    "impact_bullets": [
+      "Owned end-to-end delivery for a confidential internal project, from build to deployment.",
+      "Planned and facilitated UAT, including script creation and stakeholder sessions.",
+      "Managed incidents and user enablement through training and ongoing support."
+    ],
+    "tech": ["UAT", "Incident Management", "Stakeholder Collaboration"]
+  },
+  {
+    "org": "Singapore Management University",
+    "role": "Research Assistant",
+    "dates": "Dec 2021",
+    "impact_bullets": [
+      "Scanned 88 IS216 projects using OWASP ZAP for dynamic analysis.",
+      "Executed commercial DAST scans and performed static analysis on the same codebases.",
+      "Contributed findings to research on integrating security in web programming courses."
+    ],
+    "tech": ["OWASP ZAP", "DAST", "SAST"]
+  },
+  {
+    "org": "Alpha Ori Technologies",
+    "role": "Maritime Tech Solutions Intern",
+    "dates": "May–Jul 2020",
+    "impact_bullets": [
+      "Automated conversion of 150M+ rows with 3B+ data points into AWS DynamoDB.",
+      "Built API trials for three vendors to evaluate adoption viability.",
+      "Implemented data sorting and voyage analysis for trend identification."
+    ],
+    "tech": ["C#", "ASP.NET", "AWS DynamoDB", "APIs"]
+  },
+  {
+    "org": "OSM Thome (formerly Thome Ship Management)",
+    "role": "IT Intern",
+    "dates": "May–Oct 2018",
+    "impact_bullets": [
+      "Built an enterprise analytics portal providing 15 key data points for decision-making.",
+      "Delivered a ship agency system supporting 160+ emails/hour.",
+      "Enhanced vessel information for 230+ vessels via API integrations."
+    ],
+    "tech": ["Web Apps", "APIs", "Data Visualization"]
+  },
+  {
+    "org": "Rightspot",
+    "role": "Intern",
+    "dates": "Jul–Oct 2016",
+    "impact_bullets": [
+      "Resolved 20+ bugs to improve site stability within two weeks.",
+      "Created an overview page for 250 applicants’ job status.",
+      "Built a job listing dashboard covering 500+ companies."
+    ],
+    "tech": ["Web Apps", "QA", "Dashboarding"]
+  },
+  {
+    "org": "SamMobile",
+    "role": "Contributing Writer (Freelance)",
+    "dates": "Jul–Dec 2013",
+    "impact_bullets": [
+      "Published 1–2 articles per week for a 1.5M+ member audience.",
+      "Covered mobile software updates and product insights."
+    ],
+    "tech": ["Editorial", "Research", "Communication"]
+  }
+]

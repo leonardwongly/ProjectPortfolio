@@ -1,0 +1,22 @@
+[
+  {
+    "category": "Languages",
+    "items": ["HTML", "CSS", "JavaScript", "C#", "SQL", "PHP"]
+  },
+  {
+    "category": "Frameworks",
+    "items": ["ASP.NET", "Bootstrap", "jQuery", "YOURLS"]
+  },
+  {
+    "category": "Cloud & Data",
+    "items": ["AWS DynamoDB", "JSON", "ETL", "Data Warehousing"]
+  },
+  {
+    "category": "Security",
+    "items": ["OWASP ZAP", "SAST/DAST", "XSS Research"]
+  },
+  {
+    "category": "Product & Delivery",
+    "items": ["UAT Planning", "Incident Management", "Training & Enablement"]
+  }
+]
