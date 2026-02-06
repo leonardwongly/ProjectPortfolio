@@ -21,13 +21,18 @@ defaults:
     shell: 'bash'
 
 permissions:
-  contents: 'write'
+  contents: 'read'
   id-token: 'write'
   pull-requests: 'write'
   issues: 'write'
 
 jobs:
   gemini-cli:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      pull-requests: 'write'
+      issues: 'write'
     # This condition is complex to ensure we only run when explicitly invoked.
     if: |-
       github.event_name == 'workflow_dispatch' ||
@@ -200,9 +205,19 @@ jobs:
           } >> "${GITHUB_OUTPUT}"
 
       - name: 'Set up git user for commits'
+        if: |-
+          ${{ steps.get_context.outputs.request_type == 'plan_execution' }}
         run: |-
           git config --global user.name 'gemini-cli[bot]'
           git config --global user.email 'gemini-cli[bot]@users.noreply.github.com'
+
+      - name: 'Validate token for plan execution'
+        if: |-
+          ${{ steps.get_context.outputs.request_type == 'plan_execution' && steps.generate_token.outputs.token == '' }}
+        run: |-
+          echo "Plan execution requires vars.APP_ID and secrets.APP_PRIVATE_KEY to mint a GitHub App token."
+          echo "Refusing to continue with repository write operations on the default GITHUB_TOKEN."
+          exit 1
 
       - name: 'Checkout PR branch'
         if: |-
@@ -213,6 +228,7 @@ jobs:
           repository: '${{ github.repository }}'
           ref: 'refs/pull/${{ steps.get_context.outputs.issue_number }}/head'
           fetch-depth: 0
+          persist-credentials: false
 
       - name: 'Checkout main branch'
         if: |-
@@ -222,14 +238,15 @@ jobs:
           token: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
           repository: '${{ github.repository }}'
           fetch-depth: 0
+          persist-credentials: false
 
       - name: 'Create new branch for issue'
         if: |-
-          ${{  steps.get_context.outputs.is_pr == 'false' }}
+          ${{ steps.get_context.outputs.is_pr == 'false' && steps.get_context.outputs.request_type == 'plan_execution' }}
         run: |-
           set -euo pipefail
           BRANCH_NAME="gemini-issue-${{ steps.get_context.outputs.issue_number }}"
-          git checkout -b "${BRANCH_NAME}"
+          git checkout -B "${BRANCH_NAME}"
           echo "branch_name=${BRANCH_NAME}" >> "${GITHUB_OUTPUT}"
         id: 'create_branch'
 
@@ -261,7 +278,7 @@ jobs:
 
       - name: 'Run Gemini'
         id: 'run_gemini'
-        uses: 'google-github-actions/run-gemini-cli@v0'
+        uses: 'google-github-actions/run-gemini-cli@b7c22b00bd5a02e52eec973dc4b3bd391eb31512' # ratchet:google-github-actions/run-gemini-cli@v0
         env:
           GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
           REPOSITORY: '${{ github.repository }}'
@@ -405,6 +422,7 @@ jobs:
             - **Resource Limits**: You MUST NOT propose a plan that creates an excessive number of resources (e.g., more than 5 issues, more than 5 pull requests) in a single request.
             - **Malicious Intent**: If you suspect a user request is malicious, frivolous, or intended to abuse the system (e.g., asking to perform a repetitive, useless task), you MUST reject the request and explain why.
             - **Guardrail**: Only propose plans that modify files if the user explicitly asks for a change. If they ask a question, just answer it.
+            - **Write Safety**: Only run `git add`, `git commit`, `git push`, or branch creation commands when `REQUEST_TYPE` is exactly `plan_execution`.
             - **Commits**: When committing files, be specific (e.g., `git add path/to/file.js`). Never use `git add .`.
             - **Paths**: Always use absolute paths for file operations.
             - The file `response.md` MUST NEVER be committed.
