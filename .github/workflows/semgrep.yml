@@ -16,6 +16,7 @@ jobs:
   semgrep:
     name: Scan
     runs-on: ubuntu-20.04
+    timeout-minutes: 30
     env:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
     container:
@@ -24,4 +25,23 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
       with:
         persist-credentials: false
-    - run: semgrep ci
+    - name: Run Semgrep scan
+      shell: sh
+      run: |
+        set -eu
+
+        # Bound runtime to avoid stuck scans keeping this check in-progress.
+        if command -v timeout >/dev/null 2>&1; then
+          set +e
+          timeout --signal=SIGTERM --kill-after=60s 25m \
+            semgrep ci --disable-version-check --metrics=off --interfile-timeout=1200
+          status=$?
+          set -e
+          if [ "${status}" -eq 124 ] || [ "${status}" -eq 137 ]; then
+            echo "::error::Semgrep exceeded 25 minutes and was terminated."
+          fi
+          exit "${status}"
+        fi
+
+        echo "::warning::'timeout' utility not found; relying on job timeout."
+        semgrep ci --disable-version-check --metrics=off --interfile-timeout=1200
