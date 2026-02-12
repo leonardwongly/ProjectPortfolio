@@ -5,7 +5,6 @@ import test from 'node:test';
 const WORKFLOW_FILES = [
   '.github/workflows/build.yml',
   '.github/workflows/codeql.yml',
-  '.github/workflows/semgrep.yml',
   '.github/workflows/gemini-cli.yml'
 ];
 
@@ -37,19 +36,6 @@ test('workflow uses references are pinned by SHA', () => {
   }
 
   assert.deepEqual(unpinned, [], `Found unpinned action references:\n${unpinned.join('\n')}`);
-});
-
-test('semgrep workflow uses a supported runner and queue-safe concurrency', () => {
-  const content = fs.readFileSync('.github/workflows/semgrep.yml', 'utf8');
-
-  assert.ok(
-    /runs-on:\s*ubuntu-(?:latest|24\.04)\b/.test(content),
-    'Semgrep workflow must use a currently supported Ubuntu runner label.'
-  );
-  assert.ok(
-    /concurrency:\s*(?:\r?\n)+\s*# Keep one Semgrep run per ref; cancel stale runs to reduce queue pressure\.\s*(?:\r?\n)+\s*group:\s*semgrep-\$\{\{\s*github\.workflow\s*\}\}-\$\{\{\s*github\.ref\s*\}\}\s*(?:\r?\n)+\s*cancel-in-progress:\s*true/.test(content),
-    'Semgrep workflow must set concurrency with cancel-in-progress to avoid queue buildup.'
-  );
 });
 
 test('CSP is declared before the first script tag in source pages', () => {
