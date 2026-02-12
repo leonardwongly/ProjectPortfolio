@@ -37,7 +37,7 @@ jobs:
         # Bound runtime to avoid stuck scans keeping this check in-progress.
         if command -v timeout >/dev/null 2>&1; then
           set +e
-          timeout --signal=SIGTERM --kill-after=60s 25m \
+          timeout -s TERM -k 60 1500 \
             semgrep ci --disable-version-check --metrics=off --interfile-timeout=1200
           status=$?
           set -e
