@@ -12,10 +12,14 @@ on:
 name: Semgrep
 permissions:
   contents: read
+concurrency:
+  # Keep one Semgrep run per ref; cancel stale runs to reduce queue pressure.
+  group: semgrep-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   semgrep:
     name: Scan
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
