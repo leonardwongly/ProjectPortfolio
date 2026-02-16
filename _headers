@@ -1,0 +1,22 @@
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Permissions-Policy: accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()
+
+/
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-mvCwwKuVDWE+Rkei4e1WUnj8mTLXU5m1Sn40vtcTSWw='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content
+  Access-Control-Allow-Origin: https://leonardwong.tech
+
+/*.html
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-mvCwwKuVDWE+Rkei4e1WUnj8mTLXU5m1Sn40vtcTSWw='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content
+  Access-Control-Allow-Origin: https://leonardwong.tech
+
+/reading
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-mvCwwKuVDWE+Rkei4e1WUnj8mTLXU5m1Sn40vtcTSWw='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content
+  Access-Control-Allow-Origin: https://leonardwong.tech
+
+/offline
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-mvCwwKuVDWE+Rkei4e1WUnj8mTLXU5m1Sn40vtcTSWw='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content
+  Access-Control-Allow-Origin: https://leonardwong.tech

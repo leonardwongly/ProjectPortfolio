@@ -908,11 +908,11 @@ a:focus-visible {
   overflow: hidden;
 }
 
-.interactive-card::after {
+.interactive-card-pointer::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(180px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+  background: radial-gradient(180px circle at 50% 50%,
     rgba(143, 156, 255, 0.2), transparent 60%);
   opacity: 0;
   transition: opacity 0.35s ease;
@@ -920,8 +920,8 @@ a:focus-visible {
   z-index: 0;
 }
 
-.interactive-card:hover::after,
-.interactive-card:focus-within::after {
+.interactive-card-pointer:hover::after,
+.interactive-card-pointer:focus-within::after {
   opacity: 1;
 }
 
@@ -946,7 +946,39 @@ a:focus-visible {
   animation-duration: var(--reveal-duration);
   animation-timing-function: var(--reveal-curve);
   animation-fill-mode: forwards;
-  animation-delay: var(--animation-delay, 0ms);
+  animation-delay: 0ms;
+}
+
+.reveal-on-scroll.is-visible.reveal-delay-1 {
+  animation-delay: 70ms;
+}
+
+.reveal-on-scroll.is-visible.reveal-delay-2 {
+  animation-delay: 140ms;
+}
+
+.reveal-on-scroll.is-visible.reveal-delay-3 {
+  animation-delay: 210ms;
+}
+
+.reveal-on-scroll.is-visible.reveal-delay-4 {
+  animation-delay: 280ms;
+}
+
+.reveal-on-scroll.is-visible.reveal-delay-5 {
+  animation-delay: 350ms;
+}
+
+.reveal-on-scroll.is-visible.reveal-delay-6 {
+  animation-delay: 420ms;
+}
+
+.reveal-on-scroll.is-visible.reveal-delay-7 {
+  animation-delay: 490ms;
+}
+
+.reveal-on-scroll.is-visible.reveal-delay-8 {
+  animation-delay: 560ms;
 }
 
 @keyframes revealLift {
@@ -1556,6 +1588,31 @@ footer {
   align-items: center;
 }
 
+.reading-share {
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+}
+
+.reading-share .btn {
+  justify-self: start;
+}
+
+.reading-share-status {
+  margin: 0;
+  min-height: 1.2em;
+  color: var(--ink-quiet);
+  font-size: 0.8rem;
+}
+
+.reading-share-status[data-state="success"] {
+  color: var(--accent-cool);
+}
+
+.reading-share-status[data-state="error"] {
+  color: var(--accent-strong);
+}
+
 .reading-grid {
   display: grid;
   gap: 1.2rem;
@@ -1682,7 +1739,7 @@ footer {
 
 @media (min-width: 992px) {
   .reading-controls {
-    grid-template-columns: 1.1fr 2fr auto;
+    grid-template-columns: 1.1fr 2fr auto auto;
     align-items: end;
   }
 }

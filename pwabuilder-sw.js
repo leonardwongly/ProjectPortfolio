@@ -9,11 +9,47 @@ workbox.setConfig({
 });
 
 const offlineFallbackPage = 'offline.html';
+const SW_UPDATE_EVENT_TYPE = 'SKIP_WAITING';
+const SW_UPDATE_TOKEN_PATTERN = /^[a-f0-9]{16,64}$/i;
+
+function isTrustedWindowClient(source) {
+  if (!source || source.type !== 'window' || typeof source.url !== 'string') {
+    return false;
+  }
+
+  try {
+    return new URL(source.url).origin === self.location.origin;
+  } catch (error) {
+    return false;
+  }
+}
+
+function isSkipWaitingMessage(data) {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+
+  if (data.type !== SW_UPDATE_EVENT_TYPE) {
+    return false;
+  }
+
+  if (typeof data.token !== 'string' || !SW_UPDATE_TOKEN_PATTERN.test(data.token)) {
+    return false;
+  }
+
+  return true;
+}
 
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+  if (!isSkipWaitingMessage(event.data)) {
+    return;
   }
+
+  if (!isTrustedWindowClient(event.source)) {
+    return;
+  }
+
+  self.skipWaiting();
 });
 
 self.addEventListener('install', (event) => {

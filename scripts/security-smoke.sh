@@ -47,14 +47,37 @@ for (const file of files) {
   if (cspLine === -1) {
     throw new Error(`Missing CSP in ${file}`);
   }
-  if (scriptLine === -1) {
-    throw new Error(`Missing <script> tag in ${file}`);
-  }
-  if (cspLine > scriptLine) {
+  if (scriptLine >= 0 && cspLine > scriptLine) {
     throw new Error(`CSP appears after script tags in ${file}`);
   }
 }
 NODE
+
+echo "[security-smoke] Verifying strict style-src policy in source templates..."
+if rg -n "style-src[^\\\"]*'unsafe-inline'" src/*.html; then
+  echo "[security-smoke] Found forbidden style-src 'unsafe-inline' in source templates." >&2
+  exit 1
+fi
+
+echo "[security-smoke] Verifying _headers contains required runtime security headers..."
+if ! rg -n "Content-Security-Policy:" _headers >/dev/null; then
+  echo "[security-smoke] Missing CSP response header in _headers." >&2
+  exit 1
+fi
+if ! rg -n "Permissions-Policy:" _headers >/dev/null; then
+  echo "[security-smoke] Missing Permissions-Policy in _headers." >&2
+  exit 1
+fi
+if ! rg -n "X-Frame-Options:\\s*DENY" _headers >/dev/null; then
+  echo "[security-smoke] Missing X-Frame-Options: DENY in _headers." >&2
+  exit 1
+fi
+
+echo "[security-smoke] Checking generated HTML for inline style attributes..."
+if rg -n "\\sstyle\\s*=" index.html reading.html offline.html; then
+  echo "[security-smoke] Found inline style attribute in generated HTML." >&2
+  exit 1
+fi
 
 echo "[security-smoke] Checking workflow permission baseline..."
 if ! rg -n "contents: 'read'" .github/workflows/gemini-cli.yml >/dev/null; then
