@@ -15,5 +15,29 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
         with:
           persist-credentials: false
-      - name: CI placeholder
-        run: echo "Build pipeline active; Sonar scan removed."
+
+      - name: Setup Node.js
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # ratchet:actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run unit tests
+        run: node --test tests/unit/*.test.mjs
+
+      - name: Validate build script
+        run: node scripts/build.js
+
+      - name: Verify generated files
+        run: |
+          test -f index.html || (echo "index.html not generated" && exit 1)
+          test -f reading.html || (echo "reading.html not generated" && exit 1)
+          test -f offline.html || (echo "offline.html not generated" && exit 1)
+          echo "✓ All HTML files generated successfully"
+
+      - name: Check for unresolved tokens
+        run: |
+          if grep -r "{{[A-Z_]*}}" index.html reading.html offline.html; then
+            echo "Error: Found unresolved template tokens"
+            exit 1
+          fi
+          echo "✓ No unresolved tokens found"

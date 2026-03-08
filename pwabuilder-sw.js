@@ -56,6 +56,11 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
       .then((cache) => cache.add(offlineFallbackPage))
+      .catch((error) => {
+        console.error('[SW] Failed to cache offline fallback:', error);
+        // Continue installation even if caching fails
+        // The offline fallback won't be available, but SW will still activate
+      })
   );
 });
 
@@ -82,9 +87,32 @@ self.addEventListener('fetch', (event) => {
         const networkResp = await fetch(event.request);
         return networkResp;
       } catch (error) {
-        const cache = await caches.open(CACHE);
-        const cachedResp = await cache.match(offlineFallbackPage);
-        return cachedResp;
+        console.warn('[SW] Network fetch failed, serving offline fallback:', error.message);
+        try {
+          const cache = await caches.open(CACHE);
+          const cachedResp = await cache.match(offlineFallbackPage);
+          if (cachedResp) {
+            return cachedResp;
+          }
+          // If offline page is not cached, return a minimal error response
+          console.error('[SW] Offline fallback page not found in cache');
+          return new Response('Offline - Network unavailable', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: new Headers({
+              'Content-Type': 'text/plain'
+            })
+          });
+        } catch (cacheError) {
+          console.error('[SW] Failed to access cache:', cacheError);
+          return new Response('Service worker error', {
+            status: 503,
+            statusText: 'Service Worker Error',
+            headers: new Headers({
+              'Content-Type': 'text/plain'
+            })
+          });
+        }
       }
     })());
   }

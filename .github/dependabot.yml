@@ -1,5 +1,6 @@
 version: 2
 updates:
+  # GitHub Actions - automated updates for workflow dependencies
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -9,5 +10,31 @@ updates:
       timezone: "Etc/UTC"
     labels:
       - "dependencies"
+      - "github-actions"
       - "security"
     open-pull-requests-limit: 10
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Vendored JavaScript dependencies tracking
+  # Note: This project vendors dependencies (Bootstrap, Workbox, etc.)
+  # Dependabot will notify of security issues, but manual updates required
+  # Review docs/security/vendor-dependencies.json monthly
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "03:00"
+      timezone: "Etc/UTC"
+    labels:
+      - "dependencies"
+      - "vendored"
+      - "security"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Only security updates for vendored dependencies
+    insecure-only: true
