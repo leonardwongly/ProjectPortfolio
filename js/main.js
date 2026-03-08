@@ -15,7 +15,11 @@ const REVEAL_DELAY_CLASS_PREFIX = 'reveal-delay-';
 const MAX_REVEAL_DELAY_CLASS = 8;
 const SW_UPDATE_EVENT_TYPE = 'SKIP_WAITING';
 
+// Initialize analytics manager (imported via analytics.js in HTML)
+let analyticsManager;
+
 document.addEventListener('DOMContentLoaded', () => {
+  initAnalytics();
   initNavActive();
   initNavCollapse();
   initAccordionState();
@@ -25,6 +29,33 @@ document.addEventListener('DOMContentLoaded', () => {
   initServiceWorker();
   window.addEventListener('hashchange', initNavActive);
 });
+
+/**
+ * Initializes analytics adapters.
+ * Creates manager and registers all available analytics providers.
+ */
+function initAnalytics() {
+  // Check if AnalyticsManager is available (loaded from analytics.js)
+  if (typeof AnalyticsManager === 'undefined') {
+    console.warn('[Analytics] AnalyticsManager not available, skipping initialization');
+    return;
+  }
+
+  analyticsManager = new AnalyticsManager();
+
+  // Register all analytics adapters
+  analyticsManager.registerAdapter(new DataLayerAdapter());
+  analyticsManager.registerAdapter(new GTagAdapter());
+  analyticsManager.registerAdapter(new PlausibleAdapter());
+  analyticsManager.registerAdapter(new CustomEventAdapter());
+
+  // Initialize after a brief delay to ensure all providers are loaded
+  setTimeout(() => {
+    analyticsManager.initialize();
+    const stats = analyticsManager.getStats();
+    console.log(`[Analytics] Initialized with ${stats.available}/${stats.total} adapters available`);
+  }, 100);
+}
 
 function initNavActive() {
   const links = Array.from(document.querySelectorAll('.navbar .nav-link'));
@@ -384,57 +415,16 @@ function initServiceWorker() {
   });
 }
 
+/**
+ * Tracks an event using the analytics manager.
+ * Falls back to noop if analytics manager is not available.
+ *
+ * @param {string} eventName - Name of the event to track
+ * @param {Object} properties - Event properties/metadata
+ */
 function trackEvent(eventName, properties = {}) {
-  if (typeof eventName !== 'string' || !/^[a-z0-9_]+$/i.test(eventName)) {
-    return;
-  }
-
-  const safeProperties = {};
-  Object.entries(properties).forEach(([key, value]) => {
-    if (typeof key !== 'string' || !/^[a-z0-9_]+$/i.test(key)) {
-      return;
-    }
-
-    if (typeof value === 'boolean' || Number.isFinite(value)) {
-      safeProperties[key] = value;
-      return;
-    }
-
-    if (typeof value === 'string') {
-      safeProperties[key] = value.slice(0, 120);
-    }
-  });
-
-  try {
-    if (Array.isArray(window.dataLayer)) {
-      window.dataLayer.push({ event: eventName, ...safeProperties });
-    }
-  } catch (error) {
-    // Ignore analytics adapter errors.
-  }
-
-  try {
-    if (typeof window.gtag === 'function') {
-      window.gtag('event', eventName, safeProperties);
-    }
-  } catch (error) {
-    // Ignore analytics adapter errors.
-  }
-
-  try {
-    if (typeof window.plausible === 'function') {
-      window.plausible(eventName, { props: safeProperties });
-    }
-  } catch (error) {
-    // Ignore analytics adapter errors.
-  }
-
-  try {
-    window.dispatchEvent(new CustomEvent('portfolio:track', {
-      detail: { event: eventName, properties: safeProperties }
-    }));
-  } catch (error) {
-    // Ignore analytics adapter errors.
+  if (analyticsManager) {
+    analyticsManager.track(eventName, properties);
   }
 }
 
