@@ -29,10 +29,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@2588666de8825e1e9dc4e2329a4c985457d55b32 # ratchet:github/codeql-action@v3
+        uses: github/codeql-action/init@38697555549f1db7851b81482ff19f1fa5c4fedc # ratchet:github/codeql-action@v3
         with:
           languages: javascript
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@2588666de8825e1e9dc4e2329a4c985457d55b32 # ratchet:github/codeql-action@v3
+        uses: github/codeql-action/analyze@38697555549f1db7851b81482ff19f1fa5c4fedc # ratchet:github/codeql-action@v3
         with:
           category: "/language:javascript"
