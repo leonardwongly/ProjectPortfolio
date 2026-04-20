@@ -25,7 +25,7 @@ jobs:
           node-version: '20'
           cache: npm
 
-      - name: Install Playwright test dependencies
+      - name: Install Node dependencies
         run: npm ci
 
       - name: Install Chromium for Playwright
