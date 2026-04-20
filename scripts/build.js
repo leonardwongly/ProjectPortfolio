@@ -522,6 +522,21 @@ function inferTags(entry) {
 }
 
 function renderReadingGrid(reading) {
+  const MAX_HIGH_DPI_IMAGE_BYTES = 250 * 1024;
+
+  function shouldUseAsHighDpi(relativePath) {
+    if (!relativePath) {
+      return false;
+    }
+
+    try {
+      const absolutePath = path.join(projectRoot, relativePath);
+      return fs.existsSync(absolutePath) && fs.statSync(absolutePath).size <= MAX_HIGH_DPI_IMAGE_BYTES;
+    } catch (error) {
+      return false;
+    }
+  }
+
   const missingCovers = new Set();
   const items = reading.map((entry, entryIndex) => {
     const tags = (entry.tags && entry.tags.length ? entry.tags : inferTags(entry)) || [];
@@ -534,13 +549,12 @@ function renderReadingGrid(reading) {
 
     const coverPath = entry.cover ? safeAssetPath(String(entry.cover), `reading[${entryIndex}].cover`) : '';
     let cover2xPath = coverPath.replace('-300.jpg', '.jpg').replace('-300.jpeg', '.jpeg');
-    if (cover2xPath === coverPath) {
+    if (cover2xPath === coverPath || !shouldUseAsHighDpi(cover2xPath)) {
       cover2xPath = coverPath;
     }
 
     const hasCover = coverPath && fs.existsSync(path.join(projectRoot, coverPath));
-    const hasCover2x = cover2xPath && fs.existsSync(path.join(projectRoot, cover2xPath));
-    const safeCover2x = hasCover2x ? cover2xPath : coverPath;
+    const safeCover2x = cover2xPath && fs.existsSync(path.join(projectRoot, cover2xPath)) ? cover2xPath : coverPath;
     const cover = escapeHtml(coverPath);
     const cover2x = escapeHtml(safeCover2x);
 
@@ -551,18 +565,23 @@ function renderReadingGrid(reading) {
     let media = '';
     if (hasCover) {
       const webp1xPath = coverPath.replace('.jpg', '.webp').replace('.jpeg', '.webp');
-      const webp2xPath = safeCover2x.replace('.jpg', '.webp').replace('.jpeg', '.webp');
-      const hasWebp = fs.existsSync(path.join(projectRoot, webp1xPath)) && fs.existsSync(path.join(projectRoot, webp2xPath));
+      const webp2xCandidatePath = safeCover2x.replace('.jpg', '.webp').replace('.jpeg', '.webp');
+      const hasWebp1x = fs.existsSync(path.join(projectRoot, webp1xPath));
+      const useWebp2x = webp2xCandidatePath !== webp1xPath && shouldUseAsHighDpi(webp2xCandidatePath);
+      const webp2xPath = useWebp2x ? webp2xCandidatePath : webp1xPath;
+      const hasWebp = hasWebp1x && fs.existsSync(path.join(projectRoot, webp2xPath));
       const webp1x = escapeHtml(webp1xPath);
       const webp2x = escapeHtml(webp2xPath);
+      const webpSrcset = webp2xPath === webp1xPath ? `${webp1x} 1x` : `${webp1x} 1x, ${webp2x} 2x`;
+      const imageSrcset = safeCover2x === coverPath ? `${cover} 1x` : `${cover} 1x, ${cover2x} 2x`;
       const webpSource = hasWebp
-        ? `<source type="image/webp" srcset="${webp1x} 1x, ${webp2x} 2x" />`
+        ? `<source type="image/webp" srcset="${webpSrcset}" />`
         : '';
 
       const image = `
       <picture>
         ${webpSource}
-        <img decoding="async" src="${cover}" class="book-cover" srcset="${cover} 1x, ${cover2x} 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of ${title}" loading="lazy" />
+        <img decoding="async" src="${cover}" class="book-cover" srcset="${imageSrcset}" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of ${title}" loading="lazy" />
       </picture>`;
 
       media = link
@@ -639,6 +658,10 @@ function renderReadingGrid(reading) {
     <div class="view-toggle" role="group" aria-label="Toggle reading view">
       <button type="button" class="view-pill" data-view="grid" aria-pressed="true">Grid</button>
       <button type="button" class="view-pill" data-view="list" aria-pressed="false">List</button>
+    </div>
+    <div class="reading-share">
+      <button type="button" class="btn btn-ghost" data-reading-share>Share this view</button>
+      <p class="reading-share-status" data-reading-share-status role="status" aria-live="polite"></p>
     </div>
   </div>
 

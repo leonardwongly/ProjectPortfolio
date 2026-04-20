@@ -1,0 +1,31 @@
+name: Playwright Integration
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  nav-and-accordion:
+    name: Nav + Accordion Integration
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # ratchet:actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Chromium for Playwright
+        run: npx --yes @playwright/test@1.52.0 install --with-deps chromium
+
+      - name: Run nav and accordion integration spec
+        run: npx --yes @playwright/test@1.52.0 test tests/integration/mobile-nav-and-accordion.spec.mjs --config=playwright.config.mjs

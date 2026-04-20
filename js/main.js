@@ -11,12 +11,18 @@ const REVEAL_SELECTORS = [
 ];
 
 const THEME_STORAGE_KEY = 'theme-preference';
+const REVEAL_DELAY_CLASS_PREFIX = 'reveal-delay-';
+const MAX_REVEAL_DELAY_CLASS = 8;
+const SW_UPDATE_EVENT_TYPE = 'SKIP_WAITING';
 
 document.addEventListener('DOMContentLoaded', () => {
   initNavActive();
+  initNavCollapse();
+  initAccordionState();
   initThemeToggle();
   initRevealOnScroll();
   initReadingFilters();
+  initServiceWorker();
   window.addEventListener('hashchange', initNavActive);
 });
 
@@ -56,6 +62,105 @@ function initNavActive() {
       link.setAttribute('aria-current', 'page');
       link.classList.add('active');
     }
+  });
+}
+
+function initNavCollapse() {
+  const toggle = document.querySelector('.navbar-toggler');
+  if (!toggle) {
+    return;
+  }
+
+  const targetSelector = toggle.getAttribute('data-bs-target');
+  if (!targetSelector || !targetSelector.startsWith('#')) {
+    return;
+  }
+
+  const panel = document.querySelector(targetSelector);
+  if (!panel) {
+    return;
+  }
+
+  const setExpanded = (expanded) => {
+    toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    panel.classList.toggle('show', expanded);
+  };
+
+  setExpanded(panel.classList.contains('show'));
+
+  toggle.addEventListener('click', () => {
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    setExpanded(!expanded);
+  });
+
+  panel.querySelectorAll('.nav-link').forEach((link) => {
+    link.addEventListener('click', () => {
+      setExpanded(false);
+    });
+  });
+
+  panel.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      setExpanded(false);
+      toggle.focus();
+    }
+  });
+}
+
+function initAccordionState() {
+  const buttons = Array.from(document.querySelectorAll('.accordion-button[data-bs-target^="#"]'));
+  if (!buttons.length) {
+    return;
+  }
+
+  const setButtonState = (button, expanded) => {
+    button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    button.classList.toggle('collapsed', !expanded);
+  };
+
+  const closeSiblings = (panel, scope) => {
+    scope.querySelectorAll('.accordion-collapse.show').forEach((candidate) => {
+      if (candidate === panel) {
+        return;
+      }
+      candidate.classList.remove('show');
+      if (candidate.id) {
+        const candidateButton = document.querySelector(`.accordion-button[data-bs-target="#${candidate.id}"]`);
+        if (candidateButton) {
+          setButtonState(candidateButton, false);
+        }
+      }
+    });
+  };
+
+  buttons.forEach((button) => {
+    const targetSelector = button.getAttribute('data-bs-target');
+    if (!targetSelector) {
+      return;
+    }
+    const panel = document.querySelector(targetSelector);
+    if (!panel) {
+      return;
+    }
+
+    setButtonState(button, panel.classList.contains('show'));
+
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      const expanded = button.getAttribute('aria-expanded') === 'true';
+      const nextExpanded = !expanded;
+
+      if (nextExpanded) {
+        const parentSelector = panel.getAttribute('data-bs-parent');
+        const scope = parentSelector ? document.querySelector(parentSelector) : panel.closest('.accordion');
+        if (scope) {
+          closeSiblings(panel, scope);
+        }
+      }
+
+      panel.classList.toggle('show', nextExpanded);
+      setButtonState(button, nextExpanded);
+    });
   });
 }
 
@@ -141,6 +246,18 @@ function initRevealOnScroll() {
   const collected = [];
   const seen = new Set();
 
+  const clearRevealDelayClass = (element) => {
+    for (let step = 0; step <= MAX_REVEAL_DELAY_CLASS; step += 1) {
+      element.classList.remove(`${REVEAL_DELAY_CLASS_PREFIX}${step}`);
+    }
+  };
+
+  const applyRevealDelayClass = (element, step) => {
+    const boundedStep = Math.min(Math.max(step, 0), MAX_REVEAL_DELAY_CLASS);
+    clearRevealDelayClass(element);
+    element.classList.add(`${REVEAL_DELAY_CLASS_PREFIX}${boundedStep}`);
+  };
+
   REVEAL_SELECTORS.forEach((selector) => {
     document.querySelectorAll(selector).forEach((element, position) => {
       if (!seen.has(element)) {
@@ -162,7 +279,7 @@ function initRevealOnScroll() {
   const applyImmediate = () => {
     collected.forEach((element) => {
       element.classList.add('is-visible');
-      element.style.removeProperty('--animation-delay');
+      clearRevealDelayClass(element);
     });
   };
 
@@ -171,15 +288,13 @@ function initRevealOnScroll() {
     return;
   }
 
-  const baseDelay = 70;
-
   collected.forEach((element, index) => {
     const hasCustomOrder = element.hasAttribute('data-animate-order');
     const sourceOrder = hasCustomOrder ? element.dataset.animateOrder : element.dataset.animateAutoOrder;
     const parsedOrder = Number.parseInt(sourceOrder ?? index, 10);
     const normalizedOrder = Number.isFinite(parsedOrder) ? Math.max(parsedOrder, 0) : index;
-    const delay = (hasCustomOrder ? normalizedOrder : Math.min(normalizedOrder, 8)) * baseDelay;
-    element.style.setProperty('--animation-delay', `${delay}ms`);
+    const delayStep = hasCustomOrder ? normalizedOrder : Math.min(normalizedOrder, MAX_REVEAL_DELAY_CLASS);
+    applyRevealDelayClass(element, delayStep);
   });
 
   const observer = new IntersectionObserver((entries) => {
@@ -208,6 +323,141 @@ function initRevealOnScroll() {
   }
 }
 
+function createServiceWorkerToken() {
+  if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
+  }
+
+  return `${Date.now().toString(16)}${Math.random().toString(16).slice(2, 18)}`;
+}
+
+function initServiceWorker() {
+  if (!window.isSecureContext || !('serviceWorker' in navigator)) {
+    return;
+  }
+
+  let refreshing = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) {
+      return;
+    }
+    refreshing = true;
+    window.location.reload();
+  });
+
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/pwabuilder-sw.js');
+
+      const requestActivation = () => {
+        if (!registration.waiting) {
+          return;
+        }
+        registration.waiting.postMessage({
+          type: SW_UPDATE_EVENT_TYPE,
+          token: createServiceWorkerToken()
+        });
+      };
+
+      if (registration.waiting) {
+        requestActivation();
+      }
+
+      registration.addEventListener('updatefound', () => {
+        const installing = registration.installing;
+        if (!installing) {
+          return;
+        }
+
+        installing.addEventListener('statechange', () => {
+          if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+            requestActivation();
+          }
+        });
+      });
+    } catch (error) {
+      // Ignore service worker registration errors.
+    }
+  });
+}
+
+function trackEvent(eventName, properties = {}) {
+  if (typeof eventName !== 'string' || !/^[a-z0-9_]+$/i.test(eventName)) {
+    return;
+  }
+
+  const safeProperties = {};
+  Object.entries(properties).forEach(([key, value]) => {
+    if (typeof key !== 'string' || !/^[a-z0-9_]+$/i.test(key)) {
+      return;
+    }
+
+    if (typeof value === 'boolean' || Number.isFinite(value)) {
+      safeProperties[key] = value;
+      return;
+    }
+
+    if (typeof value === 'string') {
+      safeProperties[key] = value.slice(0, 120);
+    }
+  });
+
+  try {
+    if (Array.isArray(window.dataLayer)) {
+      window.dataLayer.push({ event: eventName, ...safeProperties });
+    }
+  } catch (error) {
+    // Ignore analytics adapter errors.
+  }
+
+  try {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', eventName, safeProperties);
+    }
+  } catch (error) {
+    // Ignore analytics adapter errors.
+  }
+
+  try {
+    if (typeof window.plausible === 'function') {
+      window.plausible(eventName, { props: safeProperties });
+    }
+  } catch (error) {
+    // Ignore analytics adapter errors.
+  }
+
+  try {
+    window.dispatchEvent(new CustomEvent('portfolio:track', {
+      detail: { event: eventName, properties: safeProperties }
+    }));
+  } catch (error) {
+    // Ignore analytics adapter errors.
+  }
+}
+
+function sanitizeReadingQuery(value) {
+  if (typeof value !== 'string') {
+    return '';
+  }
+  return value.trim().replace(/\s+/g, ' ').slice(0, 120);
+}
+
+function debounce(fn, delayMs) {
+  let timeoutId;
+  return (...args) => {
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+    }
+    timeoutId = window.setTimeout(() => {
+      timeoutId = undefined;
+      fn(...args);
+    }, delayMs);
+  };
+}
+
 function initReadingFilters() {
   const section = document.querySelector('[data-reading]');
   if (!section) {
@@ -220,26 +470,135 @@ function initReadingFilters() {
   const grid = section.querySelector('[data-reading-grid]');
   const filterButtons = Array.from(section.querySelectorAll('.filter-pill'));
   const viewButtons = Array.from(section.querySelectorAll('.view-pill'));
+  const shareButton = section.querySelector('[data-reading-share]');
+  const shareStatus = section.querySelector('[data-reading-share-status]');
+  const urlParams = new URLSearchParams(window.location.search);
+  const indexedItems = items.map((item) => ({
+    element: item,
+    year: item.dataset.year || '',
+    tags: (item.dataset.tags || '').split(',').filter(Boolean),
+    searchableText: `${item.dataset.title || ''} ${item.dataset.author || ''} ${item.dataset.isbn || ''}`.toLowerCase()
+  }));
+  const yearValues = new Set(
+    filterButtons
+      .filter((button) => button.dataset.filterGroup === 'year')
+      .map((button) => button.dataset.filterValue || 'All')
+  );
+  const tagValues = new Set(
+    filterButtons
+      .filter((button) => button.dataset.filterGroup === 'tag')
+      .map((button) => button.dataset.filterValue || 'All')
+  );
+  const viewValues = new Set(
+    viewButtons
+      .map((button) => button.dataset.view)
+      .filter((value) => value === 'grid' || value === 'list')
+  );
 
-  let activeYear = 'All';
-  let activeTag = 'All';
-  let query = '';
+  let activeYear = yearValues.has(urlParams.get('year')) ? (urlParams.get('year') || 'All') : 'All';
+  let activeTag = tagValues.has(urlParams.get('tag')) ? (urlParams.get('tag') || 'All') : 'All';
+  let query = sanitizeReadingQuery(urlParams.get('q') || '');
+  let activeView = viewValues.has(urlParams.get('view')) ? (urlParams.get('view') || 'grid') : 'grid';
+  let statusTimeout;
+
+  const setShareStatus = (message, state) => {
+    if (!shareStatus) {
+      return;
+    }
+
+    shareStatus.textContent = message;
+    if (state === 'success' || state === 'error') {
+      shareStatus.dataset.state = state;
+    } else {
+      shareStatus.removeAttribute('data-state');
+    }
+
+    if (statusTimeout) {
+      window.clearTimeout(statusTimeout);
+      statusTimeout = undefined;
+    }
+
+    if (message) {
+      statusTimeout = window.setTimeout(() => {
+        shareStatus.textContent = '';
+        shareStatus.removeAttribute('data-state');
+      }, 5000);
+    }
+  };
+
+  const setActiveFilterButton = (group, value) => {
+    filterButtons.forEach((button) => {
+      if (button.dataset.filterGroup !== group) {
+        return;
+      }
+      const buttonValue = button.dataset.filterValue || 'All';
+      button.classList.toggle('is-active', buttonValue === value);
+    });
+  };
+
+  const setActiveView = (view) => {
+    activeView = viewValues.has(view) ? view : 'grid';
+    if (grid) {
+      grid.dataset.view = activeView;
+    }
+    viewButtons.forEach((button) => {
+      button.setAttribute('aria-pressed', button.dataset.view === activeView ? 'true' : 'false');
+    });
+  };
+
+  const buildShareParams = () => {
+    const params = new URLSearchParams();
+    if (activeYear !== 'All') {
+      params.set('year', activeYear);
+    }
+    if (activeTag !== 'All') {
+      params.set('tag', activeTag);
+    }
+    const normalizedQuery = sanitizeReadingQuery(query);
+    if (normalizedQuery) {
+      params.set('q', normalizedQuery);
+    }
+    if (activeView !== 'grid') {
+      params.set('view', activeView);
+    }
+    return params;
+  };
+
+  const updateAddressBar = () => {
+    const params = buildShareParams();
+    const queryString = params.toString();
+    const next = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
+    const current = `${window.location.pathname}${window.location.search}`;
+    if (next !== current) {
+      try {
+        window.history.replaceState(null, '', next);
+      } catch (error) {
+        // Ignore history update errors.
+      }
+    }
+  };
+  const updateAddressBarDebounced = debounce(updateAddressBar, 120);
+
+  const buildShareMetrics = () => ({
+    view: activeView,
+    has_query: query.length > 0,
+    year_filter: activeYear === 'All' ? 'all' : 'active',
+    tag_filter: activeTag === 'All' ? 'all' : 'active'
+  });
 
   const updateFilters = () => {
     let visibleCount = 0;
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = query.toLowerCase();
 
-    items.forEach((item) => {
-      const year = item.dataset.year;
-      const tags = (item.dataset.tags || '').split(',').filter(Boolean);
-      const text = `${item.dataset.title || ''} ${item.dataset.author || ''} ${item.dataset.isbn || ''}`.toLowerCase();
+    indexedItems.forEach((entry) => {
+      const { element, year, tags, searchableText } = entry;
 
       const matchesYear = activeYear === 'All' || year === activeYear;
       const matchesTag = activeTag === 'All' || tags.includes(activeTag.toLowerCase());
-      const matchesQuery = !normalizedQuery || text.includes(normalizedQuery);
+      const matchesQuery = !normalizedQuery || searchableText.includes(normalizedQuery);
 
       const shouldShow = matchesYear && matchesTag && matchesQuery;
-      item.hidden = !shouldShow;
+      element.hidden = !shouldShow;
       if (shouldShow) {
         visibleCount += 1;
       }
@@ -260,45 +619,79 @@ function initReadingFilters() {
         activeTag = value;
       }
 
-      filterButtons.forEach((btn) => {
-        if (btn.dataset.filterGroup === group) {
-          btn.classList.toggle('is-active', btn === button);
-        }
-      });
+      setActiveFilterButton(group, value);
 
       updateFilters();
+      updateAddressBar();
     });
   });
 
-  if (filterButtons.length) {
-    const firstYear = filterButtons.find((btn) => btn.dataset.filterGroup === 'year');
-    if (firstYear) {
-      firstYear.classList.add('is-active');
-    }
-    const firstTag = filterButtons.find((btn) => btn.dataset.filterGroup === 'tag');
-    if (firstTag) {
-      firstTag.classList.add('is-active');
-    }
-  }
-
   if (searchInput) {
+    searchInput.value = query;
     searchInput.addEventListener('input', (event) => {
-      query = event.target.value;
+      query = sanitizeReadingQuery(event.target.value || '');
+      if (event.target.value !== query) {
+        event.target.value = query;
+      }
       updateFilters();
+      updateAddressBarDebounced();
     });
   }
 
   viewButtons.forEach((button) => {
     button.addEventListener('click', () => {
       const view = button.dataset.view;
-      if (grid) {
-        grid.dataset.view = view;
-      }
-      viewButtons.forEach((btn) => {
-        btn.setAttribute('aria-pressed', btn === button ? 'true' : 'false');
-      });
+      setActiveView(view);
+      updateAddressBar();
     });
   });
 
+  if (shareButton) {
+    shareButton.addEventListener('click', async () => {
+      const params = buildShareParams();
+      const queryString = params.toString();
+      const shareUrl = `${window.location.origin}${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
+      const metrics = buildShareMetrics();
+
+      trackEvent('reading_share_clicked', metrics);
+
+      if (window.isSecureContext && typeof navigator.share === 'function') {
+        try {
+          await navigator.share({
+            title: 'Leonard Wong Reading',
+            text: 'Books that shaped my thinking.',
+            url: shareUrl
+          });
+          setShareStatus('Shared successfully.', 'success');
+          trackEvent('reading_share_completed', { ...metrics, method: 'native' });
+          return;
+        } catch (error) {
+          if (error && error.name === 'AbortError') {
+            setShareStatus('Share canceled.', 'error');
+            return;
+          }
+        }
+      }
+
+      if (window.isSecureContext && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          setShareStatus('Link copied. You can paste it anywhere.', 'success');
+          trackEvent('reading_share_completed', { ...metrics, method: 'clipboard' });
+          return;
+        } catch (error) {
+          // Fall back to manual copy guidance.
+        }
+      }
+
+      setShareStatus('Copy is unavailable here. Share from the address bar.', 'error');
+      trackEvent('reading_share_completed', { ...metrics, method: 'manual' });
+    });
+  }
+
+  setActiveFilterButton('year', activeYear);
+  setActiveFilterButton('tag', activeTag);
+  setActiveView(activeView);
   updateFilters();
+  updateAddressBar();
 }

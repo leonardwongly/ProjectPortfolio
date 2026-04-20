@@ -27,7 +27,7 @@
 | SEC-002 | High | Dependency Hygiene | Dependabot config had no valid ecosystem, leaving workflow dependencies stale. | `.github/dependabot.yml` |
 | SEC-003 | Medium | Client Policy | CSP meta was placed after script tags in source templates, weakening parser-time enforcement. | `src/index.html`, `src/reading.html`, `src/offline.html` |
 | SEC-004 | Medium | Build Integrity | Templating escaped HTML but did not enforce strict URL/path allowlists for dynamic href/src values. | `scripts/build.js` |
-| SEC-005 | Medium | Supply Chain | Some workflow actions were referenced via floating tags instead of immutable SHAs. | `.github/workflows/build.yml`, `.github/workflows/semgrep.yml` |
+| SEC-005 | Medium | Supply Chain | Some workflow actions were referenced via floating tags instead of immutable SHAs. | `.github/workflows/build.yml` |
 | SEC-006 | Medium | Deployment Headers | Live responses were missing stronger edge-enforced headers (HSTS/CSP response header/Permissions-Policy) and returned wildcard CORS on HTML. | `curl -I` observations on 2026-02-06 |
 
 ## Exploitability Notes
