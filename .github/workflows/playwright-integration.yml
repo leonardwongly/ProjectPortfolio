@@ -23,9 +23,13 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # ratchet:actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+
+      - name: Install Playwright test dependencies
+        run: npm ci
 
       - name: Install Chromium for Playwright
-        run: npx --yes @playwright/test@1.52.0 install --with-deps chromium
+        run: ./node_modules/.bin/playwright install --with-deps chromium
 
       - name: Run nav and accordion integration spec
-        run: npx --yes @playwright/test@1.52.0 test tests/integration/mobile-nav-and-accordion.spec.mjs --config=playwright.config.mjs
+        run: ./node_modules/.bin/playwright test tests/integration/mobile-nav-and-accordion.spec.mjs --config=playwright.config.mjs
