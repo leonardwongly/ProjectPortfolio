@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const {
   collectInlineScriptHashes,
+  hashInlineScript,
   injectCspScriptHashes,
   renderCspScriptHashesDirective,
   renderProfileSchema,
@@ -200,6 +201,15 @@ test('collectInlineScriptHashes only hashes inline scripts', () => {
 
   assert.equal(hashes.length, 2);
   assert.ok(hashes.every((hash) => hash.startsWith('sha256-')));
+});
+
+test('collectInlineScriptHashes handles script end tags with whitespace', () => {
+  const html = [
+    '<script src="js/main.js" defer></script >',
+    '<script>console.log("first")</script >'
+  ].join('');
+
+  assert.deepEqual(collectInlineScriptHashes(html), [hashInlineScript('console.log("first")')]);
 });
 
 test('injectCspScriptHashes replaces the template token with computed hashes', () => {

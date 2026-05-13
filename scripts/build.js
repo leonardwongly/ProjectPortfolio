@@ -52,7 +52,7 @@ function hashInlineScript(content) {
 
 function collectInlineScriptHashes(html) {
   const hashes = [];
-  const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+  const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
   let match = scriptPattern.exec(html);
 
   while (match) {
