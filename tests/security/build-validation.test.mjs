@@ -203,13 +203,23 @@ test('collectInlineScriptHashes only hashes inline scripts', () => {
   assert.ok(hashes.every((hash) => hash.startsWith('sha256-')));
 });
 
-test('collectInlineScriptHashes handles script end tags with whitespace', () => {
+test('collectInlineScriptHashes handles tolerant script end tags', () => {
   const html = [
     '<script src="js/main.js" defer></script >',
-    '<script>console.log("first")</script >'
+    '<script>console.log("first")</script >',
+    '<script>console.log("second")</script\t\n bar>'
   ].join('');
 
-  assert.deepEqual(collectInlineScriptHashes(html), [hashInlineScript('console.log("first")')]);
+  assert.deepEqual(collectInlineScriptHashes(html), [
+    hashInlineScript('console.log("first")'),
+    hashInlineScript('console.log("second")')
+  ]);
+});
+
+test('collectInlineScriptHashes does not treat data-src as external src', () => {
+  const html = '<script data-src="metadata">console.log("inline")</script>';
+
+  assert.deepEqual(collectInlineScriptHashes(html), [hashInlineScript('console.log("inline")')]);
 });
 
 test('injectCspScriptHashes replaces the template token with computed hashes', () => {

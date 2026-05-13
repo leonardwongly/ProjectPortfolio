@@ -50,17 +50,128 @@ function hashInlineScript(content) {
   return `sha256-${crypto.createHash('sha256').update(content, 'utf8').digest('base64')}`;
 }
 
+function isAsciiWhitespace(char) {
+  return char === ' ' || char === '\t' || char === '\n' || char === '\f' || char === '\r';
+}
+
+function findScriptStartTag(html, fromIndex) {
+  const normalizedHtml = html.toLowerCase();
+  let start = normalizedHtml.indexOf('<script', fromIndex);
+
+  while (start !== -1) {
+    const nextChar = normalizedHtml[start + '<script'.length];
+    if (nextChar === '>' || isAsciiWhitespace(nextChar)) {
+      return start;
+    }
+    start = normalizedHtml.indexOf('<script', start + '<script'.length);
+  }
+
+  return -1;
+}
+
+function findScriptEndTag(html, fromIndex) {
+  const normalizedHtml = html.toLowerCase();
+  let start = normalizedHtml.indexOf('</script', fromIndex);
+
+  while (start !== -1) {
+    const afterName = start + '</script'.length;
+    const nextChar = normalizedHtml[afterName];
+
+    if (nextChar === '>' || isAsciiWhitespace(nextChar)) {
+      const end = html.indexOf('>', afterName);
+      return end === -1 ? null : { start, end: end + 1 };
+    }
+
+    start = normalizedHtml.indexOf('</script', afterName);
+  }
+
+  return null;
+}
+
+function hasScriptSrcAttribute(attrs) {
+  let index = 0;
+
+  while (index < attrs.length) {
+    while (index < attrs.length && isAsciiWhitespace(attrs[index])) {
+      index += 1;
+    }
+
+    if (attrs[index] === '/') {
+      index += 1;
+      continue;
+    }
+
+    const nameStart = index;
+    while (
+      index < attrs.length &&
+      !isAsciiWhitespace(attrs[index]) &&
+      attrs[index] !== '=' &&
+      attrs[index] !== '/' &&
+      attrs[index] !== '>'
+    ) {
+      index += 1;
+    }
+
+    const name = attrs.slice(nameStart, index).toLowerCase();
+    while (index < attrs.length && isAsciiWhitespace(attrs[index])) {
+      index += 1;
+    }
+
+    if (attrs[index] !== '=') {
+      if (index === nameStart) {
+        index += 1;
+      }
+      continue;
+    }
+
+    if (name === 'src') {
+      return true;
+    }
+
+    index += 1;
+    while (index < attrs.length && isAsciiWhitespace(attrs[index])) {
+      index += 1;
+    }
+
+    const quote = attrs[index];
+    if (quote === '"' || quote === "'") {
+      index += 1;
+      const closingQuote = attrs.indexOf(quote, index);
+      index = closingQuote === -1 ? attrs.length : closingQuote + 1;
+      continue;
+    }
+
+    while (index < attrs.length && !isAsciiWhitespace(attrs[index])) {
+      index += 1;
+    }
+  }
+
+  return false;
+}
+
 function collectInlineScriptHashes(html) {
   const hashes = [];
-  const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
-  let match = scriptPattern.exec(html);
+  let fromIndex = 0;
+  let start = findScriptStartTag(html, fromIndex);
 
-  while (match) {
-    const attrs = match[1] || '';
-    if (!/\bsrc\s*=/i.test(attrs)) {
-      hashes.push(hashInlineScript(match[2]));
+  while (start !== -1) {
+    const openEnd = html.indexOf('>', start + '<script'.length);
+    if (openEnd === -1) {
+      break;
     }
-    match = scriptPattern.exec(html);
+
+    const endTag = findScriptEndTag(html, openEnd + 1);
+    if (!endTag) {
+      break;
+    }
+
+    const attrs = html.slice(start + '<script'.length, openEnd);
+    if (!hasScriptSrcAttribute(attrs)) {
+      hashes.push(hashInlineScript(html.slice(openEnd + 1, endTag.start)));
+    }
+
+    fromIndex = endTag.end;
+    start = findScriptStartTag(html, fromIndex);
   }
 
   return hashes;
