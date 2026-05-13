@@ -45,6 +45,16 @@ test('generated index includes LinkedIn-derived profile updates', () => {
       assert.ok(html.includes(cert.title), `missing AI credential: ${cert.title}`);
     });
 
+  const linkedAiCredentialTitles = [
+    'Certificate of Completion: LLM Application Developer Programme',
+    'AI and Cybersecurity'
+  ];
+  linkedAiCredentialTitles.forEach((title) => {
+    const cert = certifications.find((item) => item.title === title);
+    assert.ok(cert?.link, `missing linked credential URL: ${title}`);
+    assert.ok(html.includes(cert.link), `missing linked credential URL in generated page: ${title}`);
+  });
+
   skills
     .filter((group) => /AI|Security|Product/i.test(group.category))
     .flatMap((group) => group.items)
