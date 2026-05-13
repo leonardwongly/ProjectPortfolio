@@ -9,14 +9,18 @@
   },
   {
     "category": "Cloud & Data",
-    "items": ["AWS DynamoDB", "JSON", "ETL", "Data Warehousing"]
+    "items": ["AWS DynamoDB", "JSON", "ETL", "Data Warehousing", "Cloud Native Design", "Scalable Systems"]
   },
   {
     "category": "Security",
-    "items": ["OWASP ZAP", "SAST/DAST", "XSS Research"]
+    "items": ["OWASP ZAP", "SAST/DAST", "XSS Research", "AI and Cybersecurity"]
+  },
+  {
+    "category": "AI & Responsible Systems",
+    "items": ["LLM Application Development", "Responsible AI", "Explainable AI", "AI Risk Awareness"]
   },
   {
     "category": "Product & Delivery",
-    "items": ["UAT Planning", "Incident Management", "Training & Enablement"]
+    "items": ["UAT Planning", "Incident Management", "Training & Enablement", "Digital Product Strategy", "Platform Product Thinking"]
   }
 ]

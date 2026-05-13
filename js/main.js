@@ -5,6 +5,8 @@ const REVEAL_SELECTORS = [
   '.skill-card',
   '.experience-card',
   '.credentials-grid .card',
+  '.article-card',
+  '.honor-card',
   '.accordion-item',
   '.book-card',
   '.contact-card'

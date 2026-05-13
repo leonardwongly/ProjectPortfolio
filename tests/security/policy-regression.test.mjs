@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import test from 'node:test';
+
+const require = createRequire(import.meta.url);
+const { renderCspScriptHashesDirective } = require('../../scripts/build.js');
 
 const WORKFLOW_FILES = [
   '.github/workflows/build.yml',
@@ -65,6 +69,19 @@ test('source CSP style-src does not permit unsafe-inline', () => {
   }
 
   assert.deepEqual(offenders, [], `Found unsafe-inline style-src directives in: ${offenders.join(', ')}`);
+});
+
+test('generated index CSP hashes match inline scripts in both HTML and runtime headers', () => {
+  const sourceContent = fs.readFileSync('src/index.html', 'utf8');
+  const generatedContent = fs.readFileSync('index.html', 'utf8');
+  const headersContent = fs.readFileSync(HEADERS_FILE, 'utf8');
+  const expectedDirective = renderCspScriptHashesDirective(generatedContent);
+  const escapedDirective = expectedDirective.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  assert.match(sourceContent, /\{\{CSP_SCRIPT_HASHES}}/);
+  assert.ok(expectedDirective.includes('sha256-'));
+  assert.match(generatedContent, new RegExp(`script-src 'self'${escapedDirective};`));
+  assert.match(headersContent, new RegExp(`script-src 'self'${escapedDirective};`));
 });
 
 test('_headers includes required runtime security headers', () => {
@@ -136,6 +153,14 @@ test('reading share measurement hooks remain wired in client script', () => {
 
   assert.match(content, /reading_share_clicked/);
   assert.match(content, /reading_share_completed/);
+});
+
+test('service worker update flow has a single active client implementation', () => {
+  const mainScript = fs.readFileSync('js/main.js', 'utf8');
+
+  assert.match(mainScript, /navigator\.serviceWorker\.register\('\/pwabuilder-sw\.js'\)/);
+  assert.equal(fs.existsSync('js/pwa-update.js'), false);
+  assert.equal(fs.existsSync('js/vendor/pwa-update.js'), false);
 });
 
 test('reading page avoids oversized 2x cover variants for known heavy assets', () => {

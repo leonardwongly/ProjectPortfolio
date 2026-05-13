@@ -108,4 +108,25 @@ test.describe('accordion behavior', () => {
     await expect(cdcButton).toHaveAttribute('aria-expanded', 'false');
     await expect(cdcPanel).not.toHaveClass(/\bshow\b/);
   });
+
+  test('opening first panel collapses the second panel', async ({ page }) => {
+    await page.goto('/index.html');
+
+    const cdcButton = page.locator('button[aria-controls="collapseCDC"]');
+    const smuButton = page.locator('button[aria-controls="collapseSMU"]');
+    const cdcPanel = page.locator('#collapseCDC');
+    const smuPanel = page.locator('#collapseSMU');
+
+    await cdcButton.scrollIntoViewIfNeeded();
+
+    await smuButton.click();
+    await expect(smuPanel).toHaveClass(/\bshow\b/);
+
+    await cdcButton.click();
+
+    await expect(cdcButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(cdcPanel).toHaveClass(/\bshow\b/);
+    await expect(smuButton).toHaveAttribute('aria-expanded', 'false');
+    await expect(smuPanel).not.toHaveClass(/\bshow\b/);
+  });
 });

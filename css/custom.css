@@ -1421,6 +1421,10 @@ footer {
   color: var(--accent-cool);
 }
 
+.article-card {
+  align-content: start;
+}
+
 .chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -1707,6 +1711,13 @@ footer {
   gap: 1.5rem;
 }
 
+.credential-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
 .certifications-grid {
   display: grid;
   gap: 1.2rem;
@@ -1729,6 +1740,25 @@ footer {
 
 .certifications-grid p {
   color: var(--ink-quiet);
+}
+
+.honors-grid {
+  display: grid;
+  gap: 1.2rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.honor-card h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.45rem;
+}
+
+.honor-card p {
+  color: var(--ink-quiet);
+}
+
+.honor-description {
+  font-size: 0.9rem;
 }
 
 @media (min-width: 992px) {
@@ -1754,6 +1784,7 @@ footer {
   .featured-card,
   .skill-card,
   .experience-card,
+  .honor-card,
   .impact-card,
   .book-card {
     transition: none !important;

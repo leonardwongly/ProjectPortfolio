@@ -1,13 +1,20 @@
 {
   "name": "projectportfolio",
+  "version": "0.0.0",
   "private": true,
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "test": "playwright test"
+    "build": "node scripts/build.js",
+    "test": "playwright test",
+    "test:security": "node --test tests/security/*.test.mjs",
+    "test:content": "node --test tests/security/content-parity.test.mjs",
+    "pretest:integration": "playwright install chromium",
+    "test:integration": "playwright test tests/integration/mobile-nav-and-accordion.spec.mjs --config=playwright.config.mjs",
+    "validate": "npm run build && npm run test:security"
   },
   "devDependencies": {
-    "@playwright/test": "1.59.1"
+    "@playwright/test": "1.60.0"
   }
 }

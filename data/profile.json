@@ -1,0 +1,142 @@
+{
+  "person": {
+    "name": "Leonard Wong",
+    "job_title": "Software Engineer",
+    "location": "Singapore",
+    "url": "https://leonardwong.tech/",
+    "works_for": "NCS Group",
+    "client_context": "Serving Public Service Commission Singapore as an IT vendor",
+    "same_as": [
+      "https://github.leonardwong.tech",
+      "https://linkedin.leonardwong.tech",
+      "https://twitter.leonardwong.tech",
+      "https://mastodon.leonardwong.tech",
+      "https://threads.leonardwong.tech"
+    ],
+    "knows_about": [
+      "Secure software delivery",
+      "Platform engineering",
+      "Responsible AI",
+      "AI and cybersecurity",
+      "Digital product strategy",
+      "Data automation"
+    ]
+  },
+  "hero": {
+    "eyebrow": "Software Engineer · Singapore",
+    "headline": "Building secure, data-driven platforms with measurable impact.",
+    "lead": "Software Engineer at NCS Group, currently serving Public Service Commission Singapore as an IT vendor. I ship reliable internal products, automate data-heavy workflows, and integrate security early.",
+    "actions": [
+      { "label": "View Resume", "href": "docs/resume.pdf", "variant": "primary" },
+      { "label": "Writing", "href": "#writing", "variant": "ghost" },
+      { "label": "Contact", "href": "#contact", "variant": "ghost" }
+    ],
+    "highlights": [
+      { "label": "Focus", "value": "Security · Platforms" },
+      { "label": "Strength", "value": "Data Automation" },
+      { "label": "Now", "value": "NCS · PSC Singapore" }
+    ],
+    "current": {
+      "label": "Currently",
+      "value": "Software Engineer @ NCS Group",
+      "sub": "Serving Public Service Commission Singapore as an IT vendor"
+    }
+  },
+  "education": [
+    {
+      "institution": "Singapore Management University",
+      "credential": "BSc Information Systems (Cyber Security)",
+      "dates": "2017–2022"
+    },
+    {
+      "institution": "Nanyang Polytechnic",
+      "credential": "Diploma in Business Informatics with Merit",
+      "dates": "2014–2017"
+    },
+    {
+      "institution": "Gachon University",
+      "credential": "Overseas Exchange",
+      "dates": "2015"
+    }
+  ],
+  "publication": {
+    "title": "XSS for the Masses: Integrating Security in a Web Programming Course using a Security Scanner",
+    "venue": "ITiCSE 2022",
+    "date": "April 26, 2022",
+    "note": "Nominated for Best Paper Award",
+    "authors": "Lwin Khin Shar, Kyong Jin Shim, Christopher M. Poskitt & Li Ying Leonard Wong",
+    "links": [
+      { "label": "arXiv", "url": "https://arxiv.org/abs/2204.12416" },
+      { "label": "Hosted PDF", "url": "https://r2.leonardwong.tech/Certs/ITiCSE-22-XSS.pdf" }
+    ]
+  },
+  "articles": [
+    {
+      "title": "Hapana accidental leakage of Instructor data",
+      "published": "Sep 10, 2024",
+      "summary": "Public write-up on an accidental data exposure observed during a platform change, with emphasis on privacy risk and responsible analysis.",
+      "link": "https://www.linkedin.com/pulse/hapana-accidental-leakage-instructor-data-leonard-wong-zmqlc",
+      "tags": ["Security", "Privacy", "Data Exposure"]
+    },
+    {
+      "title": "Strategic challenges and significances of human resource management in today's business environment",
+      "published": "Jan 8, 2016",
+      "summary": "Early business analysis article on talent retention and human-resource management in a rapidly changing environment.",
+      "link": "https://www.linkedin.com/pulse/strategic-challenges-significances-human-resource-management-wong",
+      "tags": ["Business", "Strategy", "People"]
+    }
+  ],
+  "honors": [
+    {
+      "title": "MPA Global Internship Award",
+      "issuer": "Maritime and Port Authority of Singapore",
+      "issued": "May 2019"
+    },
+    {
+      "title": "Quantedge Foundation Scholarship",
+      "issuer": "Quantedge Foundation & Singapore Management University",
+      "issued": "Aug 2017"
+    },
+    {
+      "title": "Director's List AY2016/2017 Semester 2",
+      "issuer": "Nanyang Polytechnic",
+      "issued": "May 2017",
+      "description": "Awarded to the top 15% of students from each stage of study of each course."
+    },
+    {
+      "title": "Director's List AY2016/2017 Semester 1",
+      "issuer": "Nanyang Polytechnic",
+      "issued": "Oct 2016",
+      "description": "Awarded to the top 15% of students from each stage of study of each course."
+    },
+    {
+      "title": "Director's List AY2015/2016 Semester 1",
+      "issuer": "Nanyang Polytechnic",
+      "issued": "Nov 2015",
+      "description": "Awarded to the top 15% of students from each stage of study of each course."
+    },
+    {
+      "title": "Director's List AY2014/2015 Semester 2",
+      "issuer": "Nanyang Polytechnic",
+      "issued": "May 2015",
+      "description": "Awarded to the top 15% of students from each stage of study of each course."
+    },
+    {
+      "title": "Director's List AY2014/2015 Semester 1",
+      "issuer": "Nanyang Polytechnic",
+      "issued": "Nov 2014",
+      "description": "Awarded to the top 15% of students from each stage of study of each course."
+    }
+  ],
+  "contact": {
+    "eyebrow": "Let's connect",
+    "headline": "Open to impactful platform, security, and responsible AI work.",
+    "lede": "For roles, collaborations, or speaking requests, reach out directly.",
+    "actions": [
+      { "label": "Email", "href": "https://email.leonardwong.tech", "variant": "primary" },
+      { "label": "LinkedIn", "href": "https://linkedin.leonardwong.tech", "variant": "ghost" },
+      { "label": "Resume", "href": "docs/resume.pdf", "variant": "ghost" }
+    ],
+    "meta": ["Based in Singapore", "Security + Platform Engineering", "AI-aware product delivery"]
+  }
+}
