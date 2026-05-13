@@ -57,7 +57,11 @@
 | CSP placement and directives | Completed | `src/*.html`, regenerated pages, and tests |
 | URL/path allowlist validation | Completed | `scripts/build.js` + `tests/security/build-validation.test.mjs` |
 | Live header requirements documented | Completed | `docs/security/deployment-headers.md` |
-| Live header rollout at edge | Pending external deployment | Cloudflare/host configuration change required |
+| Live header rollout at edge | Completed on 2026-04-08 | `curl -I` verification + `_headers` |
+| Vendored asset governance hardening | Completed | `scripts/check-vendor-governance.mjs` + `docs/security/vendor-dependencies.json` |
+| Vendored upstream version review automation | Completed | `scripts/check-vendor-upstream.mjs` + `.github/workflows/vendor-review.yml` |
+| CSP hash automation | Completed | `src/_headers.template` + `scripts/build.js` |
+| Duplicate service-worker updater removal | Completed | `js/main.js` + removal of `js/pwa-update.js` |
 
 ### Runtime Header Check (2026-02-06)
 
@@ -67,18 +71,35 @@ Manual `curl -I` checks were rerun for:
 - `https://leonardwong.tech/reading`
 - `https://leonardwong.tech/offline`
 
-Observed response headers still indicate pending deployment hardening for:
+Observed response headers on 2026-02-06 indicated pending deployment hardening for:
 
-- `Strict-Transport-Security` (not present)
-- Response-header `Content-Security-Policy` (not present)
-- `Permissions-Policy` (not present)
-- Broad `Access-Control-Allow-Origin: *` on HTML responses
+- `Strict-Transport-Security` (not present at that time)
+- Response-header `Content-Security-Policy` (not present at that time)
+- `Permissions-Policy` (not present at that time)
+- Broad `Access-Control-Allow-Origin: *` on HTML responses at that time
+
+### Runtime Header Re-Check (2026-04-08)
+
+Manual `curl -I` checks were rerun for:
+
+- `https://leonardwong.tech/`
+- `https://leonardwong.tech/reading`
+- `https://leonardwong.tech/offline`
+
+Observed response headers now include:
+
+- `Strict-Transport-Security`
+- `Content-Security-Policy`
+- `Permissions-Policy`
+- `Referrer-Policy`
+- `X-Content-Type-Options`
+- `X-Frame-Options`
+- `Access-Control-Allow-Origin: https://leonardwong.tech`
 
 ## Residual Risks
 
-1. Edge headers are deployment-managed and require Cloudflare/host changes outside this repo.
-2. Vendored JS assets are not yet governed by an in-repo package manifest lifecycle.
-3. AI-assisted workflow remains a sensitive capability and must stay constrained to trusted collaborators.
+1. Vendored JS assets still depend on periodic human review of upstream releases, even though digest enforcement, deterministic refresh, scheduled upstream-version checks, and a current Workbox 7.4.0 baseline now exist in-repo.
+2. AI-assisted workflow remains a sensitive capability and must stay constrained to trusted collaborators.
 
 ## Rollout Guidance
 

@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -5,11 +6,14 @@ const projectRoot = process.cwd();
 const srcDir = path.join(projectRoot, 'src');
 const partialDir = path.join(projectRoot, 'partials');
 const dataDir = path.join(projectRoot, 'data');
+const headersTemplatePath = path.join(srcDir, '_headers.template');
 
 const partials = {
   NAV: fs.readFileSync(path.join(partialDir, 'nav.html'), 'utf8'),
   FOOTER: fs.readFileSync(path.join(partialDir, 'footer.html'), 'utf8')
 };
+
+const CSP_INLINE_SCRIPT_HASH_TOKEN = '{{CSP_SCRIPT_HASHES}}';
 
 function readJson(name) {
   const file = path.join(dataDir, name);
@@ -26,6 +30,160 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function escapeJsonLd(value) {
+  return JSON.stringify(value, null, 8)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+}
+
+function stripTrailingWhitespace(content) {
+  return content
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+$/g, ''))
+    .join('\n');
+}
+
+function hashInlineScript(content) {
+  return `sha256-${crypto.createHash('sha256').update(content, 'utf8').digest('base64')}`;
+}
+
+function isAsciiWhitespace(char) {
+  return char === ' ' || char === '\t' || char === '\n' || char === '\f' || char === '\r';
+}
+
+function findScriptStartTag(html, fromIndex) {
+  const normalizedHtml = html.toLowerCase();
+  let start = normalizedHtml.indexOf('<script', fromIndex);
+
+  while (start !== -1) {
+    const nextChar = normalizedHtml[start + '<script'.length];
+    if (nextChar === '>' || isAsciiWhitespace(nextChar)) {
+      return start;
+    }
+    start = normalizedHtml.indexOf('<script', start + '<script'.length);
+  }
+
+  return -1;
+}
+
+function findScriptEndTag(html, fromIndex) {
+  const normalizedHtml = html.toLowerCase();
+  let start = normalizedHtml.indexOf('</script', fromIndex);
+
+  while (start !== -1) {
+    const afterName = start + '</script'.length;
+    const nextChar = normalizedHtml[afterName];
+
+    if (nextChar === '>' || isAsciiWhitespace(nextChar)) {
+      const end = html.indexOf('>', afterName);
+      return end === -1 ? null : { start, end: end + 1 };
+    }
+
+    start = normalizedHtml.indexOf('</script', afterName);
+  }
+
+  return null;
+}
+
+function hasScriptSrcAttribute(attrs) {
+  let index = 0;
+
+  while (index < attrs.length) {
+    while (index < attrs.length && isAsciiWhitespace(attrs[index])) {
+      index += 1;
+    }
+
+    if (attrs[index] === '/') {
+      index += 1;
+      continue;
+    }
+
+    const nameStart = index;
+    while (
+      index < attrs.length &&
+      !isAsciiWhitespace(attrs[index]) &&
+      attrs[index] !== '=' &&
+      attrs[index] !== '/' &&
+      attrs[index] !== '>'
+    ) {
+      index += 1;
+    }
+
+    const name = attrs.slice(nameStart, index).toLowerCase();
+    while (index < attrs.length && isAsciiWhitespace(attrs[index])) {
+      index += 1;
+    }
+
+    if (attrs[index] !== '=') {
+      if (index === nameStart) {
+        index += 1;
+      }
+      continue;
+    }
+
+    if (name === 'src') {
+      return true;
+    }
+
+    index += 1;
+    while (index < attrs.length && isAsciiWhitespace(attrs[index])) {
+      index += 1;
+    }
+
+    const quote = attrs[index];
+    if (quote === '"' || quote === "'") {
+      index += 1;
+      const closingQuote = attrs.indexOf(quote, index);
+      index = closingQuote === -1 ? attrs.length : closingQuote + 1;
+      continue;
+    }
+
+    while (index < attrs.length && !isAsciiWhitespace(attrs[index])) {
+      index += 1;
+    }
+  }
+
+  return false;
+}
+
+function collectInlineScriptHashes(html) {
+  const hashes = [];
+  let fromIndex = 0;
+  let start = findScriptStartTag(html, fromIndex);
+
+  while (start !== -1) {
+    const openEnd = html.indexOf('>', start + '<script'.length);
+    if (openEnd === -1) {
+      break;
+    }
+
+    const endTag = findScriptEndTag(html, openEnd + 1);
+    if (!endTag) {
+      break;
+    }
+
+    const attrs = html.slice(start + '<script'.length, openEnd);
+    if (!hasScriptSrcAttribute(attrs)) {
+      hashes.push(hashInlineScript(html.slice(openEnd + 1, endTag.start)));
+    }
+
+    fromIndex = endTag.end;
+    start = findScriptStartTag(html, fromIndex);
+  }
+
+  return hashes;
+}
+
+function renderCspScriptHashesDirective(html) {
+  const hashes = collectInlineScriptHashes(html);
+  return hashes.length ? ` ${hashes.map((hash) => `'${hash}'`).join(' ')}` : '';
+}
+
+function injectCspScriptHashes(template, html) {
+  return template.replaceAll(CSP_INLINE_SCRIPT_HASH_TOKEN, renderCspScriptHashesDirective(html));
 }
 
 const MAX_TEXT_LENGTH = 600;
@@ -255,11 +413,149 @@ function validateCertificationData(items) {
     ensureString(cert.issuer, `${fieldPath}.issuer`, { maxLength: 220 });
     ensureString(cert.issued, `${fieldPath}.issued`, { maxLength: 120 });
     ensureOptionalString(cert.credential_id, `${fieldPath}.credential_id`, { maxLength: 120 });
-    sanitizeHref(cert.link, `${fieldPath}.link`);
+    if (cert.link !== undefined) {
+      const link = ensureOptionalString(cert.link, `${fieldPath}.link`, { maxLength: MAX_URL_LENGTH });
+      if (link !== '') {
+        sanitizeHref(link, `${fieldPath}.link`);
+      }
+    }
     if (cert.icon !== undefined) {
       sanitizeAssetPath(cert.icon, `${fieldPath}.icon`);
     }
     ensureOptionalString(cert.icon_alt, `${fieldPath}.icon_alt`, { maxLength: 120 });
+  });
+}
+
+function validateAction(action, fieldPath) {
+  ensureObject(action, fieldPath);
+  ensureAllowedKeys(action, fieldPath, ['label', 'href', 'variant']);
+  ensureString(action.label, `${fieldPath}.label`, { maxLength: 80 });
+  sanitizeHref(action.href, `${fieldPath}.href`);
+  if (action.variant !== undefined) {
+    const variant = ensureString(action.variant, `${fieldPath}.variant`, { maxLength: 20 });
+    if (variant !== 'primary' && variant !== 'ghost') {
+      failValidation(`${fieldPath}.variant`, 'expected primary or ghost');
+    }
+  }
+}
+
+function validateLabelValue(item, fieldPath) {
+  ensureObject(item, fieldPath);
+  ensureAllowedKeys(item, fieldPath, ['label', 'value']);
+  ensureString(item.label, `${fieldPath}.label`, { maxLength: 80 });
+  ensureString(item.value, `${fieldPath}.value`, { maxLength: 120 });
+}
+
+function validateProfileData(profile) {
+  ensureObject(profile, 'profile');
+  ensureAllowedKeys(profile, 'profile', [
+    'person',
+    'hero',
+    'education',
+    'publication',
+    'articles',
+    'honors',
+    'contact'
+  ]);
+
+  const person = ensureObject(profile.person, 'profile.person');
+  ensureAllowedKeys(person, 'profile.person', [
+    'name',
+    'job_title',
+    'location',
+    'url',
+    'works_for',
+    'client_context',
+    'same_as',
+    'knows_about'
+  ]);
+  ensureString(person.name, 'profile.person.name', { maxLength: 120 });
+  ensureString(person.job_title, 'profile.person.job_title', { maxLength: 120 });
+  ensureString(person.location, 'profile.person.location', { maxLength: 120 });
+  sanitizeHref(person.url, 'profile.person.url');
+  ensureString(person.works_for, 'profile.person.works_for', { maxLength: 160 });
+  ensureString(person.client_context, 'profile.person.client_context', { maxLength: 220 });
+  ensureArray(person.same_as, 'profile.person.same_as', { min: 1, max: 20 }).forEach((url, index) => {
+    sanitizeHref(url, `profile.person.same_as[${index}]`);
+  });
+  ensureArray(person.knows_about, 'profile.person.knows_about', { min: 1, max: 40 }).forEach((item, index) => {
+    ensureString(item, `profile.person.knows_about[${index}]`, { maxLength: 80 });
+  });
+
+  const hero = ensureObject(profile.hero, 'profile.hero');
+  ensureAllowedKeys(hero, 'profile.hero', ['eyebrow', 'headline', 'lead', 'actions', 'highlights', 'current']);
+  ensureString(hero.eyebrow, 'profile.hero.eyebrow', { maxLength: 120 });
+  ensureString(hero.headline, 'profile.hero.headline', { maxLength: 180 });
+  ensureString(hero.lead, 'profile.hero.lead', { maxLength: 420 });
+  ensureArray(hero.actions, 'profile.hero.actions', { min: 1, max: 5 }).forEach((action, index) => {
+    validateAction(action, `profile.hero.actions[${index}]`);
+  });
+  ensureArray(hero.highlights, 'profile.hero.highlights', { min: 1, max: 6 }).forEach((item, index) => {
+    validateLabelValue(item, `profile.hero.highlights[${index}]`);
+  });
+  const current = ensureObject(hero.current, 'profile.hero.current');
+  ensureAllowedKeys(current, 'profile.hero.current', ['label', 'value', 'sub']);
+  ensureString(current.label, 'profile.hero.current.label', { maxLength: 80 });
+  ensureString(current.value, 'profile.hero.current.value', { maxLength: 120 });
+  ensureString(current.sub, 'profile.hero.current.sub', { maxLength: 180 });
+
+  ensureArray(profile.education, 'profile.education', { min: 1, max: 20 }).forEach((entry, index) => {
+    const fieldPath = `profile.education[${index}]`;
+    ensureObject(entry, fieldPath);
+    ensureAllowedKeys(entry, fieldPath, ['institution', 'credential', 'dates']);
+    ensureString(entry.institution, `${fieldPath}.institution`, { maxLength: 160 });
+    ensureString(entry.credential, `${fieldPath}.credential`, { maxLength: 180 });
+    ensureString(entry.dates, `${fieldPath}.dates`, { maxLength: 80 });
+  });
+
+  const publication = ensureObject(profile.publication, 'profile.publication');
+  ensureAllowedKeys(publication, 'profile.publication', ['title', 'venue', 'date', 'note', 'authors', 'links']);
+  ensureString(publication.title, 'profile.publication.title', { maxLength: 260 });
+  ensureString(publication.venue, 'profile.publication.venue', { maxLength: 120 });
+  ensureString(publication.date, 'profile.publication.date', { maxLength: 80 });
+  ensureOptionalString(publication.note, 'profile.publication.note', { maxLength: 220 });
+  ensureString(publication.authors, 'profile.publication.authors', { maxLength: 260 });
+  ensureArray(publication.links, 'profile.publication.links', { min: 1, max: 8 }).forEach((link, index) => {
+    const fieldPath = `profile.publication.links[${index}]`;
+    ensureObject(link, fieldPath);
+    ensureAllowedKeys(link, fieldPath, ['label', 'url']);
+    ensureString(link.label, `${fieldPath}.label`, { maxLength: 80 });
+    sanitizeHref(link.url, `${fieldPath}.url`);
+  });
+
+  ensureArray(profile.articles, 'profile.articles', { max: 30 }).forEach((article, index) => {
+    const fieldPath = `profile.articles[${index}]`;
+    ensureObject(article, fieldPath);
+    ensureAllowedKeys(article, fieldPath, ['title', 'published', 'summary', 'link', 'tags']);
+    ensureString(article.title, `${fieldPath}.title`, { maxLength: 220 });
+    ensureString(article.published, `${fieldPath}.published`, { maxLength: 80 });
+    ensureString(article.summary, `${fieldPath}.summary`, { maxLength: 420 });
+    sanitizeHref(article.link, `${fieldPath}.link`);
+    ensureArray(article.tags || [], `${fieldPath}.tags`, { max: 12 }).forEach((tag, tagIndex) => {
+      ensureString(tag, `${fieldPath}.tags[${tagIndex}]`, { maxLength: 60 });
+    });
+  });
+
+  ensureArray(profile.honors, 'profile.honors', { max: 60 }).forEach((honor, index) => {
+    const fieldPath = `profile.honors[${index}]`;
+    ensureObject(honor, fieldPath);
+    ensureAllowedKeys(honor, fieldPath, ['title', 'issuer', 'issued', 'description']);
+    ensureString(honor.title, `${fieldPath}.title`, { maxLength: 180 });
+    ensureString(honor.issuer, `${fieldPath}.issuer`, { maxLength: 180 });
+    ensureString(honor.issued, `${fieldPath}.issued`, { maxLength: 80 });
+    ensureOptionalString(honor.description, `${fieldPath}.description`, { maxLength: 260 });
+  });
+
+  const contact = ensureObject(profile.contact, 'profile.contact');
+  ensureAllowedKeys(contact, 'profile.contact', ['eyebrow', 'headline', 'lede', 'actions', 'meta']);
+  ensureString(contact.eyebrow, 'profile.contact.eyebrow', { maxLength: 80 });
+  ensureString(contact.headline, 'profile.contact.headline', { maxLength: 180 });
+  ensureString(contact.lede, 'profile.contact.lede', { maxLength: 260 });
+  ensureArray(contact.actions, 'profile.contact.actions', { min: 1, max: 5 }).forEach((action, index) => {
+    validateAction(action, `profile.contact.actions[${index}]`);
+  });
+  ensureArray(contact.meta, 'profile.contact.meta', { max: 8 }).forEach((item, index) => {
+    ensureString(item, `profile.contact.meta[${index}]`, { maxLength: 80 });
   });
 }
 
@@ -303,6 +599,7 @@ function validateReadingData(items) {
 
 function validateDataCollections(allData) {
   ensureObject(allData, 'data');
+  validateProfileData(allData.profile);
   validateFeaturedData(allData.featured);
   validateSkillsData(allData.skills);
   validateExperienceData(allData.experience);
@@ -310,40 +607,110 @@ function validateDataCollections(allData) {
   validateReadingData(allData.reading);
 }
 
-function renderHero() {
+function linkShouldOpenInNewTab(href) {
+  return hasUrlScheme(href) || href.endsWith('.pdf');
+}
+
+function renderActionLinks(actions, fieldPath, className = 'hero-actions') {
+  const links = actions
+    .map((action, index) => {
+      const href = safeHref(action.href, `${fieldPath}[${index}].href`);
+      const target = linkShouldOpenInNewTab(href) ? ' target="_blank" rel="noopener noreferrer"' : '';
+      const variant = action.variant === 'primary' ? 'btn-primary' : 'btn-ghost';
+      return `<a class="btn ${variant}" href="${escapeHtml(href)}"${target}>${escapeHtml(action.label)}</a>`;
+    })
+    .join('');
+
+  return `<div class="${escapeHtml(className)}">${links}</div>`;
+}
+
+function renderProfileSchema(profile, certifications) {
+  const person = profile.person;
+  const publicationUrl = profile.publication.links[0]?.url || person.url;
+  const graph = [
+    {
+      '@type': 'Person',
+      name: person.name,
+      url: person.url,
+      jobTitle: person.job_title,
+      worksFor: { '@type': 'Organization', name: person.works_for },
+      affiliation: { '@type': 'Organization', name: 'Public Service Commission Singapore' },
+      alumniOf: profile.education.map((entry) => ({
+        '@type': 'CollegeOrUniversity',
+        name: entry.institution
+      })),
+      sameAs: person.same_as,
+      knowsAbout: person.knows_about,
+      award: profile.honors.map((honor) => honor.title),
+      hasCredential: certifications.map((cert) => ({
+        '@type': 'EducationalOccupationalCredential',
+        name: cert.title,
+        credentialCategory: 'certificate',
+        recognizedBy: {
+          '@type': 'Organization',
+          name: cert.issuer
+        }
+      }))
+    },
+    {
+      '@type': 'WebSite',
+      name: 'Leonard Wong Portfolio',
+      url: person.url,
+      description: 'Hiring-focused portfolio of Leonard Wong, software engineer specializing in secure, data-driven platforms.',
+      publisher: { '@type': 'Person', name: person.name }
+    },
+    {
+      '@type': 'ScholarlyArticle',
+      headline: profile.publication.title,
+      datePublished: profile.publication.date,
+      publisher: profile.publication.venue,
+      url: publicationUrl,
+      author: profile.publication.authors
+        .split(/\s*&\s*|\s*,\s*/)
+        .filter(Boolean)
+        .map((name) => ({ '@type': 'Person', name }))
+    },
+    ...profile.articles.map((article) => ({
+      '@type': 'Article',
+      headline: article.title,
+      datePublished: article.published,
+      url: article.link,
+      author: { '@type': 'Person', name: person.name },
+      about: article.tags || []
+    }))
+  ];
+
+  return escapeJsonLd({
+    '@context': 'https://schema.org',
+    '@graph': graph
+  });
+}
+
+function renderHero(profile) {
+  const hero = profile.hero;
   const webp220 = path.join(projectRoot, 'images/leo-220.webp');
   const webp440 = path.join(projectRoot, 'images/leo-440.webp');
   const hasWebp = fs.existsSync(webp220) && fs.existsSync(webp440);
   const pictureSource = hasWebp
     ? '<source type="image/webp" srcset="images/leo-220.webp 1x, images/leo-440.webp 2x" />'
     : '';
+  const highlights = hero.highlights
+    .map((item) => `
+        <div class="highlight-card">
+          <span class="highlight-label">${escapeHtml(item.label)}</span>
+          <span class="highlight-value">${escapeHtml(item.value)}</span>
+        </div>`)
+    .join('');
   return `
 <section class="hero-section section-block" id="home">
   <div class="hero-grid">
     <div class="hero-copy">
-      <p class="eyebrow">Software Engineer · Singapore</p>
-      <h1>Building secure, data-driven platforms with measurable impact.</h1>
-      <p class="lead">
-        Software Engineer at NCS Group and graduate student at NUS ISS. I ship reliable internal products,
-        automate data-heavy workflows, and integrate security early.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">View Resume</a>
-        <a class="btn btn-ghost" href="#contact">Contact</a>
-      </div>
+      <p class="eyebrow">${escapeHtml(hero.eyebrow)}</p>
+      <h1>${escapeHtml(hero.headline)}</h1>
+      <p class="lead">${escapeHtml(hero.lead)}</p>
+      ${renderActionLinks(hero.actions, 'profile.hero.actions')}
       <div class="hero-highlights">
-        <div class="highlight-card">
-          <span class="highlight-label">Focus</span>
-          <span class="highlight-value">Security · Platforms</span>
-        </div>
-        <div class="highlight-card">
-          <span class="highlight-label">Strength</span>
-          <span class="highlight-value">Data Automation</span>
-        </div>
-        <div class="highlight-card">
-          <span class="highlight-label">Now</span>
-          <span class="highlight-value">NCS · NUS ISS</span>
-        </div>
+        ${highlights}
       </div>
     </div>
     <div class="hero-visual">
@@ -354,13 +721,43 @@ function renderHero() {
         </picture>
       </div>
       <div class="now-card">
-        <p class="now-label">Currently</p>
-        <p class="now-value">Software Engineer @ NCS Group</p>
-        <p class="now-sub">Graduate Student · NUS ISS</p>
+        <p class="now-label">${escapeHtml(hero.current.label)}</p>
+        <p class="now-value">${escapeHtml(hero.current.value)}</p>
+        <p class="now-sub">${escapeHtml(hero.current.sub)}</p>
       </div>
     </div>
   </div>
 </section>`;
+}
+
+function renderProfileCredentials(profile) {
+  const educationItems = profile.education
+    .map((entry) => `<li>${escapeHtml(entry.institution)} — ${escapeHtml(entry.credential)}, ${escapeHtml(entry.dates)}</li>`)
+    .join('');
+  const publicationLinks = profile.publication.links
+    .map((link, index) => {
+      const href = safeHref(link.url, `profile.publication.links[${index}].url`);
+      return `<a class="badge rounded-pill bg-dark shadow" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)}&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>`;
+    })
+    .join('');
+  const note = profile.publication.note ? `<p class="text-muted">${escapeHtml(profile.publication.venue)} · ${escapeHtml(profile.publication.note)}</p>` : `<p class="text-muted">${escapeHtml(profile.publication.venue)}</p>`;
+
+  return `
+        <div class="credentials-grid">
+            <div class="card p-4">
+                <h3>Education</h3>
+                <ul class="experience-list">
+                    ${educationItems}
+                </ul>
+            </div>
+            <div class="card p-4">
+                <h3>Publication</h3>
+                <p><strong>${escapeHtml(profile.publication.title)}</strong></p>
+                ${note}
+                <p>${escapeHtml(profile.publication.authors)}</p>
+                <div class="credential-link-row">${publicationLinks}</div>
+            </div>
+        </div>`;
 }
 
 function renderFeaturedWork(items) {
@@ -479,7 +876,7 @@ function renderCertifications(certifications) {
       const issuer = escapeHtml(cert.issuer);
       const issued = escapeHtml(cert.issued);
       const credentialId = cert.credential_id ? escapeHtml(cert.credential_id) : '';
-      const link = escapeHtml(safeHref(cert.link, `certifications[${certIndex}].link`));
+      const link = cert.link ? escapeHtml(safeHref(cert.link, `certifications[${certIndex}].link`)) : '';
       const iconPath = cert.icon ? safeAssetPath(String(cert.icon), `certifications[${certIndex}].icon`) : '';
       const iconAlt = escapeHtml(cert.icon_alt || `${cert.issuer} logo`);
 
@@ -493,13 +890,16 @@ function renderCertifications(certifications) {
       }
 
       const meta = credentialId ? `${issued} · Credential ID ${credentialId}` : issued;
+      const linkMarkup = link
+        ? `<a class="badge rounded-pill bg-dark shadow" href="${link}" target="_blank" rel="noopener noreferrer">View Certification&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>`
+        : '<span class="badge rounded-pill bg-secondary shadow-sm">Credential link pending</span>';
 
       return `
       <article class="card p-3">
         <h3 class="card-title">${iconMarkup ? `${iconMarkup}&nbsp;` : ''}${title}</h3>
         <p>${issuer}</p>
         <p class="card-text fw-light">${meta}</p>
-        <a class="badge rounded-pill bg-dark shadow" href="${link}" target="_blank" rel="noopener noreferrer">View Certification&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>
+        ${linkMarkup}
       </article>`;
     })
     .join('');
@@ -508,6 +908,79 @@ function renderCertifications(certifications) {
 <div class="certifications-grid">
   ${cards}
 </div>`;
+}
+
+function renderWriting(profile) {
+  if (!profile.articles.length) {
+    return '';
+  }
+
+  const cards = profile.articles
+    .map((article, index) => {
+      const tags = article.tags || [];
+      const href = safeHref(article.link, `profile.articles[${index}].link`);
+      const tagChips = tags.map((tag) => `<span class="chip">${escapeHtml(tag)}</span>`).join('');
+
+      return `
+      <article class="featured-card article-card" data-tags="${escapeHtml(tags.join(','))}">
+        <header>
+          <p class="featured-kicker">${escapeHtml(article.published)}</p>
+          <h3>${escapeHtml(article.title)}</h3>
+        </header>
+        <p>${escapeHtml(article.summary)}</p>
+        ${tagChips ? `<div class="chip-row">${tagChips}</div>` : ''}
+        <div class="featured-links">
+          <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Read Article&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>
+        </div>
+      </article>`;
+    })
+    .join('');
+
+  return `
+<section class="section-block" id="writing">
+  <div class="section-header">
+    <p class="eyebrow">Writing</p>
+    <h2>Articles and public analysis</h2>
+    <p class="section-lede">Selected writing on security, privacy, and business topics.</p>
+  </div>
+  <div class="featured-grid writing-grid">
+    ${cards}
+  </div>
+</section>`;
+}
+
+function renderHonors(profile) {
+  if (!profile.honors.length) {
+    return '';
+  }
+
+  const cards = profile.honors
+    .map((honor) => {
+      const description = honor.description
+        ? `<p class="honor-description">${escapeHtml(honor.description)}</p>`
+        : '';
+
+      return `
+      <article class="card p-3 honor-card">
+        <p class="featured-kicker">${escapeHtml(honor.issued)}</p>
+        <h3>${escapeHtml(honor.title)}</h3>
+        <p>${escapeHtml(honor.issuer)}</p>
+        ${description}
+      </article>`;
+    })
+    .join('');
+
+  return `
+<section class="section-block" id="honors">
+  <div class="section-header">
+    <p class="eyebrow">Honors &amp; Awards</p>
+    <h2>Recognition across study and industry</h2>
+    <p class="section-lede">Scholarships, internship recognition, and academic excellence awards.</p>
+  </div>
+  <div class="honors-grid">
+    ${cards}
+  </div>
+</section>`;
 }
 
 function inferTags(entry) {
@@ -672,23 +1145,21 @@ function renderReadingGrid(reading) {
 </section>`;
 }
 
-function renderContact() {
+function renderContact(profile) {
+  const contact = profile.contact;
+  const meta = contact.meta.map((item) => `<span>${escapeHtml(item)}</span>`).join('');
+
   return `
 <section class="section-block" id="contact">
   <div class="contact-card">
     <div>
-      <p class="eyebrow">Let’s connect</p>
-      <h2>Open to impactful platform and security work.</h2>
-      <p class="section-lede">For roles, collaborations, or speaking requests, reach out directly.</p>
+      <p class="eyebrow">${escapeHtml(contact.eyebrow)}</p>
+      <h2>${escapeHtml(contact.headline)}</h2>
+      <p class="section-lede">${escapeHtml(contact.lede)}</p>
     </div>
-    <div class="contact-actions">
-      <a class="btn btn-primary" href="https://email.leonardwong.tech" target="_blank" rel="noopener noreferrer">Email</a>
-      <a class="btn btn-ghost" href="https://linkedin.leonardwong.tech" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-      <a class="btn btn-ghost" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">Resume</a>
-    </div>
+    ${renderActionLinks(contact.actions, 'profile.contact.actions', 'contact-actions')}
     <div class="contact-meta">
-      <span>Based in Singapore</span>
-      <span>Security + Platform Engineering</span>
+      ${meta}
     </div>
   </div>
 </section>`;
@@ -696,6 +1167,7 @@ function renderContact() {
 
 function buildSite() {
   const data = {
+    profile: readJson('profile.json'),
     featured: readJson('featured-projects.json'),
     skills: readJson('skills.json'),
     experience: readJson('experience.json'),
@@ -707,16 +1179,21 @@ function buildSite() {
 
   const tokens = {
     ...partials,
-    HERO: renderHero(),
+    PROFILE_SCHEMA: renderProfileSchema(data.profile, data.certifications),
+    HERO: renderHero(data.profile),
     FEATURED_WORK: renderFeaturedWork(data.featured),
     SKILLS: renderSkills(data.skills),
     EXPERIENCE: renderExperience(data.experience),
+    WRITING: renderWriting(data.profile),
+    PROFILE_CREDENTIALS: renderProfileCredentials(data.profile),
     CERTIFICATIONS: renderCertifications(data.certifications),
+    HONORS: renderHonors(data.profile),
     READING_GRID: renderReadingGrid(data.reading),
-    CONTACT: renderContact()
+    CONTACT: renderContact(data.profile)
   };
 
   const pages = ['index.html', 'reading.html', 'offline.html'];
+  const renderedPages = new Map();
 
   pages.forEach((page) => {
     const srcPath = path.join(srcDir, page);
@@ -732,13 +1209,33 @@ function buildSite() {
       }
     });
 
-    const leftover = content.match(/\{\{[A-Z_]+}}/g);
-    if (leftover) {
+    const leftover = content.match(/\{\{[A-Z_]+}}/g)?.filter((token) => token !== CSP_INLINE_SCRIPT_HASH_TOKEN);
+    if (leftover && leftover.length > 0) {
       throw new Error(`Unresolved tokens in ${page}: ${leftover.join(', ')}`);
     }
 
-    fs.writeFileSync(path.join(projectRoot, page), content);
+    renderedPages.set(page, stripTrailingWhitespace(content));
   });
+
+  const indexPage = renderedPages.get('index.html');
+  if (!indexPage) {
+    throw new Error('Missing rendered index page content');
+  }
+
+  renderedPages.forEach((content, page) => {
+    const finalContent = page === 'index.html'
+      ? injectCspScriptHashes(content, content)
+      : content;
+    fs.writeFileSync(path.join(projectRoot, page), finalContent);
+  });
+
+  if (!fs.existsSync(headersTemplatePath)) {
+    throw new Error(`Missing headers template: ${headersTemplatePath}`);
+  }
+
+  const headersTemplate = fs.readFileSync(headersTemplatePath, 'utf8');
+  const headersContent = injectCspScriptHashes(headersTemplate, indexPage);
+  fs.writeFileSync(path.join(projectRoot, '_headers'), headersContent);
 
   console.log('Build complete: generated', pages.join(', '));
 }
@@ -749,8 +1246,14 @@ if (require.main === module) {
 
 module.exports = {
   buildSite,
+  collectInlineScriptHashes,
+  hashInlineScript,
+  injectCspScriptHashes,
+  renderCspScriptHashesDirective,
+  renderProfileSchema,
   sanitizeHref,
   sanitizeAssetPath,
   sanitizeRelativeLink,
-  validateDataCollections
+  validateDataCollections,
+  validateProfileData
 };

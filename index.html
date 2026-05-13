@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-mvCwwKuVDWE+Rkei4e1WUnj8mTLXU5m1Sn40vtcTSWw='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-hGPMdxT8Ca36zlmsNyRt7NoIZl+X/nY1KQnsDtXVWlE='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="manifest" href="manifest.json"/>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
@@ -51,37 +51,283 @@
     <meta name="twitter:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
     <title>Leonard Wong | Software Engineer</title>
     <script type="application/ld+json">
-      {
+{
         "@context": "https://schema.org",
         "@graph": [
-          {
-            "@type": "Person",
-            "name": "Leonard Wong",
-            "url": "https://leonardwong.tech/",
-            "jobTitle": "Software Engineer",
-            "worksFor": { "@type": "Organization", "name": "NCS Group" },
-            "alumniOf": [
-              { "@type": "CollegeOrUniversity", "name": "Singapore Management University" },
-              { "@type": "CollegeOrUniversity", "name": "Nanyang Polytechnic" },
-              { "@type": "CollegeOrUniversity", "name": "Gachon University" }
-            ],
-            "sameAs": [
-              "https://github.leonardwong.tech",
-              "https://linkedin.leonardwong.tech",
-              "https://twitter.leonardwong.tech",
-              "https://mastodon.leonardwong.tech",
-              "https://threads.leonardwong.tech"
-            ]
-          },
-          {
-            "@type": "WebSite",
-            "name": "Leonard Wong Portfolio",
-            "url": "https://leonardwong.tech/",
-            "description": "Hiring-focused portfolio of Leonard Wong, software engineer specializing in secure, data-driven platforms.",
-            "publisher": { "@type": "Person", "name": "Leonard Wong" }
-          }
+                {
+                        "@type": "Person",
+                        "name": "Leonard Wong",
+                        "url": "https://leonardwong.tech/",
+                        "jobTitle": "Software Engineer",
+                        "worksFor": {
+                                "@type": "Organization",
+                                "name": "NCS Group"
+                        },
+                        "affiliation": {
+                                "@type": "Organization",
+                                "name": "Public Service Commission Singapore"
+                        },
+                        "alumniOf": [
+                                {
+                                        "@type": "CollegeOrUniversity",
+                                        "name": "Singapore Management University"
+                                },
+                                {
+                                        "@type": "CollegeOrUniversity",
+                                        "name": "Nanyang Polytechnic"
+                                },
+                                {
+                                        "@type": "CollegeOrUniversity",
+                                        "name": "Gachon University"
+                                }
+                        ],
+                        "sameAs": [
+                                "https://github.leonardwong.tech",
+                                "https://linkedin.leonardwong.tech",
+                                "https://twitter.leonardwong.tech",
+                                "https://mastodon.leonardwong.tech",
+                                "https://threads.leonardwong.tech"
+                        ],
+                        "knowsAbout": [
+                                "Secure software delivery",
+                                "Platform engineering",
+                                "Responsible AI",
+                                "AI and cybersecurity",
+                                "Digital product strategy",
+                                "Data automation"
+                        ],
+                        "award": [
+                                "MPA Global Internship Award",
+                                "Quantedge Foundation Scholarship",
+                                "Director's List AY2016/2017 Semester 2",
+                                "Director's List AY2016/2017 Semester 1",
+                                "Director's List AY2015/2016 Semester 1",
+                                "Director's List AY2014/2015 Semester 2",
+                                "Director's List AY2014/2015 Semester 1"
+                        ],
+                        "hasCredential": [
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Certificate of Completion: LLM Application Developer Programme",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "AI Singapore"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "AI and Cybersecurity",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Explainable and Responsible Artificial Intelligence",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Graduate Certificate in Designing and Managing Products and Platforms",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Service Design",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Architecting Platforms as a Business",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Digital Product Strategy",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Certification in Managing Digital Products",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "Singapore Computer Society"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Managing Digital Products",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Graduate Certificate of Architecting Scalable Systems",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Platform Engineering",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Cloud Native Solution Design",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Architecting Software Solutions",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "DevOps Engineering and Automation",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "National University of Singapore: Institute of Systems Science"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Professional Scrum Master I (PSM I)",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "Scrum.org"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Bachelor of Science: Information Systems (Major in Cyber Security)",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "Singapore Management University"
+                                        }
+                                },
+                                {
+                                        "@type": "EducationalOccupationalCredential",
+                                        "name": "Diploma in Business Informatics with Merit",
+                                        "credentialCategory": "certificate",
+                                        "recognizedBy": {
+                                                "@type": "Organization",
+                                                "name": "Nanyang Polytechnic"
+                                        }
+                                }
+                        ]
+                },
+                {
+                        "@type": "WebSite",
+                        "name": "Leonard Wong Portfolio",
+                        "url": "https://leonardwong.tech/",
+                        "description": "Hiring-focused portfolio of Leonard Wong, software engineer specializing in secure, data-driven platforms.",
+                        "publisher": {
+                                "@type": "Person",
+                                "name": "Leonard Wong"
+                        }
+                },
+                {
+                        "@type": "ScholarlyArticle",
+                        "headline": "XSS for the Masses: Integrating Security in a Web Programming Course using a Security Scanner",
+                        "datePublished": "April 26, 2022",
+                        "publisher": "ITiCSE 2022",
+                        "url": "https://arxiv.org/abs/2204.12416",
+                        "author": [
+                                {
+                                        "@type": "Person",
+                                        "name": "Lwin Khin Shar"
+                                },
+                                {
+                                        "@type": "Person",
+                                        "name": "Kyong Jin Shim"
+                                },
+                                {
+                                        "@type": "Person",
+                                        "name": "Christopher M. Poskitt"
+                                },
+                                {
+                                        "@type": "Person",
+                                        "name": "Li Ying Leonard Wong"
+                                }
+                        ]
+                },
+                {
+                        "@type": "Article",
+                        "headline": "Hapana accidental leakage of Instructor data",
+                        "datePublished": "Sep 10, 2024",
+                        "url": "https://www.linkedin.com/pulse/hapana-accidental-leakage-instructor-data-leonard-wong-zmqlc",
+                        "author": {
+                                "@type": "Person",
+                                "name": "Leonard Wong"
+                        },
+                        "about": [
+                                "Security",
+                                "Privacy",
+                                "Data Exposure"
+                        ]
+                },
+                {
+                        "@type": "Article",
+                        "headline": "Strategic challenges and significances of human resource management in today's business environment",
+                        "datePublished": "Jan 8, 2016",
+                        "url": "https://www.linkedin.com/pulse/strategic-challenges-significances-human-resource-management-wong",
+                        "author": {
+                                "@type": "Person",
+                                "name": "Leonard Wong"
+                        },
+                        "about": [
+                                "Business",
+                                "Strategy",
+                                "People"
+                        ]
+                }
         ]
-      }
+}
     </script>
 </head>
 <body class="page-bg">
@@ -168,6 +414,9 @@
                     <a class="nav-link" href="/index.html#experience">Experience</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="/index.html#writing">Writing</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="/reading.html">Reading</a>
                 </li>
                 <li class="nav-item">
@@ -189,21 +438,16 @@
 
 
 <main id="content" class="container-xxl">
-    
+
 <section class="hero-section section-block" id="home">
   <div class="hero-grid">
     <div class="hero-copy">
       <p class="eyebrow">Software Engineer · Singapore</p>
       <h1>Building secure, data-driven platforms with measurable impact.</h1>
-      <p class="lead">
-        Software Engineer at NCS Group and graduate student at NUS ISS. I ship reliable internal products,
-        automate data-heavy workflows, and integrate security early.
-      </p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">View Resume</a>
-        <a class="btn btn-ghost" href="#contact">Contact</a>
-      </div>
+      <p class="lead">Software Engineer at NCS Group, currently serving Public Service Commission Singapore as an IT vendor. I ship reliable internal products, automate data-heavy workflows, and integrate security early.</p>
+      <div class="hero-actions"><a class="btn btn-primary" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">View Resume</a><a class="btn btn-ghost" href="#writing">Writing</a><a class="btn btn-ghost" href="#contact">Contact</a></div>
       <div class="hero-highlights">
+
         <div class="highlight-card">
           <span class="highlight-label">Focus</span>
           <span class="highlight-value">Security · Platforms</span>
@@ -214,7 +458,7 @@
         </div>
         <div class="highlight-card">
           <span class="highlight-label">Now</span>
-          <span class="highlight-value">NCS · NUS ISS</span>
+          <span class="highlight-value">NCS · PSC Singapore</span>
         </div>
       </div>
     </div>
@@ -228,12 +472,12 @@
       <div class="now-card">
         <p class="now-label">Currently</p>
         <p class="now-value">Software Engineer @ NCS Group</p>
-        <p class="now-sub">Graduate Student · NUS ISS</p>
+        <p class="now-sub">Serving Public Service Commission Singapore as an IT vendor</p>
       </div>
     </div>
   </div>
 </section>
-    
+
 <section class="section-block" id="work">
   <div class="section-header">
     <p class="eyebrow">Featured Work</p>
@@ -241,7 +485,7 @@
     <p class="section-lede">A focused set of projects that show how I deliver secure, data-heavy systems.</p>
   </div>
   <div class="featured-grid">
-    
+
       <article class="featured-card" data-tags="C#,ASP.NET,AWS DynamoDB,JSON,APIs">
         <header>
           <p class="featured-kicker">May–Jul 2020</p>
@@ -288,7 +532,7 @@
           <p>Built a system to streamline agency workflows handling 160+ emails/hour.</p>
         </div>
         <div class="chip-row"><span class="chip">Web Apps</span><span class="chip">APIs</span><span class="chip">Workflow Automation</span></div>
-        
+
       </article>
       <article class="featured-card" data-tags="C#,ASP.NET,JavaScript,ipsw.me API">
         <header>
@@ -308,14 +552,14 @@
       </article>
   </div>
 </section>
-    
+
 <section class="section-block" id="skills">
   <div class="section-header">
     <p class="eyebrow">Skills</p>
     <h2>Technical breadth with delivery depth</h2>
   </div>
   <div class="skills-grid">
-    
+
       <div class="skill-card">
         <h3>Languages</h3>
         <div class="chip-row"><span class="chip">HTML</span><span class="chip">CSS</span><span class="chip">JavaScript</span><span class="chip">C#</span><span class="chip">SQL</span><span class="chip">PHP</span></div>
@@ -326,33 +570,37 @@
       </div>
       <div class="skill-card">
         <h3>Cloud &amp; Data</h3>
-        <div class="chip-row"><span class="chip">AWS DynamoDB</span><span class="chip">JSON</span><span class="chip">ETL</span><span class="chip">Data Warehousing</span></div>
+        <div class="chip-row"><span class="chip">AWS DynamoDB</span><span class="chip">JSON</span><span class="chip">ETL</span><span class="chip">Data Warehousing</span><span class="chip">Cloud Native Design</span><span class="chip">Scalable Systems</span></div>
       </div>
       <div class="skill-card">
         <h3>Security</h3>
-        <div class="chip-row"><span class="chip">OWASP ZAP</span><span class="chip">SAST/DAST</span><span class="chip">XSS Research</span></div>
+        <div class="chip-row"><span class="chip">OWASP ZAP</span><span class="chip">SAST/DAST</span><span class="chip">XSS Research</span><span class="chip">AI and Cybersecurity</span></div>
+      </div>
+      <div class="skill-card">
+        <h3>AI &amp; Responsible Systems</h3>
+        <div class="chip-row"><span class="chip">LLM Application Development</span><span class="chip">Responsible AI</span><span class="chip">Explainable AI</span><span class="chip">AI Risk Awareness</span></div>
       </div>
       <div class="skill-card">
         <h3>Product &amp; Delivery</h3>
-        <div class="chip-row"><span class="chip">UAT Planning</span><span class="chip">Incident Management</span><span class="chip">Training &amp; Enablement</span></div>
+        <div class="chip-row"><span class="chip">UAT Planning</span><span class="chip">Incident Management</span><span class="chip">Training &amp; Enablement</span><span class="chip">Digital Product Strategy</span><span class="chip">Platform Product Thinking</span></div>
       </div>
   </div>
 </section>
-    
+
 <section class="section-block" id="experience">
   <div class="section-header">
     <p class="eyebrow">Experience</p>
     <h2>Engineering roles with measurable outcomes</h2>
   </div>
   <div class="experience-grid">
-    
-      <article class="experience-card" data-role="Software Engineer · Young Leaders · Brand Ambassador">
+
+      <article class="experience-card" data-role="Software Engineer · IT Vendor to Public Service Commission Singapore · Young Leaders · Brand Ambassador">
         <header>
           <h3>NCS Pte. Ltd.</h3>
-          <p class="experience-meta">Software Engineer · Young Leaders · Brand Ambassador · Jan 2022–Present</p>
+          <p class="experience-meta">Software Engineer · IT Vendor to Public Service Commission Singapore · Young Leaders · Brand Ambassador · Jan 2022–Present</p>
         </header>
-        <ul class="experience-list"><li>Owned end-to-end delivery for a confidential internal project, from build to deployment.</li><li>Planned and facilitated UAT, including script creation and stakeholder sessions.</li><li>Managed incidents and user enablement through training and ongoing support.</li></ul>
-        <div class="chip-row"><span class="chip">UAT</span><span class="chip">Incident Management</span><span class="chip">Stakeholder Collaboration</span></div>
+        <ul class="experience-list"><li>Employed by NCS Group while serving Public Service Commission Singapore as an IT vendor.</li><li>Owned end-to-end delivery for a confidential internal project, from build to deployment.</li><li>Planned and facilitated UAT, including script creation and stakeholder sessions.</li><li>Managed incidents and user enablement through training and ongoing support.</li></ul>
+        <div class="chip-row"><span class="chip">UAT</span><span class="chip">Incident Management</span><span class="chip">Stakeholder Collaboration</span><span class="chip">Public Sector Delivery</span></div>
       </article>
       <article class="experience-card" data-role="Research Assistant">
         <header>
@@ -397,33 +645,76 @@
   </div>
 </section>
 
+<section class="section-block" id="writing">
+  <div class="section-header">
+    <p class="eyebrow">Writing</p>
+    <h2>Articles and public analysis</h2>
+    <p class="section-lede">Selected writing on security, privacy, and business topics.</p>
+  </div>
+  <div class="featured-grid writing-grid">
+
+      <article class="featured-card article-card" data-tags="Security,Privacy,Data Exposure">
+        <header>
+          <p class="featured-kicker">Sep 10, 2024</p>
+          <h3>Hapana accidental leakage of Instructor data</h3>
+        </header>
+        <p>Public write-up on an accidental data exposure observed during a platform change, with emphasis on privacy risk and responsible analysis.</p>
+        <div class="chip-row"><span class="chip">Security</span><span class="chip">Privacy</span><span class="chip">Data Exposure</span></div>
+        <div class="featured-links">
+          <a href="https://www.linkedin.com/pulse/hapana-accidental-leakage-instructor-data-leonard-wong-zmqlc" target="_blank" rel="noopener noreferrer">Read Article&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>
+        </div>
+      </article>
+      <article class="featured-card article-card" data-tags="Business,Strategy,People">
+        <header>
+          <p class="featured-kicker">Jan 8, 2016</p>
+          <h3>Strategic challenges and significances of human resource management in today&#39;s business environment</h3>
+        </header>
+        <p>Early business analysis article on talent retention and human-resource management in a rapidly changing environment.</p>
+        <div class="chip-row"><span class="chip">Business</span><span class="chip">Strategy</span><span class="chip">People</span></div>
+        <div class="featured-links">
+          <a href="https://www.linkedin.com/pulse/strategic-challenges-significances-human-resource-management-wong" target="_blank" rel="noopener noreferrer">Read Article&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>
+        </div>
+      </article>
+  </div>
+</section>
+
     <section class="section-block" id="credentials">
         <div class="section-header">
             <p class="eyebrow">Credentials</p>
             <h2>Education, research, and certifications</h2>
             <p class="section-lede">Academic foundations and continuous learning in security, platforms, and product thinking.</p>
         </div>
+
         <div class="credentials-grid">
             <div class="card p-4">
                 <h3>Education</h3>
                 <ul class="experience-list">
-                    <li>Singapore Management University — BSc Information Systems (Cyber Security), 2017–2022</li>
-                    <li>Nanyang Polytechnic — Diploma in Business Informatics with Merit, 2017–2021</li>
-                    <li>Gachon University — Overseas Exchange, 2015</li>
+                    <li>Singapore Management University — BSc Information Systems (Cyber Security), 2017–2022</li><li>Nanyang Polytechnic — Diploma in Business Informatics with Merit, 2014–2017</li><li>Gachon University — Overseas Exchange, 2015</li>
                 </ul>
             </div>
             <div class="card p-4">
                 <h3>Publication</h3>
                 <p><strong>XSS for the Masses: Integrating Security in a Web Programming Course using a Security Scanner</strong></p>
                 <p class="text-muted">ITiCSE 2022 · Nominated for Best Paper Award</p>
-                <p>Authored by Lwin Khin Shar, Kyong Jin Shim, Christopher M. Poskitt & Li Ying Leonard Wong</p>
-                <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/ITiCSE-22-XSS.pdf" target="_blank" rel="noopener noreferrer">View Publication&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a></span>
+                <p>Lwin Khin Shar, Kyong Jin Shim, Christopher M. Poskitt &amp; Li Ying Leonard Wong</p>
+                <div class="credential-link-row"><a class="badge rounded-pill bg-dark shadow" href="https://arxiv.org/abs/2204.12416" target="_blank" rel="noopener noreferrer">arXiv&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a><a class="badge rounded-pill bg-dark shadow" href="https://r2.leonardwong.tech/Certs/ITiCSE-22-XSS.pdf" target="_blank" rel="noopener noreferrer">Hosted PDF&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a></div>
             </div>
         </div>
 
-        
 <div class="certifications-grid">
-  
+
+      <article class="card p-3">
+        <h3 class="card-title">Certificate of Completion: LLM Application Developer Programme</h3>
+        <p>AI Singapore</p>
+        <p class="card-text fw-light">Issued Feb 2026 · Credential ID 12CEAFD3C-12CEAFCD6-1277E97ED</p>
+        <a class="badge rounded-pill bg-dark shadow" href="https://certificates.aisingapore.org/certificate-verification/12CEAFD3C-12CEAFCD6-1277E97ED/" target="_blank" rel="noopener noreferrer">View Certification&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>
+      </article>
+      <article class="card p-3">
+        <h3 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;AI and Cybersecurity</h3>
+        <p>National University of Singapore: Institute of Systems Science</p>
+        <p class="card-text fw-light">Issued Jun 2025</p>
+        <a class="badge rounded-pill bg-dark shadow" href="https://credentials.nus.edu.sg/cf361abd-1a92-4fdd-ae4f-9e82c620c4bf" target="_blank" rel="noopener noreferrer">View Certification&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>
+      </article>
       <article class="card p-3">
         <h3 class="card-title"><img decoding="async" src="images/nus_iss-30.jpg" alt="NUS-ISS logo" loading="lazy" width="30" height="30" class="circle-img" srcset="images/nus_iss-30.jpg 1x, images/nus_iss-60.jpg 2x" sizes="30px"/>&nbsp;Explainable and Responsible Artificial Intelligence</h3>
         <p>National University of Singapore: Institute of Systems Science</p>
@@ -517,6 +808,59 @@
 </div>
     </section>
 
+<section class="section-block" id="honors">
+  <div class="section-header">
+    <p class="eyebrow">Honors &amp; Awards</p>
+    <h2>Recognition across study and industry</h2>
+    <p class="section-lede">Scholarships, internship recognition, and academic excellence awards.</p>
+  </div>
+  <div class="honors-grid">
+
+      <article class="card p-3 honor-card">
+        <p class="featured-kicker">May 2019</p>
+        <h3>MPA Global Internship Award</h3>
+        <p>Maritime and Port Authority of Singapore</p>
+
+      </article>
+      <article class="card p-3 honor-card">
+        <p class="featured-kicker">Aug 2017</p>
+        <h3>Quantedge Foundation Scholarship</h3>
+        <p>Quantedge Foundation &amp; Singapore Management University</p>
+
+      </article>
+      <article class="card p-3 honor-card">
+        <p class="featured-kicker">May 2017</p>
+        <h3>Director&#39;s List AY2016/2017 Semester 2</h3>
+        <p>Nanyang Polytechnic</p>
+        <p class="honor-description">Awarded to the top 15% of students from each stage of study of each course.</p>
+      </article>
+      <article class="card p-3 honor-card">
+        <p class="featured-kicker">Oct 2016</p>
+        <h3>Director&#39;s List AY2016/2017 Semester 1</h3>
+        <p>Nanyang Polytechnic</p>
+        <p class="honor-description">Awarded to the top 15% of students from each stage of study of each course.</p>
+      </article>
+      <article class="card p-3 honor-card">
+        <p class="featured-kicker">Nov 2015</p>
+        <h3>Director&#39;s List AY2015/2016 Semester 1</h3>
+        <p>Nanyang Polytechnic</p>
+        <p class="honor-description">Awarded to the top 15% of students from each stage of study of each course.</p>
+      </article>
+      <article class="card p-3 honor-card">
+        <p class="featured-kicker">May 2015</p>
+        <h3>Director&#39;s List AY2014/2015 Semester 2</h3>
+        <p>Nanyang Polytechnic</p>
+        <p class="honor-description">Awarded to the top 15% of students from each stage of study of each course.</p>
+      </article>
+      <article class="card p-3 honor-card">
+        <p class="featured-kicker">Nov 2014</p>
+        <h3>Director&#39;s List AY2014/2015 Semester 1</h3>
+        <p>Nanyang Polytechnic</p>
+        <p class="honor-description">Awarded to the top 15% of students from each stage of study of each course.</p>
+      </article>
+  </div>
+</section>
+
     <section class="section-block" id="community">
         <div class="section-header">
             <p class="eyebrow">Community</p>
@@ -531,7 +875,7 @@
                     </button>
                 </h2>
                 <div id="collapseCDC" class="accordion-collapse collapse" aria-labelledby="headingCDC"
-                     data-bs-parent="#accordionCDC">
+                     data-bs-parent="#accordionList">
                     <div class="accordion-body">
                         <p>
                             • Mentor · 20 Apr – 27 Apr 2018<br/>
@@ -572,22 +916,17 @@
         </div>
     </section>
 
-    
+
 <section class="section-block" id="contact">
   <div class="contact-card">
     <div>
-      <p class="eyebrow">Let’s connect</p>
-      <h2>Open to impactful platform and security work.</h2>
+      <p class="eyebrow">Let&#39;s connect</p>
+      <h2>Open to impactful platform, security, and responsible AI work.</h2>
       <p class="section-lede">For roles, collaborations, or speaking requests, reach out directly.</p>
     </div>
-    <div class="contact-actions">
-      <a class="btn btn-primary" href="https://email.leonardwong.tech" target="_blank" rel="noopener noreferrer">Email</a>
-      <a class="btn btn-ghost" href="https://linkedin.leonardwong.tech" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-      <a class="btn btn-ghost" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">Resume</a>
-    </div>
+    <div class="contact-actions"><a class="btn btn-primary" href="https://email.leonardwong.tech/" target="_blank" rel="noopener noreferrer">Email</a><a class="btn btn-ghost" href="https://linkedin.leonardwong.tech/" target="_blank" rel="noopener noreferrer">LinkedIn</a><a class="btn btn-ghost" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">Resume</a></div>
     <div class="contact-meta">
-      <span>Based in Singapore</span>
-      <span>Security + Platform Engineering</span>
+      <span>Based in Singapore</span><span>Security + Platform Engineering</span><span>AI-aware product delivery</span>
     </div>
   </div>
 </section>

@@ -10,26 +10,36 @@ test('vendor dependency governance manifest is present and valid', () => {
 
   assert.equal(typeof parsed.last_reviewed, 'string');
   assert.equal(typeof parsed.review_cadence, 'string');
+  assert.equal(typeof parsed.max_review_age_days, 'number');
   assert.ok(Array.isArray(parsed.dependencies));
   assert.ok(parsed.dependencies.length >= 1);
+  assert.ok(
+    parsed.dependencies.every((dependency) =>
+      typeof dependency.registry_package === 'string' && dependency.registry_package.length > 0
+    )
+  );
+  assert.ok(
+    parsed.dependencies.every((dependency) =>
+      Array.isArray(dependency.files) &&
+      dependency.files.every((file) => typeof file.upstream_url === 'string' && file.upstream_url.startsWith('https://'))
+    )
+  );
 });
 
-test('vendored dependency signatures match tracked files', () => {
-  const parsed = JSON.parse(fs.readFileSync(GOVERNANCE_FILE, 'utf8'));
+test('vendored dependency governance validates digests, freshness, and inventory', async () => {
+  const { loadManifest, validateVendorGovernance } = await import('../../scripts/check-vendor-governance.mjs');
+  const result = validateVendorGovernance(loadManifest(), { today: '2026-04-08' });
 
-  parsed.dependencies.forEach((dependency) => {
-    assert.equal(typeof dependency.name, 'string');
-    assert.equal(typeof dependency.version, 'string');
-    assert.equal(typeof dependency.file, 'string');
-    assert.ok(Array.isArray(dependency.signatures) && dependency.signatures.length >= 1);
+  assert.equal(result.reviewAgeDays, 0);
+  assert.deepEqual(result.declaredFiles, result.actualFiles);
+});
 
-    const fileContent = fs.readFileSync(dependency.file, 'utf8');
-    dependency.signatures.forEach((signature) => {
-      assert.match(
-        fileContent,
-        new RegExp(signature.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
-        `Missing signature "${signature}" in ${dependency.file}`
-      );
-    });
-  });
+test('vendored dependency governance rejects stale reviews', async () => {
+  const { loadManifest, validateVendorGovernance } = await import('../../scripts/check-vendor-governance.mjs');
+  const manifest = loadManifest();
+
+  assert.throws(
+    () => validateVendorGovernance(manifest, { today: '2026-06-01' }),
+    /review age is \d+ day\(s\), exceeding 45 day\(s\)/
+  );
 });

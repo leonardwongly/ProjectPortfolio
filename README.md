@@ -30,9 +30,20 @@ Feel free to follow me on my socials 😶‍🌫️<br/>
 ## Development notes
 
 - Source HTML lives in `src/` with shared partials in `partials/`.
+- Profile, writing, honors, skills, experience, certifications, featured work, and reading content live in `data/`.
 - Regenerate the production pages after edits:
   ```bash
-  node scripts/build.js
+  npm run build
   ```
-- Local vendor scripts are stored in `js/vendor/` (PWA update + Workbox).
+- Run the static validation suite:
+  ```bash
+  npm run test:security
+  ```
+- Local vendor scripts are stored in `js/vendor/` and governed by:
+  ```bash
+  node scripts/check-vendor-governance.mjs
+  node scripts/check-vendor-upstream.mjs
+  node scripts/update-vendor.mjs
+  ```
 - Font WOFF2 files are generated from the OTF sources via FontTools.
+- See `docs/static-content-runbook.md` for the content update workflow and validation gates.

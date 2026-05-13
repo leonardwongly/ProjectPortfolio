@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-mvCwwKuVDWE+Rkei4e1WUnj8mTLXU5m1Sn40vtcTSWw='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'{{CSP_SCRIPT_HASHES}}; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="manifest" href="manifest.json"/>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
@@ -51,37 +51,7 @@
     <meta name="twitter:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
     <title>Leonard Wong | Software Engineer</title>
     <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Person",
-            "name": "Leonard Wong",
-            "url": "https://leonardwong.tech/",
-            "jobTitle": "Software Engineer",
-            "worksFor": { "@type": "Organization", "name": "NCS Group" },
-            "alumniOf": [
-              { "@type": "CollegeOrUniversity", "name": "Singapore Management University" },
-              { "@type": "CollegeOrUniversity", "name": "Nanyang Polytechnic" },
-              { "@type": "CollegeOrUniversity", "name": "Gachon University" }
-            ],
-            "sameAs": [
-              "https://github.leonardwong.tech",
-              "https://linkedin.leonardwong.tech",
-              "https://twitter.leonardwong.tech",
-              "https://mastodon.leonardwong.tech",
-              "https://threads.leonardwong.tech"
-            ]
-          },
-          {
-            "@type": "WebSite",
-            "name": "Leonard Wong Portfolio",
-            "url": "https://leonardwong.tech/",
-            "description": "Hiring-focused portfolio of Leonard Wong, software engineer specializing in secure, data-driven platforms.",
-            "publisher": { "@type": "Person", "name": "Leonard Wong" }
-          }
-        ]
-      }
+{{PROFILE_SCHEMA}}
     </script>
 </head>
 <body class="page-bg">
@@ -151,6 +121,7 @@
     {{FEATURED_WORK}}
     {{SKILLS}}
     {{EXPERIENCE}}
+    {{WRITING}}
 
     <section class="section-block" id="credentials">
         <div class="section-header">
@@ -158,26 +129,10 @@
             <h2>Education, research, and certifications</h2>
             <p class="section-lede">Academic foundations and continuous learning in security, platforms, and product thinking.</p>
         </div>
-        <div class="credentials-grid">
-            <div class="card p-4">
-                <h3>Education</h3>
-                <ul class="experience-list">
-                    <li>Singapore Management University — BSc Information Systems (Cyber Security), 2017–2022</li>
-                    <li>Nanyang Polytechnic — Diploma in Business Informatics with Merit, 2017–2021</li>
-                    <li>Gachon University — Overseas Exchange, 2015</li>
-                </ul>
-            </div>
-            <div class="card p-4">
-                <h3>Publication</h3>
-                <p><strong>XSS for the Masses: Integrating Security in a Web Programming Course using a Security Scanner</strong></p>
-                <p class="text-muted">ITiCSE 2022 · Nominated for Best Paper Award</p>
-                <p>Authored by Lwin Khin Shar, Kyong Jin Shim, Christopher M. Poskitt & Li Ying Leonard Wong</p>
-                <span class="badge rounded-pill bg-dark shadow"><a href="https://r2.leonardwong.tech/Certs/ITiCSE-22-XSS.pdf" target="_blank" rel="noopener noreferrer">View Publication&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a></span>
-            </div>
-        </div>
-
+        {{PROFILE_CREDENTIALS}}
         {{CERTIFICATIONS}}
     </section>
+    {{HONORS}}
 
     <section class="section-block" id="community">
         <div class="section-header">
@@ -193,7 +148,7 @@
                     </button>
                 </h2>
                 <div id="collapseCDC" class="accordion-collapse collapse" aria-labelledby="headingCDC"
-                     data-bs-parent="#accordionCDC">
+                     data-bs-parent="#accordionList">
                     <div class="accordion-body">
                         <p>
                             • Mentor · 20 Apr – 27 Apr 2018<br/>

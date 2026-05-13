@@ -4,13 +4,88 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const {
+  collectInlineScriptHashes,
+  hashInlineScript,
+  injectCspScriptHashes,
+  renderCspScriptHashesDirective,
+  renderProfileSchema,
   sanitizeHref,
   sanitizeAssetPath,
   validateDataCollections
 } = require('../../scripts/build.js');
 
+function makeValidProfile() {
+  return {
+    person: {
+      name: 'Example Person',
+      job_title: 'Software Engineer',
+      location: 'Singapore',
+      url: 'https://example.com/',
+      works_for: 'Example Org',
+      client_context: 'Serving Example Client as an IT vendor',
+      same_as: ['https://linkedin.com/in/example'],
+      knows_about: ['Security', 'Responsible AI']
+    },
+    hero: {
+      eyebrow: 'Software Engineer · Singapore',
+      headline: 'Building secure platforms.',
+      lead: 'Software engineer focused on secure, data-driven platforms.',
+      actions: [
+        { label: 'Resume', href: 'docs/resume.pdf', variant: 'primary' },
+        { label: 'Contact', href: '#contact', variant: 'ghost' }
+      ],
+      highlights: [{ label: 'Focus', value: 'Security' }],
+      current: {
+        label: 'Currently',
+        value: 'Software Engineer @ Example Org',
+        sub: 'Serving Example Client as an IT vendor'
+      }
+    },
+    education: [
+      {
+        institution: 'Example Polytechnic',
+        credential: 'Diploma in Secure Systems',
+        dates: '2014–2017'
+      }
+    ],
+    publication: {
+      title: 'Security for the Masses',
+      venue: 'ExampleConf 2025',
+      date: 'May 1, 2025',
+      note: 'Best paper nominee',
+      authors: 'Example Person & Collaborator',
+      links: [{ label: 'Paper', url: 'https://example.com/paper' }]
+    },
+    articles: [
+      {
+        title: 'Security write-up',
+        published: 'Jan 1, 2026',
+        summary: 'A short public analysis.',
+        link: 'https://linkedin.com/pulse/security-write-up',
+        tags: ['Security']
+      }
+    ],
+    honors: [
+      {
+        title: 'Director’s List',
+        issuer: 'Example Polytechnic',
+        issued: 'May 2017',
+        description: 'Awarded to top students.'
+      }
+    ],
+    contact: {
+      eyebrow: 'Contact',
+      headline: 'Open to secure platform work.',
+      lede: 'Reach out directly.',
+      actions: [{ label: 'Email', href: 'https://email.example.com', variant: 'primary' }],
+      meta: ['Based in Singapore']
+    }
+  };
+}
+
 function makeValidData() {
   return {
+    profile: makeValidProfile(),
     featured: [
       {
         id: 'project-alpha',
@@ -86,6 +161,13 @@ test('validateDataCollections accepts valid payload', () => {
   assert.doesNotThrow(() => validateDataCollections(data));
 });
 
+test('validateDataCollections accepts certifications without public links', () => {
+  const data = makeValidData();
+  delete data.certifications[0].link;
+
+  assert.doesNotThrow(() => validateDataCollections(data));
+});
+
 test('validateDataCollections rejects malformed payloads', () => {
   const badScheme = makeValidData();
   badScheme.featured[0].links[0].url = 'javascript:alert(1)';
@@ -98,4 +180,63 @@ test('validateDataCollections rejects malformed payloads', () => {
   const unknownField = makeValidData();
   unknownField.skills[0].unexpected = 'value';
   assert.throws(() => validateDataCollections(unknownField), /unexpected key\(s\): unexpected/);
+
+  const badArticle = makeValidData();
+  badArticle.profile.articles[0].link = 'javascript:alert(1)';
+  assert.throws(() => validateDataCollections(badArticle), /only https URLs are allowed/);
+
+  const badHonor = makeValidData();
+  badHonor.profile.honors[0].unexpected = 'value';
+  assert.throws(() => validateDataCollections(badHonor), /unexpected key\(s\): unexpected/);
+});
+
+test('collectInlineScriptHashes only hashes inline scripts', () => {
+  const html = [
+    '<script src="js/main.js" defer></script>',
+    '<script>console.log("first")</script>',
+    '<script type="application/ld+json">{"@context":"https://schema.org"}</script>'
+  ].join('');
+
+  const hashes = collectInlineScriptHashes(html);
+
+  assert.equal(hashes.length, 2);
+  assert.ok(hashes.every((hash) => hash.startsWith('sha256-')));
+});
+
+test('collectInlineScriptHashes handles tolerant script end tags', () => {
+  const html = [
+    '<script src="js/main.js" defer></script >',
+    '<script>console.log("first")</script >',
+    '<script>console.log("second")</script\t\n bar>'
+  ].join('');
+
+  assert.deepEqual(collectInlineScriptHashes(html), [
+    hashInlineScript('console.log("first")'),
+    hashInlineScript('console.log("second")')
+  ]);
+});
+
+test('collectInlineScriptHashes does not treat data-src as external src', () => {
+  const html = '<script data-src="metadata">console.log("inline")</script>';
+
+  assert.deepEqual(collectInlineScriptHashes(html), [hashInlineScript('console.log("inline")')]);
+});
+
+test('injectCspScriptHashes replaces the template token with computed hashes', () => {
+  const html = '<meta http-equiv="Content-Security-Policy" content="script-src \'self\'{{CSP_SCRIPT_HASHES}};">\n<script>{"safe":true}</script>';
+  const injected = injectCspScriptHashes(html, html);
+  const directive = renderCspScriptHashesDirective(html);
+
+  assert.ok(directive.includes('sha256-'));
+  assert.match(injected, new RegExp(`script-src 'self'${directive.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')};`));
+  assert.doesNotMatch(injected, /\{\{CSP_SCRIPT_HASHES}}/);
+});
+
+test('renderProfileSchema escapes script-breaking JSON-LD content', () => {
+  const profile = makeValidProfile();
+  profile.articles[0].title = 'Safe </script><script>alert(1)</script> title';
+  const schema = renderProfileSchema(profile, makeValidData().certifications);
+
+  assert.doesNotMatch(schema, /<\/script>/i);
+  assert.match(schema, /\\u003c\/script\\u003e/);
 });

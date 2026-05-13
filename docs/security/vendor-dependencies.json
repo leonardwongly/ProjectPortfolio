@@ -1,25 +1,59 @@
 {
-  "last_reviewed": "2026-02-15",
+  "last_reviewed": "2026-04-08",
   "review_cadence": "monthly",
+  "max_review_age_days": 45,
   "dependencies": [
     {
-      "name": "workbox-sw",
-      "source": "https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js",
-      "version": "5.1.2",
-      "file": "js/vendor/workbox-sw.js",
-      "signatures": [
-        "workbox:sw:5.1.2",
-        "storage.googleapis.com/workbox-cdn/releases/5.1.2"
-      ]
-    },
-    {
-      "name": "@pwabuilder/pwaupdate",
-      "source": "https://www.npmjs.com/package/@pwabuilder/pwaupdate",
-      "version": "0.2.1",
-      "file": "js/vendor/pwa-update.js",
-      "signatures": [
-        "/npm/@pwabuilder/pwaupdate@0.2.1/dist/pwa-update.js",
-        "window.litElementVersions"
+      "name": "workbox",
+      "registry_package": "workbox-sw",
+      "source": "https://storage.googleapis.com/workbox-cdn/releases/7.4.0/",
+      "version": "7.4.0",
+      "files": [
+        {
+          "path": "js/vendor/workbox-sw.js",
+          "upstream_url": "https://storage.googleapis.com/workbox-cdn/releases/7.4.0/workbox-sw.js",
+          "sha256": "8584a4d0401d8cde7f25d780145464d728b05a471fb2b8e2451bc88f9af2b1ef",
+          "signatures": [
+            "workbox:sw:7.4.0",
+            "storage.googleapis.com/workbox-cdn/releases/7.4.0"
+          ]
+        },
+        {
+          "path": "js/vendor/workbox/workbox-core.prod.js",
+          "upstream_url": "https://storage.googleapis.com/workbox-cdn/releases/7.4.0/workbox-core.prod.js",
+          "sha256": "8c4bb8d86f324621bdf9d4e82ea7cce6f3928f52bd9bf7654c4b85f26d724dae",
+          "signatures": [
+            "workbox:core:7.4.0",
+            "workbox-core.prod.js"
+          ]
+        },
+        {
+          "path": "js/vendor/workbox/workbox-navigation-preload.prod.js",
+          "upstream_url": "https://storage.googleapis.com/workbox-cdn/releases/7.4.0/workbox-navigation-preload.prod.js",
+          "sha256": "879756bca0560d5dde781663b684993ae63a792dd6d502502c52a46bc4a37c97",
+          "signatures": [
+            "workbox:navigation-preload:7.4.0",
+            "workbox-navigation-preload.prod.js"
+          ]
+        },
+        {
+          "path": "js/vendor/workbox/workbox-routing.prod.js",
+          "upstream_url": "https://storage.googleapis.com/workbox-cdn/releases/7.4.0/workbox-routing.prod.js",
+          "sha256": "844e227e94979b17caa529a90bead72541c32985d91f1e17ed2589a741cf7647",
+          "signatures": [
+            "workbox:routing:7.4.0",
+            "workbox-routing.prod.js"
+          ]
+        },
+        {
+          "path": "js/vendor/workbox/workbox-strategies.prod.js",
+          "upstream_url": "https://storage.googleapis.com/workbox-cdn/releases/7.4.0/workbox-strategies.prod.js",
+          "sha256": "c4139ddc2510aea347456a8ed167f820683492561394c64fd1eca5827cd219d3",
+          "signatures": [
+            "workbox:strategies:7.4.0",
+            "workbox-strategies.prod.js"
+          ]
+        }
       ]
     }
   ]

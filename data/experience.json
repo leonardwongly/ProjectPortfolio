@@ -1,14 +1,15 @@
 [
   {
     "org": "NCS Pte. Ltd.",
-    "role": "Software Engineer · Young Leaders · Brand Ambassador",
+    "role": "Software Engineer · IT Vendor to Public Service Commission Singapore · Young Leaders · Brand Ambassador",
     "dates": "Jan 2022–Present",
     "impact_bullets": [
+      "Employed by NCS Group while serving Public Service Commission Singapore as an IT vendor.",
       "Owned end-to-end delivery for a confidential internal project, from build to deployment.",
       "Planned and facilitated UAT, including script creation and stakeholder sessions.",
       "Managed incidents and user enablement through training and ongoing support."
     ],
-    "tech": ["UAT", "Incident Management", "Stakeholder Collaboration"]
+    "tech": ["UAT", "Incident Management", "Stakeholder Collaboration", "Public Sector Delivery"]
   },
   {
     "org": "Singapore Management University",

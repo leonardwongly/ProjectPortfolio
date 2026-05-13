@@ -13,6 +13,9 @@ done
 echo "[security-smoke] Checking build script syntax..."
 node --check scripts/build.js
 
+echo "[security-smoke] Validating vendored dependency governance..."
+node scripts/check-vendor-governance.mjs
+
 echo "[security-smoke] Regenerating static pages..."
 node scripts/build.js >/dev/null
 

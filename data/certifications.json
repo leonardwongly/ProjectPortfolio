@@ -1,5 +1,20 @@
 [
   {
+    "title": "Certificate of Completion: LLM Application Developer Programme",
+    "issuer": "AI Singapore",
+    "issued": "Issued Feb 2026",
+    "credential_id": "12CEAFD3C-12CEAFCD6-1277E97ED",
+    "link": "https://certificates.aisingapore.org/certificate-verification/12CEAFD3C-12CEAFCD6-1277E97ED/"
+  },
+  {
+    "title": "AI and Cybersecurity",
+    "issuer": "National University of Singapore: Institute of Systems Science",
+    "issued": "Issued Jun 2025",
+    "link": "https://credentials.nus.edu.sg/cf361abd-1a92-4fdd-ae4f-9e82c620c4bf",
+    "icon": "images/nus_iss-30.jpg",
+    "icon_alt": "NUS-ISS logo"
+  },
+  {
     "title": "Explainable and Responsible Artificial Intelligence",
     "issuer": "National University of Singapore: Institute of Systems Science",
     "issued": "Issued May 2025 - No Expiration Date",

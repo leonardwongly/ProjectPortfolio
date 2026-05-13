@@ -1,0 +1,34 @@
+name: Vendor Review
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  vendor-review:
+    name: Vendored Dependency Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # ratchet:actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate vendored dependency governance
+        run: node scripts/check-vendor-governance.mjs
+
+      - name: Check vendored dependencies against declared upstream files
+        run: node scripts/update-vendor.mjs
+
+      - name: Check vendored dependencies against latest npm releases
+        run: node scripts/check-vendor-upstream.mjs
