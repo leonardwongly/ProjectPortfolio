@@ -11,20 +11,65 @@ This portfolio is generated from source templates and JSON data. Edit the data a
 - `data/featured-projects.json` controls featured work.
 - `data/reading.json` controls the reading page.
 
+See `docs/content-source-inventory.md` before adding new public claims. New claims should be backed by an owner-approved source, public URL, or committed artifact before they are rendered.
+
 ## Update Flow
 
 1. Edit the relevant file in `data/`.
 2. Run `npm run build`.
-3. Run `npm run test:security`.
-4. Check `index.html`, `reading.html`, `offline.html`, and `_headers` for expected generated changes.
-5. For navigation or accordion changes, run `npm install` once, then `npm run test:integration`.
+3. Review `index.html`, `reading.html`, `offline.html`, and `_headers` for expected generated changes.
+4. Run targeted validation for the surface changed:
+   - Profile/content changes: `npm run test:content`
+   - Reading changes: `npm run check:reading`
+   - Media or layout-heavy changes: `npm run check:performance`
+   - External URL changes: `npm run check:links`
+   - Vendor changes: `npm run validate:vendor`
+5. Run the full local release gate once generated files are committed or otherwise in sync with `HEAD`:
+   ```bash
+   npm run validate:full
+   ```
+6. For navigation, accordion, service-worker, or responsive changes, run `npm install` once, then `npm run test:integration`.
 
 ## Safety Checks
 
 The build validates URLs, asset paths, and expected schema keys before rendering. External links must use `https:`. Relative links cannot contain path traversal segments.
 
-The content parity tests verify that LinkedIn-derived profile facts such as the current NCS and Public Service Commission Singapore context, Nanyang Polytechnic dates, articles, AI credentials, and honors remain visible on the generated page.
+The content parity tests verify that source-backed profile facts such as the current NCS and Public Service Commission Singapore context, Nanyang Polytechnic dates, articles, AI credentials, honors, and community records remain visible on the generated page.
+
+The reading audit rejects missing authors, missing ISBNs, invalid years, duplicate ISBN/title-year records, and missing declared cover files.
+
+The link-health checker validates URL shape before network access and blocks non-HTTPS, credential-bearing, localhost, and private literal host references. The default mode reports network failures without failing the build; use `npm run check:links -- --strict` before release if you need broken-link enforcement.
+
+The performance budget check caps generated page sizes, key static assets, asset directories, and individual book/image/font files. Update `docs/media-asset-policy.md` before changing those budgets.
 
 ## CI
 
-The build workflow uses Node 20, regenerates static pages, checks that generated outputs are committed, and runs the security/content test suite.
+The build workflow uses Node 20, regenerates static pages, checks that generated outputs are committed, and runs the security/content test suite. Branch protection currently requires these contexts before merging to `main`:
+
+- `Build`
+- `Scan`
+- `Cloudflare Pages`
+- `CodeQL`
+
+Draft pull requests intentionally skip the Playwright integration workflow. Mark a PR ready for review only when local validation has passed and generated files are committed.
+
+## Release Checklist
+
+- [ ] `npm run build`
+- [ ] `npm run test:security`
+- [ ] `npm run check:reading`
+- [ ] `npm run check:performance`
+- [ ] `npm run audit:high`
+- [ ] `npm run validate:vendor`
+- [ ] `npm run test:integration`
+- [ ] `npm run check:generated` after committing generated files
+- [ ] Verify production security headers after merge:
+  ```bash
+  curl -sSI https://leonardwong.tech/ | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy):"
+  curl -sSI https://leonardwong.tech/reading | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy):"
+  curl -sSI https://leonardwong.tech/offline | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy):"
+  ```
+
+## Rollback
+
+This is a static site. Roll back by reverting the offending commit or redeploying the last known-good Cloudflare Pages deployment. For content-only regressions, revert the changed `data/` file and rerun `npm run build` so generated pages and `_headers` stay consistent.
