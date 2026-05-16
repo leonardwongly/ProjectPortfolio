@@ -1,17 +1,16 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
 import { createRequire } from 'node:module';
 import test from 'node:test';
 
 const require = createRequire(import.meta.url);
 const { renderCspScriptHashesDirective } = require('../../scripts/build.js');
 
-const WORKFLOW_FILES = [
-  '.github/workflows/build.yml',
-  '.github/workflows/codeql.yml',
-  '.github/workflows/gemini-cli.yml',
-  '.github/workflows/playwright-integration.yml'
-];
+const WORKFLOW_FILES = fs.readdirSync('.github/workflows')
+  .filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'))
+  .map((file) => path.posix.join('.github/workflows', file))
+  .sort();
 
 const SOURCE_HTML_FILES = [
   'src/index.html',
@@ -28,6 +27,15 @@ const GENERATED_HTML_FILES = [
 const HEADERS_FILE = '_headers';
 
 test('workflow uses references are pinned by SHA', () => {
+  assert.deepEqual(WORKFLOW_FILES, [
+    '.github/workflows/build.yml',
+    '.github/workflows/codeql.yml',
+    '.github/workflows/gemini-cli.yml',
+    '.github/workflows/playwright-integration.yml',
+    '.github/workflows/scan.yml',
+    '.github/workflows/vendor-review.yml'
+  ]);
+
   const unpinned = [];
   const pinPattern = /uses:\s*[^@\s]+@[0-9a-f]{40}\b/;
   const usesPattern = /uses:\s*[^@\s]+@/;
@@ -124,6 +132,32 @@ test('generated pages do not contain dangerous href/src schemes', () => {
   }
 
   assert.deepEqual(offenders, [], `Found dangerous schemes in generated pages: ${offenders.join(', ')}`);
+});
+
+test('public content does not reference retired unreachable vanity domains', () => {
+  const retiredDomains = [
+    'email.leonardwong.tech',
+    'telegram.leonardwong.tech',
+    'twitter.leonardwong.tech'
+  ];
+  const files = [
+    'data/profile.json',
+    'partials/footer.html',
+    'README.md',
+    ...GENERATED_HTML_FILES
+  ];
+  const offenders = [];
+
+  files.forEach((file) => {
+    const content = fs.readFileSync(file, 'utf8');
+    retiredDomains.forEach((domain) => {
+      if (content.includes(domain)) {
+        offenders.push(`${file}: ${domain}`);
+      }
+    });
+  });
+
+  assert.deepEqual(offenders, [], `Found retired vanity domains:\n${offenders.join('\n')}`);
 });
 
 test('generated pages do not contain inline style attributes', () => {

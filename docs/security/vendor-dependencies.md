@@ -5,14 +5,14 @@ This file tracks locally vendored browser dependencies that are committed under 
 ## Review policy
 
 - Cadence: monthly
-- Last reviewed: 2026-04-08
+- Last reviewed: 2026-05-16
 - Maximum review age: 45 days
 - Owner: repository maintainers
 
 ## Current inventory
 
-1. `workbox` (`7.4.0`)
-   Source: `https://storage.googleapis.com/workbox-cdn/releases/7.4.0/`
+1. `workbox` (`7.4.1`)
+   Source: `https://storage.googleapis.com/workbox-cdn/releases/7.4.1/`
    Files:
    - `js/vendor/workbox-sw.js`
    - `js/vendor/workbox/workbox-core.prod.js`
