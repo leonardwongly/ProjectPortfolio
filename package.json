@@ -7,12 +7,19 @@
   },
   "scripts": {
     "build": "node scripts/build.js",
-    "test": "playwright test",
+    "test": "npx --no-install playwright test",
     "test:security": "node --test tests/security/*.test.mjs",
     "test:content": "node --test tests/security/content-parity.test.mjs",
-    "pretest:integration": "playwright install chromium",
-    "test:integration": "playwright test tests/integration/mobile-nav-and-accordion.spec.mjs --config=playwright.config.mjs",
-    "validate": "npm run build && npm run test:security"
+    "pretest:integration": "npx --no-install playwright install chromium",
+    "test:integration": "npx --no-install playwright test tests/integration/mobile-nav-and-accordion.spec.mjs --config=playwright.config.mjs",
+    "audit:high": "npm audit --audit-level=high",
+    "check:generated": "git diff --exit-code -- index.html reading.html offline.html _headers",
+    "check:links": "node scripts/check-link-health.mjs",
+    "check:performance": "node scripts/check-performance-budget.mjs",
+    "check:reading": "node scripts/audit-reading-metadata.mjs",
+    "validate:vendor": "node scripts/check-vendor-governance.mjs && node scripts/update-vendor.mjs && node scripts/check-vendor-upstream.mjs",
+    "validate": "npm run build && npm run test:security",
+    "validate:full": "npm run build && npm run check:generated && npm run test:security && npm run check:reading && npm run check:performance && npm run audit:high && npm run validate:vendor && npm run test:integration"
   },
   "devDependencies": {
     "@playwright/test": "1.60.0"
