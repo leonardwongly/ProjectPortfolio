@@ -9,7 +9,6 @@
     "same_as": [
       "https://github.leonardwong.tech",
       "https://linkedin.leonardwong.tech",
-      "https://twitter.leonardwong.tech",
       "https://mastodon.leonardwong.tech",
       "https://threads.leonardwong.tech"
     ],
@@ -82,7 +81,6 @@
       "title": "Strategic challenges and significances of human resource management in today's business environment",
       "published": "Jan 8, 2016",
       "summary": "Early business analysis article on talent retention and human-resource management in a rapidly changing environment.",
-      "link": "https://www.linkedin.com/pulse/strategic-challenges-significances-human-resource-management-wong",
       "tags": ["Business", "Strategy", "People"]
     }
   ],
@@ -128,13 +126,47 @@
       "description": "Awarded to the top 15% of students from each stage of study of each course."
     }
   ],
+  "languages": [],
+  "community": [
+    {
+      "id": "CDC",
+      "organization": "CDC (Central Singapore)",
+      "logo": "images/CDC-30.jpg",
+      "logo_alt": "Central Singapore CDC logo",
+      "roles": [
+        { "title": "Mentor", "dates": "20 Apr – 27 Apr 2018" },
+        { "title": "Mentor", "dates": "1 Feb 2019 – 3 May 2019" },
+        { "title": "Project Co-Leader & Mentor", "dates": "23 Aug 2019 – 22 Nov 2019" },
+        { "title": "Mentor", "dates": "17 Jan 2020 – 3 Mar 2020" },
+        { "title": "Mentor", "dates": "18 Sep 2020 – 11 Nov 2020" }
+      ],
+      "responsibilities": [
+        "Support lead teachers and ensure students complete assigned work",
+        "Help students access resources regardless of background or financial capability"
+      ]
+    },
+    {
+      "id": "SMU",
+      "organization": "SMU Apolitical Society",
+      "logo": "images/apolitcal-30.jpg",
+      "logo_alt": "SMU Apolitical Society logo",
+      "roles": [
+        { "title": "Sub-Committee Member", "dates": "Oct 2017" },
+        { "title": "Executive Committee & Honorary Financial Secretary", "dates": "Jan – Nov 2018" }
+      ],
+      "responsibilities": [
+        "Organized ministerial dialogue sessions with over 90 attendees",
+        "Hosted dialogue session with Senior Minister of State Dr. Janil Puthucheary",
+        "Owned budgeting and claims for the society"
+      ]
+    }
+  ],
   "contact": {
     "eyebrow": "Let's connect",
     "headline": "Open to impactful platform, security, and responsible AI work.",
     "lede": "For roles, collaborations, or speaking requests, reach out directly.",
     "actions": [
-      { "label": "Email", "href": "https://email.leonardwong.tech", "variant": "primary" },
-      { "label": "LinkedIn", "href": "https://linkedin.leonardwong.tech", "variant": "ghost" },
+      { "label": "LinkedIn", "href": "https://linkedin.leonardwong.tech", "variant": "primary" },
       { "label": "Resume", "href": "docs/resume.pdf", "variant": "ghost" }
     ],
     "meta": ["Based in Singapore", "Security + Platform Engineering", "AI-aware product delivery"]
