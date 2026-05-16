@@ -1,6 +1,9 @@
 name: '💬 Gemini CLI'
 
 on:
+  issues:
+    types:
+      - 'opened'
   pull_request_review_comment:
     types:
       - 'created'
@@ -35,9 +38,9 @@ jobs:
       issues: 'write'
     # This condition is complex to ensure we only run when explicitly invoked.
     if: |-
-      github.event_name == 'workflow_dispatch' ||
       (
-        github.event_name == 'issues' && github.event.action == 'opened' &&
+        github.event_name == 'issues' &&
+        github.event.action == 'opened' &&
         (
           contains(github.event.issue.body, '@gemini-cli') ||
           contains(github.event.issue.body, 'plan#')
@@ -278,7 +281,7 @@ jobs:
 
       - name: 'Run Gemini'
         id: 'run_gemini'
-        uses: 'google-github-actions/run-gemini-cli@9dbec29a20fab3f35017a40ad0eb798a257d4d51' # ratchet:google-github-actions/run-gemini-cli@v0.1.21
+        uses: 'google-github-actions/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions/run-gemini-cli@v0.1.22
         env:
           GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
           REPOSITORY: '${{ github.repository }}'

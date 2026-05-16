@@ -21,8 +21,6 @@ Usually updates are done to the beta before it is committed to the main codebase
 Feel free to follow me on my socials 😶‍🌫️<br/>
 [Mastodon](https://mastodon.leonardwong.tech)
 <br/>
-[Twitter](https://twitter.leonardwong.tech)
-<br/>
 [Linkedin](https://linkedin.leonardwong.tech)
 
 ---
@@ -39,6 +37,16 @@ Feel free to follow me on my socials 😶‍🌫️<br/>
   ```bash
   npm run test:security
   ```
+- Run the full local release gate after source and generated files are in sync:
+  ```bash
+  npm run validate:full
+  ```
+- Audit reading metadata, link health, and size budgets independently:
+  ```bash
+  npm run check:reading
+  npm run check:links
+  npm run check:performance
+  ```
 - Local vendor scripts are stored in `js/vendor/` and governed by:
   ```bash
   node scripts/check-vendor-governance.mjs
@@ -47,3 +55,4 @@ Feel free to follow me on my socials 😶‍🌫️<br/>
   ```
 - Font WOFF2 files are generated from the OTF sources via FontTools.
 - See `docs/static-content-runbook.md` for the content update workflow and validation gates.
+- See `docs/content-source-inventory.md` for owner-verified content sources and `docs/media-asset-policy.md` for cover/image budget rules.

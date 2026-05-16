@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 import { createRequire } from 'node:module';
 
@@ -11,6 +14,7 @@ const {
   renderProfileSchema,
   sanitizeHref,
   sanitizeAssetPath,
+  validateReadingAssetInventory,
   validateDataCollections
 } = require('../../scripts/build.js');
 
@@ -71,6 +75,27 @@ function makeValidProfile() {
         issuer: 'Example Polytechnic',
         issued: 'May 2017',
         description: 'Awarded to top students.'
+      }
+    ],
+    languages: [
+      {
+        name: 'English',
+        proficiency: 'Professional working proficiency'
+      }
+    ],
+    community: [
+      {
+        id: 'EXAMPLE',
+        organization: 'Example Community',
+        logo: 'images/example-30.jpg',
+        logo_alt: 'Example Community logo',
+        roles: [
+          {
+            title: 'Mentor',
+            dates: '2025'
+          }
+        ],
+        responsibilities: ['Supported students during weekly sessions.']
       }
     ],
     contact: {
@@ -168,6 +193,13 @@ test('validateDataCollections accepts certifications without public links', () =
   assert.doesNotThrow(() => validateDataCollections(data));
 });
 
+test('validateDataCollections accepts articles without public links', () => {
+  const data = makeValidData();
+  delete data.profile.articles[0].link;
+
+  assert.doesNotThrow(() => validateDataCollections(data));
+});
+
 test('validateDataCollections rejects malformed payloads', () => {
   const badScheme = makeValidData();
   badScheme.featured[0].links[0].url = 'javascript:alert(1)';
@@ -188,6 +220,30 @@ test('validateDataCollections rejects malformed payloads', () => {
   const badHonor = makeValidData();
   badHonor.profile.honors[0].unexpected = 'value';
   assert.throws(() => validateDataCollections(badHonor), /unexpected key\(s\): unexpected/);
+
+  const duplicateReading = makeValidData();
+  duplicateReading.reading.push({ ...duplicateReading.reading[0], title: 'Different title' });
+  assert.throws(() => validateDataCollections(duplicateReading), /duplicate reading record/);
+
+  const badCommunityId = makeValidData();
+  badCommunityId.profile.community[0].id = 'bad id';
+  assert.throws(() => validateDataCollections(badCommunityId), /expected an identifier/);
+});
+
+test('validateReadingAssetInventory requires declared cover files to exist', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-covers-'));
+  const coverPath = path.join(rootDir, 'book/2025/secure-design-300.jpg');
+  fs.mkdirSync(path.dirname(coverPath), { recursive: true });
+  fs.writeFileSync(coverPath, 'cover');
+
+  const data = makeValidData();
+  assert.doesNotThrow(() => validateReadingAssetInventory(data.reading, { rootDir }));
+
+  fs.rmSync(coverPath);
+  assert.throws(
+    () => validateReadingAssetInventory(data.reading, { rootDir }),
+    /missing declared cover asset/
+  );
 });
 
 test('collectInlineScriptHashes only hashes inline scripts', () => {

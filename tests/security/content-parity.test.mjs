@@ -32,11 +32,24 @@ test('generated index includes LinkedIn-derived profile updates', () => {
 
   profile.articles.forEach((article) => {
     assert.ok(html.includes(article.title), `missing article: ${article.title}`);
-    assert.ok(html.includes(article.link), `missing article link: ${article.link}`);
+    if (article.link) {
+      assert.ok(html.includes(article.link), `missing article link: ${article.link}`);
+    }
   });
 
   profile.honors.forEach((honor) => {
     assert.ok(html.includes(honor.title), `missing honor: ${honor.title}`);
+  });
+
+  profile.community.forEach((community) => {
+    assert.ok(html.includes(community.organization), `missing community organization: ${community.organization}`);
+    assert.ok(html.includes(community.logo), `missing community logo: ${community.logo}`);
+    community.roles.forEach((role) => {
+      assert.ok(htmlIncludesText(html, role.title), `missing community role: ${role.title}`);
+    });
+    community.responsibilities.forEach((item) => {
+      assert.ok(htmlIncludesText(html, item), `missing community responsibility: ${item}`);
+    });
   });
 
   certifications
@@ -71,13 +84,18 @@ test('generated index includes LinkedIn-derived profile updates', () => {
 
 test('generated index resolves profile tokens and exposes schema.org metadata', () => {
   const html = readGeneratedIndex();
+  const source = fs.readFileSync(path.join(projectRoot, 'src/index.html'), 'utf8');
 
   assert.doesNotMatch(html, /\{\{PROFILE_SCHEMA}}/);
   assert.doesNotMatch(html, /\{\{PROFILE_CREDENTIALS}}/);
   assert.doesNotMatch(html, /\{\{WRITING}}/);
   assert.doesNotMatch(html, /\{\{HONORS}}/);
+  assert.doesNotMatch(html, /\{\{COMMUNITY}}/);
+  assert.match(source, /\{\{COMMUNITY}}/);
+  assert.doesNotMatch(source, /CDC \(Central Singapore\)/);
   assert.match(html, /"@context": "https:\/\/schema.org"/);
   assert.match(html, /"affiliation": \{/);
+  assert.match(html, /"memberOf": \[/);
   assert.match(html, /"name": "Public Service Commission Singapore"/);
   assert.match(html, /"@type": "Article"/);
   assert.match(html, /"@type": "ScholarlyArticle"/);

@@ -446,6 +446,38 @@ function validateLabelValue(item, fieldPath) {
   ensureString(item.value, `${fieldPath}.value`, { maxLength: 120 });
 }
 
+function validateLanguageEntry(item, fieldPath) {
+  ensureObject(item, fieldPath);
+  ensureAllowedKeys(item, fieldPath, ['name', 'proficiency']);
+  ensureString(item.name, `${fieldPath}.name`, { maxLength: 80 });
+  ensureString(item.proficiency, `${fieldPath}.proficiency`, { maxLength: 120 });
+}
+
+function validateCommunityRole(role, fieldPath) {
+  ensureObject(role, fieldPath);
+  ensureAllowedKeys(role, fieldPath, ['title', 'dates']);
+  ensureString(role.title, `${fieldPath}.title`, { maxLength: 160 });
+  ensureString(role.dates, `${fieldPath}.dates`, { maxLength: 120 });
+}
+
+function validateCommunityEntry(entry, fieldPath) {
+  ensureObject(entry, fieldPath);
+  ensureAllowedKeys(entry, fieldPath, ['id', 'organization', 'logo', 'logo_alt', 'roles', 'responsibilities']);
+  ensureString(entry.id, `${fieldPath}.id`, { maxLength: 40 });
+  if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(entry.id)) {
+    failValidation(`${fieldPath}.id`, 'expected an identifier starting with a letter');
+  }
+  ensureString(entry.organization, `${fieldPath}.organization`, { maxLength: 180 });
+  sanitizeAssetPath(entry.logo, `${fieldPath}.logo`);
+  ensureString(entry.logo_alt, `${fieldPath}.logo_alt`, { maxLength: 140 });
+  ensureArray(entry.roles, `${fieldPath}.roles`, { min: 1, max: 20 }).forEach((role, index) => {
+    validateCommunityRole(role, `${fieldPath}.roles[${index}]`);
+  });
+  ensureArray(entry.responsibilities, `${fieldPath}.responsibilities`, { min: 1, max: 20 }).forEach((item, index) => {
+    ensureString(item, `${fieldPath}.responsibilities[${index}]`, { maxLength: 260 });
+  });
+}
+
 function validateProfileData(profile) {
   ensureObject(profile, 'profile');
   ensureAllowedKeys(profile, 'profile', [
@@ -455,6 +487,8 @@ function validateProfileData(profile) {
     'publication',
     'articles',
     'honors',
+    'languages',
+    'community',
     'contact'
   ]);
 
@@ -530,7 +564,10 @@ function validateProfileData(profile) {
     ensureString(article.title, `${fieldPath}.title`, { maxLength: 220 });
     ensureString(article.published, `${fieldPath}.published`, { maxLength: 80 });
     ensureString(article.summary, `${fieldPath}.summary`, { maxLength: 420 });
-    sanitizeHref(article.link, `${fieldPath}.link`);
+    const articleLink = ensureOptionalString(article.link, `${fieldPath}.link`, { maxLength: MAX_URL_LENGTH });
+    if (articleLink) {
+      sanitizeHref(articleLink, `${fieldPath}.link`);
+    }
     ensureArray(article.tags || [], `${fieldPath}.tags`, { max: 12 }).forEach((tag, tagIndex) => {
       ensureString(tag, `${fieldPath}.tags[${tagIndex}]`, { maxLength: 60 });
     });
@@ -544,6 +581,14 @@ function validateProfileData(profile) {
     ensureString(honor.issuer, `${fieldPath}.issuer`, { maxLength: 180 });
     ensureString(honor.issued, `${fieldPath}.issued`, { maxLength: 80 });
     ensureOptionalString(honor.description, `${fieldPath}.description`, { maxLength: 260 });
+  });
+
+  ensureArray(profile.languages || [], 'profile.languages', { max: 20 }).forEach((item, index) => {
+    validateLanguageEntry(item, `profile.languages[${index}]`);
+  });
+
+  ensureArray(profile.community || [], 'profile.community', { max: 20 }).forEach((entry, index) => {
+    validateCommunityEntry(entry, `profile.community[${index}]`);
   });
 
   const contact = ensureObject(profile.contact, 'profile.contact');
@@ -561,6 +606,7 @@ function validateProfileData(profile) {
 
 function validateReadingData(items) {
   const list = ensureArray(items, 'reading', { min: 1, max: 2000 });
+  const seen = new Map();
   list.forEach((entry, index) => {
     const fieldPath = `reading[${index}]`;
     ensureObject(entry, fieldPath);
@@ -575,8 +621,20 @@ function validateReadingData(items) {
     }
 
     ensureString(entry.title, `${fieldPath}.title`, { maxLength: 240 });
-    ensureOptionalString(entry.author, `${fieldPath}.author`, { maxLength: 160 });
+    ensureString(entry.author, `${fieldPath}.author`, { maxLength: 160 });
     ensureString(entry.isbn, `${fieldPath}.isbn`, { maxLength: 80 });
+
+    const identityKeys = [
+      `isbn:${String(entry.isbn).trim().toLowerCase()}`,
+      `title-year:${String(entry.title).trim().toLowerCase()}|${year}`
+    ];
+    identityKeys.forEach((key) => {
+      if (seen.has(key)) {
+        failValidation(fieldPath, `duplicate reading record matches reading[${seen.get(key)}] by ${key}`);
+      }
+      seen.set(key, index);
+    });
+
     if (entry.link !== undefined) {
       ensureOptionalString(entry.link, `${fieldPath}.link`, { maxLength: MAX_URL_LENGTH });
       if (String(entry.link).trim() !== '') {
@@ -595,6 +653,25 @@ function validateReadingData(items) {
       });
     }
   });
+}
+
+function validateReadingAssetInventory(items, { rootDir = projectRoot } = {}) {
+  const missing = [];
+  items.forEach((entry, index) => {
+    if (entry.cover === undefined || String(entry.cover).trim() === '') {
+      return;
+    }
+
+    const coverPath = sanitizeAssetPath(entry.cover, `reading[${index}].cover`);
+    const absolutePath = path.join(rootDir, coverPath);
+    if (!fs.existsSync(absolutePath)) {
+      missing.push(`reading[${index}].cover: ${coverPath}`);
+    }
+  });
+
+  if (missing.length > 0) {
+    failValidation('reading', `missing declared cover asset(s): ${missing.join(', ')}`);
+  }
 }
 
 function validateDataCollections(allData) {
@@ -627,31 +704,45 @@ function renderActionLinks(actions, fieldPath, className = 'hero-actions') {
 function renderProfileSchema(profile, certifications) {
   const person = profile.person;
   const publicationUrl = profile.publication.links[0]?.url || person.url;
+  const community = profile.community || [];
+  const languages = profile.languages || [];
+  const personNode = {
+    '@type': 'Person',
+    name: person.name,
+    url: person.url,
+    jobTitle: person.job_title,
+    worksFor: { '@type': 'Organization', name: person.works_for },
+    affiliation: { '@type': 'Organization', name: 'Public Service Commission Singapore' },
+    alumniOf: profile.education.map((entry) => ({
+      '@type': 'CollegeOrUniversity',
+      name: entry.institution
+    })),
+    sameAs: person.same_as,
+    knowsAbout: person.knows_about,
+    award: profile.honors.map((honor) => honor.title),
+    hasCredential: certifications.map((cert) => ({
+      '@type': 'EducationalOccupationalCredential',
+      name: cert.title,
+      credentialCategory: 'certificate',
+      recognizedBy: {
+        '@type': 'Organization',
+        name: cert.issuer
+      }
+    }))
+  };
+
+  if (community.length > 0) {
+    personNode.memberOf = community.map((entry) => ({
+      '@type': 'Organization',
+      name: entry.organization
+    }));
+  }
+  if (languages.length > 0) {
+    personNode.knowsLanguage = languages.map((entry) => entry.name);
+  }
+
   const graph = [
-    {
-      '@type': 'Person',
-      name: person.name,
-      url: person.url,
-      jobTitle: person.job_title,
-      worksFor: { '@type': 'Organization', name: person.works_for },
-      affiliation: { '@type': 'Organization', name: 'Public Service Commission Singapore' },
-      alumniOf: profile.education.map((entry) => ({
-        '@type': 'CollegeOrUniversity',
-        name: entry.institution
-      })),
-      sameAs: person.same_as,
-      knowsAbout: person.knows_about,
-      award: profile.honors.map((honor) => honor.title),
-      hasCredential: certifications.map((cert) => ({
-        '@type': 'EducationalOccupationalCredential',
-        name: cert.title,
-        credentialCategory: 'certificate',
-        recognizedBy: {
-          '@type': 'Organization',
-          name: cert.issuer
-        }
-      }))
-    },
+    personNode,
     {
       '@type': 'WebSite',
       name: 'Leonard Wong Portfolio',
@@ -918,8 +1009,13 @@ function renderWriting(profile) {
   const cards = profile.articles
     .map((article, index) => {
       const tags = article.tags || [];
-      const href = safeHref(article.link, `profile.articles[${index}].link`);
+      const href = article.link ? safeHref(article.link, `profile.articles[${index}].link`) : '';
       const tagChips = tags.map((tag) => `<span class="chip">${escapeHtml(tag)}</span>`).join('');
+      const linkMarkup = href
+        ? `<div class="featured-links">
+          <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Read Article&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>
+        </div>`
+        : '';
 
       return `
       <article class="featured-card article-card" data-tags="${escapeHtml(tags.join(','))}">
@@ -929,9 +1025,7 @@ function renderWriting(profile) {
         </header>
         <p>${escapeHtml(article.summary)}</p>
         ${tagChips ? `<div class="chip-row">${tagChips}</div>` : ''}
-        <div class="featured-links">
-          <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">Read Article&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>
-        </div>
+        ${linkMarkup}
       </article>`;
     })
     .join('');
@@ -981,6 +1075,71 @@ function renderHonors(profile) {
     ${cards}
   </div>
 </section>`;
+}
+
+function renderCommunity(profile) {
+  const community = profile.community || [];
+  const languages = profile.languages || [];
+  if (!community.length && !languages.length) {
+    return '';
+  }
+
+  const communityCards = community
+    .map((entry) => {
+      const id = escapeHtml(entry.id);
+      const organization = escapeHtml(entry.organization);
+      const logo = safeAssetPath(entry.logo, `profile.community.${entry.id}.logo`);
+      const logo2x = logo.replace('-30.', '-60.');
+      const hasLogo2x = logo2x !== logo && fs.existsSync(path.join(projectRoot, logo2x));
+      const logoSrcset = hasLogo2x ? `${escapeHtml(logo)} 1x, ${escapeHtml(logo2x)} 2x` : `${escapeHtml(logo)} 1x`;
+      const roles = entry.roles
+        .map((role) => `<li>${escapeHtml(role.dates)} · ${escapeHtml(role.title)}</li>`)
+        .join('');
+      const responsibilities = entry.responsibilities
+        .map((item) => `<li>${escapeHtml(item)}</li>`)
+        .join('');
+
+      return `
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading${id}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse${id}" aria-expanded="false" aria-controls="collapse${id}">
+                        <img decoding="async" src="${escapeHtml(logo)}" alt="${escapeHtml(entry.logo_alt)}" loading="lazy" class="circle-img" width="30" height="30" srcset="${logoSrcset}" sizes="30px"/>&nbsp;<strong>${organization}</strong>
+                    </button>
+                </h2>
+                <div id="collapse${id}" class="accordion-collapse collapse" aria-labelledby="heading${id}"
+                     data-bs-parent="#accordionList">
+                    <div class="accordion-body">
+                        <h3>Roles</h3>
+                        <ul class="experience-list">${roles}</ul>
+                        <h3>Responsibilities</h3>
+                        <ul class="experience-list">${responsibilities}</ul>
+                    </div>
+                </div>
+            </div>`;
+    })
+    .join('');
+
+  const languageCards = languages.length
+    ? `
+        <div class="skills-grid community-languages">
+          ${languages.map((item) => `
+          <div class="skill-card">
+            <h3>${escapeHtml(item.name)}</h3>
+            <p>${escapeHtml(item.proficiency)}</p>
+          </div>`).join('')}
+        </div>`
+    : '';
+
+  return `
+    <section class="section-block" id="community">
+        <div class="section-header">
+            <p class="eyebrow">Community</p>
+            <h2>Leadership and mentorship</h2>
+        </div>
+        ${communityCards ? `<div class="accordion accordion-flush" id="accordionList">${communityCards}</div>` : ''}
+        ${languageCards}
+    </section>`;
 }
 
 function inferTags(entry) {
@@ -1176,6 +1335,7 @@ function buildSite() {
   };
 
   validateDataCollections(data);
+  validateReadingAssetInventory(data.reading);
 
   const tokens = {
     ...partials,
@@ -1188,6 +1348,7 @@ function buildSite() {
     PROFILE_CREDENTIALS: renderProfileCredentials(data.profile),
     CERTIFICATIONS: renderCertifications(data.certifications),
     HONORS: renderHonors(data.profile),
+    COMMUNITY: renderCommunity(data.profile),
     READING_GRID: renderReadingGrid(data.reading),
     CONTACT: renderContact(data.profile)
   };
@@ -1255,5 +1416,6 @@ module.exports = {
   sanitizeAssetPath,
   sanitizeRelativeLink,
   validateDataCollections,
+  validateReadingAssetInventory,
   validateProfileData
 };
