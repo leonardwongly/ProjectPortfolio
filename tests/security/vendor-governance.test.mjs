@@ -28,7 +28,7 @@ test('vendor dependency governance manifest is present and valid', () => {
 
 test('vendored dependency governance validates digests, freshness, and inventory', async () => {
   const { loadManifest, validateVendorGovernance } = await import('../../scripts/check-vendor-governance.mjs');
-  const result = validateVendorGovernance(loadManifest(), { today: '2026-04-08' });
+  const result = validateVendorGovernance(loadManifest(), { today: '2026-05-16' });
 
   assert.equal(result.reviewAgeDays, 0);
   assert.deepEqual(result.declaredFiles, result.actualFiles);
@@ -39,7 +39,7 @@ test('vendored dependency governance rejects stale reviews', async () => {
   const manifest = loadManifest();
 
   assert.throws(
-    () => validateVendorGovernance(manifest, { today: '2026-06-01' }),
+    () => validateVendorGovernance(manifest, { today: '2026-07-01' }),
     /review age is \d+ day\(s\), exceeding 45 day\(s\)/
   );
 });
