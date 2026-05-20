@@ -1,5 +1,16 @@
 [
   {
+    "id": "ai-ops-revenue-desk",
+    "title": "AI Ops Revenue Desk",
+    "timeframe": "2026",
+    "problem": "Small businesses lose revenue when inbound leads sit in forms, inboxes, missed-call notes, or spreadsheets without fast follow-up.",
+    "impact": "Packaged a 10-business-day remote implementation that captures inquiries, qualifies leads, prepares approved follow-up, updates CRM or sheets, alerts owners, and reports stale leads.",
+    "tech": ["AI Workflow Automation", "RevOps", "Security", "Operator Tooling"],
+    "links": [
+      { "label": "Service page", "url": "ai-ops-revenue-desk.html" }
+    ]
+  },
+  {
     "id": "project-vendors",
     "title": "Project Vendors",
     "timeframe": "May–Jul 2020",

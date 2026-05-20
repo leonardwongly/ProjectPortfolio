@@ -1192,7 +1192,7 @@ function buildSite() {
     CONTACT: renderContact(data.profile)
   };
 
-  const pages = ['index.html', 'reading.html', 'offline.html'];
+  const pages = ['index.html', 'reading.html', 'offline.html', 'ai-ops-revenue-desk.html'];
   const renderedPages = new Map();
 
   pages.forEach((page) => {
@@ -1223,9 +1223,7 @@ function buildSite() {
   }
 
   renderedPages.forEach((content, page) => {
-    const finalContent = page === 'index.html'
-      ? injectCspScriptHashes(content, content)
-      : content;
+    const finalContent = injectCspScriptHashes(content, content);
     fs.writeFileSync(path.join(projectRoot, page), finalContent);
   });
 

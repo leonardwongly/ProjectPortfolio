@@ -8,12 +8,29 @@
     <link rel="manifest" href="manifest.json"/>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
     <link rel="stylesheet" href="css/custom.css"/>
+    <link rel="preload" href="fonts/SF-Pro-Display-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/SF-Pro-Display-Semibold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png" class="circle-img"/>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" class="circle-img"/>
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" class="circle-img"/>
     <meta name="theme-color" content="#f7f1ea" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#12110f" media="(prefers-color-scheme: dark)">
-    <title>Offline | Leonard Wong</title>
+    <script src="js/main.js" defer></script>
+    <script src="js/site.js" defer></script>
+    <noscript>Your browser does not support JavaScript!</noscript>
+    <meta name="description" content="AI Ops Revenue Desk is a remote implementation that installs one AI-assisted lead follow-up workflow for small businesses in 10 business days."/>
+    <link rel="canonical" href="https://leonardwong.tech/ai-ops-revenue-desk.html"/>
+    <meta property="og:title" content="AI Ops Revenue Desk"/>
+    <meta property="og:description" content="Recover missed leads with a controlled AI-assisted workflow for intake, qualification, follow-up, CRM updates, owner alerts, and weekly leakage reporting."/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="https://leonardwong.tech/ai-ops-revenue-desk.html"/>
+    <meta property="og:site_name" content="Leonard Wong"/>
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content="AI Ops Revenue Desk"/>
+    <meta name="twitter:description" content="A 10-business-day remote implementation for one controlled AI-assisted lead follow-up workflow."/>
+    <title>AI Ops Revenue Desk | Leonard Wong</title>
 </head>
-<body class="page-bg">
-<h1 class="visually-hidden">Offline</h1>
+<body class="page-bg ai-ops-page">
 <a class="skip-link" href="#content">Skip to content</a>
 <nav class="navbar navbar-expand-lg fixed-top navbar-dark glass-nav" aria-label="Main navigation">
     <div class="container-fluid">
@@ -65,16 +82,139 @@
 
 
 <main id="content" class="container-xxl">
-    <section class="section-block">
+    <section class="section-block ai-ops-hero" id="home">
+        <div class="ai-ops-hero__copy">
+            <p class="eyebrow">Remote AI Workflow Implementation</p>
+            <h1>Recover missed leads with one AI-assisted workflow.</h1>
+            <p class="section-lede">AI Ops Revenue Desk installs a controlled lead follow-up workflow for small businesses: capture new inquiries, qualify them, prepare follow-up, update your CRM or sheet, alert the owner, and report what slipped.</p>
+            <div class="contact-actions">
+                <a class="btn btn-primary" href="https://email.leonardwong.tech" target="_blank" rel="noopener noreferrer">Request workflow review</a>
+                <a class="btn btn-ghost" href="#packages">View packages</a>
+            </div>
+        </div>
+        <aside class="ai-ops-console" aria-label="Lead Follow-up Desk workflow">
+            <div class="ai-ops-console__header">
+                <span>Lead Follow-up Desk</span>
+                <span>Dry run ready</span>
+            </div>
+            <ol class="ai-ops-steps">
+                <li><span>01</span><strong>Capture</strong><p>Form, inbox, missed-call note, booking request, or spreadsheet row.</p></li>
+                <li><span>02</span><strong>Qualify</strong><p>Check service area, urgency, contact details, duplicates, and fit.</p></li>
+                <li><span>03</span><strong>Prepare</strong><p>Draft the follow-up, owner alert, booking note, and CRM update.</p></li>
+                <li><span>04</span><strong>Approve</strong><p>Human review before external messages, quotes, or sensitive updates.</p></li>
+                <li><span>05</span><strong>Report</strong><p>Weekly view of new leads, stale leads, failures, and follow-up status.</p></li>
+            </ol>
+        </aside>
+    </section>
+
+    <section class="section-block" id="fit">
+        <div class="section-header">
+            <p class="eyebrow">Best fit</p>
+            <h2>Start where slow response costs money.</h2>
+            <p class="section-lede">The first offer is deliberately narrow: lead intake and follow-up for businesses where missed inquiries turn into lost jobs, empty appointments, or stale pipeline.</p>
+        </div>
+        <div class="ai-ops-grid">
+            <article class="ai-ops-card">
+                <h3>Home services</h3>
+                <p>Respond to estimate requests, missed calls, booking forms, and quote follow-ups faster.</p>
+            </article>
+            <article class="ai-ops-card">
+                <h3>Clinics and wellness</h3>
+                <p>Prepare inquiry triage, front-desk review, reminders, and non-clinical follow-up.</p>
+            </article>
+            <article class="ai-ops-card">
+                <h3>Agencies and MSPs</h3>
+                <p>Clean up inbound leads, CRM handoffs, proposal prep, and client onboarding tasks.</p>
+            </article>
+            <article class="ai-ops-card">
+                <h3>Real estate and local services</h3>
+                <p>Route inquiries, chase documents, prepare viewing reminders, and flag stale prospects.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="section-block" id="packages">
+        <div class="section-header">
+            <p class="eyebrow">Packages</p>
+            <h2>Setup plus managed workflow support.</h2>
+            <p class="section-lede">Buyers pay for workflow ownership, reliability, and measurement. The software stack stays as simple as the workflow allows.</p>
+        </div>
+        <div class="ai-ops-pricing">
+            <article class="ai-ops-card">
+                <h3>Diagnostic</h3>
+                <p class="ai-ops-price">SGD 500</p>
+                <ul>
+                    <li>Workflow map</li>
+                    <li>Tool and access map</li>
+                    <li>ROI estimate</li>
+                    <li>Implementation quote</li>
+                </ul>
+            </article>
+            <article class="ai-ops-card ai-ops-card--featured">
+                <h3>Starter</h3>
+                <p class="ai-ops-price">SGD 2,500 + 750/mo</p>
+                <ul>
+                    <li>One lead workflow</li>
+                    <li>Up to three integrations</li>
+                    <li>Basic dashboard and alerts</li>
+                    <li>10-business-day delivery</li>
+                </ul>
+            </article>
+            <article class="ai-ops-card">
+                <h3>Growth</h3>
+                <p class="ai-ops-price">SGD 5,000 + 1,500/mo</p>
+                <ul>
+                    <li>Two to three workflows</li>
+                    <li>CRM cleanup support</li>
+                    <li>Weekly report</li>
+                    <li>15-business-day delivery</li>
+                </ul>
+            </article>
+        </div>
+    </section>
+
+    <section class="section-block" id="process">
+        <div class="section-header">
+            <p class="eyebrow">Delivery</p>
+            <h2>Built for remote execution with approval gates.</h2>
+        </div>
+        <div class="ai-ops-process">
+            <article class="ai-ops-card"><span>1</span><h3>Send the lead flow</h3><p>Share where leads arrive, who responds, and what gets missed.</p></article>
+            <article class="ai-ops-card"><span>2</span><h3>Map access and risk</h3><p>Identify tools, credentials, approval gates, failure modes, and KPIs.</p></article>
+            <article class="ai-ops-card"><span>3</span><h3>Build and dry-run</h3><p>Implement the workflow with test leads, edge-case checks, and clear logs.</p></article>
+            <article class="ai-ops-card"><span>4</span><h3>Launch and monitor</h3><p>Deliver docs, walkthrough, operating notes, and the monthly support plan.</p></article>
+        </div>
+    </section>
+
+    <section class="section-block ai-ops-trust" id="controls">
+        <div class="section-header">
+            <p class="eyebrow">Controls</p>
+            <h2>AI assists. Humans approve the risky actions.</h2>
+            <p class="section-lede">The implementation uses least-privilege access, dry-run modes, human approval gates, and redacted logging for sensitive workflows.</p>
+        </div>
+        <div class="ai-ops-grid">
+            <article class="ai-ops-card"><h3>No secrets in code</h3><p>Credentials stay in approved stores or platform-managed connections, not source files.</p></article>
+            <article class="ai-ops-card"><h3>Explicit scopes</h3><p>Read-only access comes first; write access is justified and gated.</p></article>
+            <article class="ai-ops-card"><h3>PII minimization</h3><p>Logs and demos avoid unnecessary personal or sensitive data.</p></article>
+            <article class="ai-ops-card"><h3>Rollback notes</h3><p>Owners get instructions to pause, revoke, inspect, and recover the workflow.</p></article>
+        </div>
+    </section>
+
+    <section class="section-block" id="review">
         <div class="contact-card">
             <div>
-                <p class="eyebrow">Offline</p>
-                <h2>You’re offline right now.</h2>
-                <p class="section-lede">This page is available offline. Once you reconnect, refresh to see the latest updates.</p>
+                <p class="eyebrow">Next step</p>
+                <h2>Send one lead workflow for review.</h2>
+                <p class="section-lede">The strongest first project is not the biggest one. It is the workflow your team repeats often, understands well, and can improve without creating new operational risk.</p>
             </div>
             <div class="contact-actions">
-                <a class="btn btn-primary" href="/index.html">Back to Home</a>
-                <a class="btn btn-ghost" href="/reading.html">Reading List</a>
+                <a class="btn btn-primary" href="https://email.leonardwong.tech" target="_blank" rel="noopener noreferrer">Request workflow review</a>
+                <a class="btn btn-ghost" href="https://linkedin.leonardwong.tech" target="_blank" rel="noopener noreferrer">Connect on LinkedIn</a>
+            </div>
+            <div class="contact-meta">
+                <span>Remote delivery</span>
+                <span>Lead follow-up systems</span>
+                <span>Security-minded automation</span>
             </div>
         </div>
     </section>

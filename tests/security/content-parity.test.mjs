@@ -13,6 +13,10 @@ function readGeneratedIndex() {
   return fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 }
 
+function readGeneratedAiOpsPage() {
+  return fs.readFileSync(path.join(projectRoot, 'ai-ops-revenue-desk.html'), 'utf8');
+}
+
 function htmlIncludesText(html, value) {
   return html.includes(value) || html.includes(value.replace(/&/g, '&amp;').replace(/'/g, '&#39;'));
 }
@@ -81,4 +85,20 @@ test('generated index resolves profile tokens and exposes schema.org metadata', 
   assert.match(html, /"name": "Public Service Commission Singapore"/);
   assert.match(html, /"@type": "Article"/);
   assert.match(html, /"@type": "ScholarlyArticle"/);
+});
+
+test('generated AI Ops page is discoverable and resolves build tokens', () => {
+  const indexHtml = readGeneratedIndex();
+  const aiOpsHtml = readGeneratedAiOpsPage();
+
+  assert.match(indexHtml, /AI Ops Revenue Desk/);
+  assert.match(indexHtml, /ai-ops-revenue-desk\.html/);
+  assert.doesNotMatch(aiOpsHtml, /\{\{[A-Z_]+}}/);
+  assert.match(aiOpsHtml, /Recover missed leads with one AI-assisted workflow\./);
+  assert.match(aiOpsHtml, /SGD 2,500 \+ 750\/mo/);
+  assert.doesNotMatch(aiOpsHtml, /USD /);
+  assert.match(aiOpsHtml, /Request workflow review/);
+  assert.match(aiOpsHtml, /https:\/\/email\.leonardwong\.tech/);
+  assert.match(aiOpsHtml, /rel="noopener noreferrer"/);
+  assert.match(aiOpsHtml, /Content-Security-Policy/);
 });
