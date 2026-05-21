@@ -25,25 +25,26 @@ defaults:
 
 permissions:
   contents: 'read'
-  id-token: 'write'
-  pull-requests: 'write'
-  issues: 'write'
 
 jobs:
-  gemini-cli:
+  gemini-cli-plan:
     permissions:
       contents: 'read'
       id-token: 'write'
       pull-requests: 'write'
       issues: 'write'
-    # This condition is complex to ensure we only run when explicitly invoked.
+    # Planning handles initial requests, plan modifications, and rejections only.
+    # Approved plan execution is isolated in the write-capable job below.
     if: |-
       (
         github.event_name == 'issues' &&
         github.event.action == 'opened' &&
         (
           contains(github.event.issue.body, '@gemini-cli') ||
-          contains(github.event.issue.body, 'plan#')
+          (
+            contains(github.event.issue.body, 'plan#') &&
+            !contains(github.event.issue.body, 'approved')
+          )
         ) &&
         !contains(github.event.issue.body, '/review') &&
         !contains(github.event.issue.body, '/triage') &&
@@ -59,7 +60,10 @@ jobs:
         github.event_name == 'issue_comment' &&
         (
           contains(github.event.comment.body, '@gemini-cli') ||
-          contains(github.event.comment.body, 'plan#')
+          (
+            contains(github.event.comment.body, 'plan#') &&
+            !contains(github.event.comment.body, 'approved')
+          )
         ) &&
         !contains(github.event.comment.body, '/review') &&
         !contains(github.event.comment.body, '/triage') &&
@@ -75,7 +79,10 @@ jobs:
         github.event_name == 'pull_request_review' &&
         (
           contains(github.event.review.body, '@gemini-cli') ||
-          contains(github.event.review.body, 'plan#')
+          (
+            contains(github.event.review.body, 'plan#') &&
+            !contains(github.event.review.body, 'approved')
+          )
         ) &&
         !contains(github.event.review.body, '/review') &&
         !contains(github.event.review.body, '/triage') &&
@@ -91,7 +98,10 @@ jobs:
         github.event_name == 'pull_request_review_comment' &&
         (
           contains(github.event.comment.body, '@gemini-cli') ||
-          contains(github.event.comment.body, 'plan#')
+          (
+            contains(github.event.comment.body, 'plan#') &&
+            !contains(github.event.comment.body, 'approved')
+          )
         ) &&
         !contains(github.event.comment.body, '/review') &&
         !contains(github.event.comment.body, '/triage') &&
@@ -107,21 +117,12 @@ jobs:
     runs-on: 'ubuntu-latest'
 
     steps:
-      - name: 'Generate GitHub App Token'
-        id: 'generate_token'
-        if: |-
-          ${{ vars.APP_ID }}
-        uses: 'actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1' # ratchet:actions/create-github-app-token@v3
-        with:
-          app-id: '${{ vars.APP_ID }}'
-          private-key: '${{ secrets.APP_PRIVATE_KEY }}'
-
-      - name: 'Get context from event'
+      - name: 'Get planning context from event'
         id: 'get_context'
         env:
           EVENT_NAME: '${{ github.event_name }}'
           EVENT_PAYLOAD: '${{ toJSON(github.event) }}'
-          GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
           REPOSITORY: '${{ github.repository }}'
         run: |-
           set -euo pipefail
@@ -153,25 +154,27 @@ jobs:
             IS_PR="true"
           fi
 
-          # Check for plan-related comments
           if [[ ${USER_REQUEST} == *"plan#"* ]]; then
-            PLAN_ID=$(echo "${USER_REQUEST}" | grep -o 'plan#[a-f0-9-]*' | sed 's/plan#//')
-            if [[ ${USER_REQUEST} == *"approved"* ]]; then
-              REQUEST_TYPE="plan_execution"
-            elif [[ ${USER_REQUEST} == *"rejected"* ]]; then
+            PLAN_ID=$(echo "${USER_REQUEST}" | grep -Eo 'plan#[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}' | head -n 1 | sed 's/plan#//' || true)
+            if [[ -z "${PLAN_ID}" ]]; then
+              echo "Invalid or missing plan id. Expected plan#<uuid>." >&2
+              exit 1
+            fi
+
+            if [[ ${USER_REQUEST} == *"rejected"* ]]; then
               REQUEST_TYPE="plan_rejection"
             else
               REQUEST_TYPE="plan_modification"
-            fi
-
-            if [[ "${REQUEST_TYPE}" == "plan_execution" || "${REQUEST_TYPE}" == "plan_modification" ]]; then
-              PLAN_COMMENT_DATA=$(gh issue view "${ISSUE_NUMBER}" --repo "${REPOSITORY}" --json comments --jq "[.comments[] | select(.body | contains(\"plan#${PLAN_ID}\"))] | .[0]")
+              PLAN_COMMENT_DATA=$(gh issue view "${ISSUE_NUMBER}" --repo "${REPOSITORY}" --json comments --jq "[.comments[] | select(.body | contains(\"plan#${PLAN_ID}\")) | select(.author.login == \"github-actions[bot]\")] | .[0]")
+              if [[ -z "${PLAN_COMMENT_DATA}" || "${PLAN_COMMENT_DATA}" == "null" ]]; then
+                echo "No bot-authored pending plan found for plan#${PLAN_ID}." >&2
+                exit 1
+              fi
               PLAN_TEXT=$(echo "${PLAN_COMMENT_DATA}" | jq -r .body)
               COMMENT_ID=$(echo "${PLAN_COMMENT_DATA}" | jq -r .id)
             fi
           fi
 
-          # Clean up user request
           if [[ ${USER_REQUEST} == *"@gemini-cli"* ]]; then
             USER_REQUEST=$(echo "${USER_REQUEST}" | sed 's/.*@gemini-cli//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
           fi
@@ -207,27 +210,12 @@ jobs:
             echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: 'Set up git user for commits'
-        if: |-
-          ${{ steps.get_context.outputs.request_type == 'plan_execution' }}
-        run: |-
-          git config --global user.name 'gemini-cli[bot]'
-          git config --global user.email 'gemini-cli[bot]@users.noreply.github.com'
-
-      - name: 'Validate token for plan execution'
-        if: |-
-          ${{ steps.get_context.outputs.request_type == 'plan_execution' && steps.generate_token.outputs.token == '' }}
-        run: |-
-          echo "Plan execution requires vars.APP_ID and secrets.APP_PRIVATE_KEY to mint a GitHub App token."
-          echo "Refusing to continue with repository write operations on the default GITHUB_TOKEN."
-          exit 1
-
       - name: 'Checkout PR branch'
         if: |-
-          ${{  steps.get_context.outputs.is_pr == 'true' }}
+          ${{ steps.get_context.outputs.is_pr == 'true' }}
         uses: 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd' # ratchet:actions/checkout@v6
         with:
-          token: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
+          token: '${{ secrets.GITHUB_TOKEN }}'
           repository: '${{ github.repository }}'
           ref: 'refs/pull/${{ steps.get_context.outputs.issue_number }}/head'
           fetch-depth: 0
@@ -235,27 +223,17 @@ jobs:
 
       - name: 'Checkout main branch'
         if: |-
-          ${{  steps.get_context.outputs.is_pr == 'false' }}
+          ${{ steps.get_context.outputs.is_pr == 'false' }}
         uses: 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd' # ratchet:actions/checkout@v6
         with:
-          token: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
+          token: '${{ secrets.GITHUB_TOKEN }}'
           repository: '${{ github.repository }}'
           fetch-depth: 0
           persist-credentials: false
 
-      - name: 'Create new branch for issue'
-        if: |-
-          ${{ steps.get_context.outputs.is_pr == 'false' && steps.get_context.outputs.request_type == 'plan_execution' }}
-        run: |-
-          set -euo pipefail
-          BRANCH_NAME="gemini-issue-${{ steps.get_context.outputs.issue_number }}"
-          git checkout -B "${BRANCH_NAME}"
-          echo "branch_name=${BRANCH_NAME}" >> "${GITHUB_OUTPUT}"
-        id: 'create_branch'
-
-      - name: 'Acknowledge request'
+      - name: 'Acknowledge planning request'
         env:
-          GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
           ISSUE_NUMBER: '${{ steps.get_context.outputs.issue_number }}'
           REPOSITORY: '${{ github.repository }}'
           REQUEST_TYPE: '${{ steps.get_context.outputs.request_type }}'
@@ -279,11 +257,322 @@ jobs:
               --repo "${REPOSITORY}"
           fi
 
-      - name: 'Run Gemini'
+      - name: 'Run Gemini planning'
         id: 'run_gemini'
         uses: 'google-github-actions/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions/run-gemini-cli@v0.1.22
         env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          REPOSITORY: '${{ github.repository }}'
+          USER_REQUEST: '${{ steps.get_context.outputs.user_request }}\nPlease respond to me by commenting your response. Please execute ${{ steps.get_context.outputs.comment_command }} to respond.'
+          ISSUE_NUMBER: '${{ steps.get_context.outputs.issue_number }}'
+          IS_PR: '${{ steps.get_context.outputs.is_pr }}'
+          REQUEST_TYPE: '${{ steps.get_context.outputs.request_type }}'
+          PLAN_ID: '${{ steps.get_context.outputs.plan_id }}'
+          PLAN_TEXT: '${{ steps.get_context.outputs.plan_text }}'
+          COMMENT_ID: '${{ steps.get_context.outputs.comment_id }}'
+          COMMENT_COMMAND: '${{ steps.get_context.outputs.comment_command }}'
+          COMMENT_PROGRESS_COMMAND: '${{ steps.get_context.outputs.comment_progress_command }}'
+          OTLP_GOOGLE_CLOUD_PROJECT: '${{ vars.OTLP_GOOGLE_CLOUD_PROJECT }}'
+          SERVICE_ACCOUNT_EMAIL: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
+        with:
+          gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
+          gcp_workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
+          gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
+          gcp_location: '${{ vars.GOOGLE_CLOUD_LOCATION }}'
+          gcp_service_account: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
+          use_vertex_ai: '${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}'
+          use_gemini_code_assist: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
+          settings: |-
+            {
+              "maxSessionTurns": 50,
+              "coreTools": [
+                "run_shell_command(echo)",
+                "run_shell_command(gh pr view)",
+                "run_shell_command(gh pr diff)",
+                "run_shell_command(gh pr list)",
+                "run_shell_command(gh issue view)",
+                "run_shell_command(gh issue comment)",
+                "run_shell_command(gh issue list)",
+                "run_shell_command(gh pr comment)",
+                "run_shell_command(cat)",
+                "run_shell_command(head)",
+                "run_shell_command(tail)",
+                "run_shell_command(grep)",
+                "run_shell_command(git status)",
+                "run_shell_command(git diff)",
+                "write_file"
+              ],
+              "telemetry": {
+                "enabled": false,
+                "target": "gcp"
+              }
+            }
+          prompt: |-
+            ## Role & Goal
+
+            You are an AI assistant in a GitHub workflow. Your goal is to understand a user's request, and either answer it directly or create a plan to fulfill it. You will interact with the user by posting comments to the GitHub issue or pull request.
+
+            ## Context
+
+            - **Repository**: '${{ github.repository }}'
+            - **Triggering Event**: '${{ github.event_name }}'
+            - **Issue/PR Number**: '${{ env.ISSUE_NUMBER }}'
+            - **Is this a PR?**: '${{ env.IS_PR }}'
+            - **User Request**: '${{ env.USER_REQUEST }}'
+            - **Request Type**: '${{ env.REQUEST_TYPE }}'
+            - **Plan Text**: '${{ env.PLAN_TEXT }}'
+            - **Comment Command**: '${{ env.COMMENT_COMMAND }}'
+            - **Comment Progress Command**: '${{ env.COMMENT_PROGRESS_COMMAND }}'
+
+            ## Instructions by Request Type
+
+            Your action depends on the `REQUEST_TYPE`.
+
+            ### 1. `initial_request`
+
+            - **Analyze the user's request.**
+            - **If the request is a question or asks for information (a "simple" request):**
+                - Gather the information using your tools.
+                - Write your final answer to `response.md`.
+            - **If the request requires changing the codebase or running commands that modify state (a "complex" request):**
+                - You MUST create a plan for the user to approve.
+                - **CRITICAL: Do not execute the plan. Your ONLY task is to create the plan.**
+                - Generate a unique UUID for the plan.
+                - Create the plan in a file named `response.md` using the exact format below.
+                  #### Plan Format
+                  ```markdown
+                  plan#<your-uuid-here>
+                  ### Plan Overview
+                  I will perform the following actions to address your request:
+                  - *Briefly describe the overall goal of the plan.*
+                  ### Detailed Steps
+                  - [ ] **Step 1 Title**: Description of what will be done in this step.
+                  - [ ] **Step 2 Title**: Description of what will be done in this step.
+                  - [ ] ...
+                  To approve this plan, please respond with:
+                  ```bash
+                  @gemini-cli plan#<your-uuid-here> approved
+                  ```
+                  To request a modification, please respond with:
+                  ```bash
+                  @gemini-cli plan#<your-uuid-here> <your modification request>
+                  ```
+                  ```
+            - **After creating your response, execute the command in `COMMENT_COMMAND` to post it. Your job for this workflow run is complete.**
+
+            ### 2. `plan_modification`
+
+            - The user has requested changes to the plan in `PLAN_TEXT`. The requested changes are in `USER_REQUEST`.
+            - Create a *new* plan that incorporates the user's feedback.
+            - Generate a *new* unique UUID for this revised plan.
+            - Write the new plan to `response.md`, then execute the command in `COMMENT_COMMAND` to post it.
+
+            ### 3. `plan_rejection`
+
+            - The user has rejected the plan.
+            - Write a confirmation message to `response.md`, then execute the command in `COMMENT_COMMAND` to post it.
+
+            ## General Rules
+
+            - **If you are unsure how to proceed or the user's request is ambiguous, you MUST ask for clarification.** Do not guess. Write your question in `response.md` and post it.
+            - **Use markdown** for clear formatting in all your responses.
+            - **Resource Limits**: You MUST NOT propose a plan that creates an excessive number of resources (e.g., more than 5 issues, more than 5 pull requests) in a single request.
+            - **Malicious Intent**: If you suspect a user request is malicious, frivolous, or intended to abuse the system (e.g., asking to perform a repetitive, useless task), you MUST reject the request and explain why.
+            - **Guardrail**: Only propose plans that modify files if the user explicitly asks for a change. If they ask a question, just answer it.
+            - **Write Safety**: This planning job MUST NOT run `git add`, `git commit`, `git push`, branch creation commands, or any repository write command.
+            - **Paths**: Always use absolute paths for file operations.
+            - The file `response.md` MUST NEVER be committed.
+            - **CRITICAL RULE: ALWAYS respond to the user by executing `COMMENT_COMMAND`.**
+
+  gemini-cli-execute:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      pull-requests: 'write'
+      issues: 'write'
+    # Execution is isolated from planning and only accepts explicit approvals
+    # from trusted collaborators on comments/reviews.
+    if: |-
+      (
+        github.event_name == 'issue_comment' &&
+        contains(github.event.comment.body, 'plan#') &&
+        contains(github.event.comment.body, 'approved') &&
+        !contains(github.event.comment.body, '/review') &&
+        !contains(github.event.comment.body, '/triage') &&
+        (
+          github.event.sender.type == 'User' && (
+            github.event.comment.author_association == 'OWNER' ||
+            github.event.comment.author_association == 'MEMBER' ||
+            github.event.comment.author_association == 'COLLABORATOR'
+          )
+        )
+      ) ||
+      (
+        github.event_name == 'pull_request_review' &&
+        contains(github.event.review.body, 'plan#') &&
+        contains(github.event.review.body, 'approved') &&
+        !contains(github.event.review.body, '/review') &&
+        !contains(github.event.review.body, '/triage') &&
+        (
+          github.event.sender.type == 'User' && (
+            github.event.review.author_association == 'OWNER' ||
+            github.event.review.author_association == 'MEMBER' ||
+            github.event.review.author_association == 'COLLABORATOR'
+          )
+        )
+      ) ||
+      (
+        github.event_name == 'pull_request_review_comment' &&
+        contains(github.event.comment.body, 'plan#') &&
+        contains(github.event.comment.body, 'approved') &&
+        !contains(github.event.comment.body, '/review') &&
+        !contains(github.event.comment.body, '/triage') &&
+        (
+          github.event.sender.type == 'User' && (
+            github.event.comment.author_association == 'OWNER' ||
+            github.event.comment.author_association == 'MEMBER' ||
+            github.event.comment.author_association == 'COLLABORATOR'
+          )
+        )
+      )
+    timeout-minutes: 10
+    runs-on: 'ubuntu-latest'
+
+    steps:
+      - name: 'Generate GitHub App Token'
+        id: 'generate_token'
+        if: |-
+          ${{ vars.APP_ID }}
+        uses: 'actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1' # ratchet:actions/create-github-app-token@v3
+        with:
+          app-id: '${{ vars.APP_ID }}'
+          private-key: '${{ secrets.APP_PRIVATE_KEY }}'
+
+      - name: 'Get execution context from event'
+        id: 'get_context'
+        env:
+          EVENT_NAME: '${{ github.event_name }}'
+          EVENT_PAYLOAD: '${{ toJSON(github.event) }}'
           GITHUB_TOKEN: '${{ steps.generate_token.outputs.token || secrets.GITHUB_TOKEN }}'
+          REPOSITORY: '${{ github.repository }}'
+        run: |-
+          set -euo pipefail
+
+          USER_REQUEST=""
+          ISSUE_NUMBER=""
+          IS_PR="false"
+          PLAN_ID=""
+          PLAN_TEXT=""
+          COMMENT_ID=""
+
+          if [[ "${EVENT_NAME}" == "issue_comment" ]]; then
+            USER_REQUEST=$(echo "${EVENT_PAYLOAD}" | jq -r .comment.body)
+            ISSUE_NUMBER=$(echo "${EVENT_PAYLOAD}" | jq -r .issue.number)
+            if [[ $(echo "${EVENT_PAYLOAD}" | jq -r .issue.pull_request) != "null" ]]; then
+              IS_PR="true"
+            fi
+          elif [[ "${EVENT_NAME}" == "pull_request_review" ]]; then
+            USER_REQUEST=$(echo "${EVENT_PAYLOAD}" | jq -r .review.body)
+            ISSUE_NUMBER=$(echo "${EVENT_PAYLOAD}" | jq -r .pull_request.number)
+            IS_PR="true"
+          elif [[ "${EVENT_NAME}" == "pull_request_review_comment" ]]; then
+            USER_REQUEST=$(echo "${EVENT_PAYLOAD}" | jq -r .comment.body)
+            ISSUE_NUMBER=$(echo "${EVENT_PAYLOAD}" | jq -r .pull_request.number)
+            IS_PR="true"
+          fi
+
+          PLAN_ID=$(echo "${USER_REQUEST}" | grep -Eo 'plan#[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}' | head -n 1 | sed 's/plan#//' || true)
+          if [[ -z "${PLAN_ID}" ]]; then
+            echo "Invalid or missing plan id. Expected plan#<uuid>." >&2
+            exit 1
+          fi
+
+          if ! echo "${USER_REQUEST}" | grep -Eq "(^|[[:space:]])(@gemini-cli[[:space:]]+)?plan#${PLAN_ID}[[:space:]]+approved([[:space:]]|$)"; then
+            echo "Plan execution requires the exact approval command: @gemini-cli plan#${PLAN_ID} approved" >&2
+            exit 1
+          fi
+
+          PLAN_COMMENT_DATA=$(gh issue view "${ISSUE_NUMBER}" --repo "${REPOSITORY}" --json comments --jq "[.comments[] | select(.body | contains(\"plan#${PLAN_ID}\")) | select(.author.login == \"github-actions[bot]\")] | .[0]")
+          if [[ -z "${PLAN_COMMENT_DATA}" || "${PLAN_COMMENT_DATA}" == "null" ]]; then
+            echo "No bot-authored pending plan found for plan#${PLAN_ID}." >&2
+            exit 1
+          fi
+          PLAN_TEXT=$(echo "${PLAN_COMMENT_DATA}" | jq -r .body)
+          COMMENT_ID=$(echo "${PLAN_COMMENT_DATA}" | jq -r .id)
+
+          if [[ "${IS_PR}" == "true" ]]; then
+            COMMENT_COMMAND="gh pr comment \"${ISSUE_NUMBER}\" --body-file response.md"
+            COMMENT_PROGRESS_COMMAND="gh pr comment --edit \"${COMMENT_ID}\" --body-file response.md"
+          else
+            COMMENT_COMMAND="gh issue comment \"${ISSUE_NUMBER}\" --body-file response.md"
+            COMMENT_PROGRESS_COMMAND="gh issue comment --edit \"${COMMENT_ID}\" --body-file response.md"
+          fi
+
+          {
+            echo "user_request<<EOF"
+            echo "${USER_REQUEST}"
+            echo "EOF"
+            echo "issue_number=${ISSUE_NUMBER}"
+            echo "is_pr=${IS_PR}"
+            echo "request_type=plan_execution"
+            echo "plan_id=${PLAN_ID}"
+            echo "comment_id=${COMMENT_ID}"
+            echo "comment_command=${COMMENT_COMMAND}"
+            echo "comment_progress_command=${COMMENT_PROGRESS_COMMAND}"
+            echo "plan_text<<EOF"
+            echo "${PLAN_TEXT}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: 'Set up git user for commits'
+        run: |-
+          git config --global user.name 'gemini-cli[bot]'
+          git config --global user.email 'gemini-cli[bot]@users.noreply.github.com'
+
+      - name: 'Validate token for plan execution'
+        if: |-
+          ${{ steps.generate_token.outputs.token == '' }}
+        run: |-
+          echo "Plan execution requires vars.APP_ID and secrets.APP_PRIVATE_KEY to mint a GitHub App token."
+          echo "Refusing to continue with repository write operations on the default GITHUB_TOKEN."
+          exit 1
+
+      - name: 'Checkout PR branch'
+        if: |-
+          ${{ steps.get_context.outputs.is_pr == 'true' }}
+        uses: 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd' # ratchet:actions/checkout@v6
+        with:
+          token: '${{ steps.generate_token.outputs.token }}'
+          repository: '${{ github.repository }}'
+          ref: 'refs/pull/${{ steps.get_context.outputs.issue_number }}/head'
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 'Checkout main branch'
+        if: |-
+          ${{ steps.get_context.outputs.is_pr == 'false' }}
+        uses: 'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd' # ratchet:actions/checkout@v6
+        with:
+          token: '${{ steps.generate_token.outputs.token }}'
+          repository: '${{ github.repository }}'
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 'Create new branch for issue'
+        if: |-
+          ${{ steps.get_context.outputs.is_pr == 'false' }}
+        run: |-
+          set -euo pipefail
+          BRANCH_NAME="gemini-issue-${{ steps.get_context.outputs.issue_number }}"
+          git checkout -B "${BRANCH_NAME}"
+          echo "branch_name=${BRANCH_NAME}" >> "${GITHUB_OUTPUT}"
+        id: 'create_branch'
+
+      - name: 'Run Gemini execution'
+        id: 'run_gemini'
+        uses: 'google-github-actions/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions/run-gemini-cli@v0.1.22
+        env:
+          GITHUB_TOKEN: '${{ steps.generate_token.outputs.token }}'
           REPOSITORY: '${{ github.repository }}'
           USER_REQUEST: '${{ steps.get_context.outputs.user_request }}\nPlease respond to me by commenting your response. Please execute ${{ steps.get_context.outputs.comment_command }} to respond.'
           ISSUE_NUMBER: '${{ steps.get_context.outputs.issue_number }}'
@@ -337,7 +626,7 @@ jobs:
           prompt: |-
             ## Role & Goal
 
-            You are an AI assistant in a GitHub workflow. Your goal is to understand a user's request, and either answer it directly or create a plan to fulfill it. You will interact with the user by posting comments to the GitHub issue or pull request.
+            You are an AI assistant in a GitHub workflow. Your goal is to execute an approved plan and report the result by posting comments to the GitHub issue or pull request.
 
             ## Context
 
@@ -352,47 +641,11 @@ jobs:
             - **Comment Command**: '${{ env.COMMENT_COMMAND }}'
             - **Comment Progress Command**: '${{ env.COMMENT_PROGRESS_COMMAND }}'
 
-            ## Instructions by Request Type
-
-            Your action depends on the `REQUEST_TYPE`.
-
-            ### 1. `initial_request`
-
-            - **Analyze the user's request.**
-            - **If the request is a question or asks for information (a "simple" request):**
-                - Gather the information using your tools.
-                - Write your final answer to `response.md`.
-            - **If the request requires changing the codebase or running commands that modify state (a "complex" request):**
-                - You MUST create a plan for the user to approve.
-                - **CRITICAL: Do not execute the plan. Your ONLY task is to create the plan.**
-                - Generate a unique UUID for the plan.
-                - Create the plan in a file named `response.md` using the exact format below.
-                  #### Plan Format
-                  ```markdown
-                  plan#<your-uuid-here>
-                  ### Plan Overview
-                  I will perform the following actions to address your request:
-                  - *Briefly describe the overall goal of the plan.*
-                  ### Detailed Steps
-                  - [ ] **Step 1 Title**: Description of what will be done in this step.
-                  - [ ] **Step 2 Title**: Description of what will be done in this step.
-                  - [ ] ...
-                  To approve this plan, please respond with:
-                  ```bash
-                  @gemini-cli plan#<your-uuid-here> approved
-                  ```
-                  To request a modification, please respond with:
-                  ```bash
-                  @gemini-cli plan#<your-uuid-here> <your modification request>
-                  ```
-                  ```
-            - **After creating your response, execute the command in `COMMENT_COMMAND` to post it. Your job for this workflow run is complete.**
-
-            ### 2. `plan_execution`
+            ## Plan Execution Instructions
 
             - The user has approved the plan. The approved plan is in the `PLAN_TEXT` variable.
-            - **Execute the steps from the plan and report progress.** As you make progress, keep the checklist visible and up to date by editing the same comment (check off completed tasks with `- [x]`).
-              - To report progress, write the updated plan to `response.md` and execute the command in `COMMENT_PROGRESS_COMMAND`.
+            - Execute the steps from the plan and report progress. As you make progress, keep the checklist visible and up to date by editing the same comment (check off completed tasks with `- [x]`).
+            - To report progress, write the updated plan to `response.md` and execute the command in `COMMENT_PROGRESS_COMMAND`.
             - If you make code changes:
                 - **CRITICAL: NEVER commit directly to the `main` branch.**
                 - Commit your changes to the currently checked-out branch.
@@ -406,25 +659,12 @@ jobs:
                   - `gh pr create --title "Resolves #${{ env.ISSUE_NUMBER }}" --body "This PR was created by @gemini-cli to address issue #${{ env.ISSUE_NUMBER }}."`
             - After all steps are complete, summarize what was changed and why in `response.md`, then execute the command in `COMMENT_COMMAND` to post a final summary comment.
 
-            ### 3. `plan_modification`
-
-            - The user has requested changes to the plan in `PLAN_TEXT`. The requested changes are in `USER_REQUEST`.
-            - Create a *new* plan that incorporates the user's feedback.
-            - Generate a *new* unique UUID for this revised plan.
-            - Write the new plan to `response.md`, then execute the command in `COMMENT_COMMAND` to post it.
-
-            ### 4. `plan_rejection`
-
-            - The user has rejected the plan.
-            - Write a confirmation message to `response.md`, then execute the command in `COMMENT_COMMAND` to post it.
-
             ## General Rules
 
             - **If you are unsure how to proceed or the user's request is ambiguous, you MUST ask for clarification.** Do not guess. Write your question in `response.md` and post it.
             - **Use markdown** for clear formatting in all your responses.
-            - **Resource Limits**: You MUST NOT propose a plan that creates an excessive number of resources (e.g., more than 5 issues, more than 5 pull requests) in a single request.
+            - **Resource Limits**: You MUST NOT create an excessive number of resources (e.g., more than 5 issues, more than 5 pull requests) in a single request.
             - **Malicious Intent**: If you suspect a user request is malicious, frivolous, or intended to abuse the system (e.g., asking to perform a repetitive, useless task), you MUST reject the request and explain why.
-            - **Guardrail**: Only propose plans that modify files if the user explicitly asks for a change. If they ask a question, just answer it.
             - **Write Safety**: Only run `git add`, `git commit`, `git push`, or branch creation commands when `REQUEST_TYPE` is exactly `plan_execution`.
             - **Commits**: When committing files, be specific (e.g., `git add path/to/file.js`). Never use `git add .`.
             - **Paths**: Always use absolute paths for file operations.

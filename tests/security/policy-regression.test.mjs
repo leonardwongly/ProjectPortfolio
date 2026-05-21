@@ -53,6 +53,33 @@ test('workflow uses references are pinned by SHA', () => {
   assert.deepEqual(unpinned, [], `Found unpinned action references:\n${unpinned.join('\n')}`);
 });
 
+test('Gemini workflow separates planning from write-capable execution', () => {
+  const content = fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8');
+  const planJobStart = content.indexOf('  gemini-cli-plan:');
+  const executeJobStart = content.indexOf('  gemini-cli-execute:');
+
+  assert.ok(planJobStart >= 0, 'Missing Gemini planning job');
+  assert.ok(executeJobStart > planJobStart, 'Missing Gemini execution job after planning job');
+
+  const planJob = content.slice(planJobStart, executeJobStart);
+  const executeJob = content.slice(executeJobStart);
+
+  assert.doesNotMatch(planJob, /actions\/create-github-app-token/);
+  assert.doesNotMatch(planJob, /run_shell_command\(git add\)/);
+  assert.doesNotMatch(planJob, /run_shell_command\(git commit\)/);
+  assert.doesNotMatch(planJob, /run_shell_command\(git push\)/);
+  assert.match(planJob, /Write Safety.*planning job MUST NOT run `git add`, `git commit`, `git push`/s);
+
+  assert.match(executeJob, /actions\/create-github-app-token@[0-9a-f]{40}/);
+  assert.match(executeJob, /request_type=plan_execution/);
+  assert.match(executeJob, /plan#\$\{PLAN_ID\}/);
+  assert.match(executeJob, /github-actions\[bot\]/);
+  assert.match(executeJob, /run_shell_command\(git add\)/);
+  assert.match(executeJob, /run_shell_command\(git commit\)/);
+  assert.match(executeJob, /run_shell_command\(git push\)/);
+  assert.match(executeJob, /Plan execution requires vars\.APP_ID and secrets\.APP_PRIVATE_KEY/);
+});
+
 test('CSP is declared in source pages and appears before script tags when present', () => {
   for (const file of SOURCE_HTML_FILES) {
     const lines = fs.readFileSync(file, 'utf8').split('\n');

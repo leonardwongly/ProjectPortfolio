@@ -34,9 +34,11 @@ See `docs/content-source-inventory.md` before adding new public claims. New clai
 
 The build validates URLs, asset paths, and expected schema keys before rendering. External links must use `https:`. Relative links cannot contain path traversal segments.
 
+Repository data files are treated as maintainer-controlled source inputs, not as externally trusted user submissions. Keep that boundary explicit when adding content pipelines: any future import, form, CMS, feed, or generated-data workflow that writes into `data/` must validate type, shape, length, allowed values, URL scheme, asset path, and rendered-output escaping before the content reaches `npm run build`.
+
 The content parity tests verify that source-backed profile facts such as the current NCS and Public Service Commission Singapore context, Nanyang Polytechnic dates, articles, AI credentials, honors, and community records remain visible on the generated page.
 
-The reading audit rejects missing authors, missing ISBNs, invalid years, duplicate ISBN/title-year records, and missing declared cover files.
+The reading audit rejects missing authors, missing ISBNs, invalid years, duplicate ISBN/title-year records, and missing declared cover files. Reading years must be canonical four-digit years or integer years in the accepted range, and generated filter attributes must remain escaped so quote-bearing metadata cannot break out of HTML attributes.
 
 The link-health checker validates URL shape before network access and blocks non-HTTPS, credential-bearing, localhost, and private literal host references. The default mode reports network failures without failing the build; use `npm run check:links -- --strict` before release if you need broken-link enforcement.
 
@@ -52,6 +54,8 @@ The build workflow uses Node 20, regenerates static pages, checks that generated
 - `CodeQL`
 
 Draft pull requests intentionally skip the Playwright integration workflow. Mark a PR ready for review only when local validation has passed and generated files are committed.
+
+The Gemini assistant workflow separates planning from execution. Planning can inspect repository context and post comments, but cannot mint the GitHub App token or use git write commands. Execution runs in a separate job only after a trusted collaborator submits an exact `plan#<uuid> approved` command that references a prior `github-actions[bot]` plan comment.
 
 ## Release Checklist
 

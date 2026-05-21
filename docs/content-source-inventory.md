@@ -14,6 +14,20 @@ This inventory is the acceptance contract for profile and resume reconciliation.
 | Featured work data | Selected project cards and external project links | `data/featured-projects.json` | Unsafe URL/path tests and generated page review |
 | Reading data | Reading page metadata and cover references | `data/reading.json`, `book/` | `npm run check:reading`, cover asset validation |
 
+## Trust Boundary
+
+All current content sources are maintainer-controlled repository files or owner-approved committed artifacts. They are still validated before rendering because the generated pages are public, same-origin HTML.
+
+Do not connect an external source such as a form, CMS, feed, scraper, AI-generated dataset, or third-party import directly to `data/` without adding an ingestion contract first. That contract must define:
+
+- allowed fields and rejected unknown fields
+- maximum string lengths and collection sizes
+- canonical formats for identifiers, years, dates, tags, and URLs
+- `https:`-only external links and traversal-safe relative asset paths
+- generated-output regression tests for HTML attribute, text, URL, and structured-data sinks
+
+Until that contract exists, external content should be reviewed and committed by a maintainer through the normal static-content update flow.
+
 ## Current Required Facts
 
 | Fact | Source status | Target file | Rendered surface | Gate |
