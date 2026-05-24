@@ -40,7 +40,10 @@ jobs:
         github.event_name == 'issues' &&
         github.event.action == 'opened' &&
         (
-          contains(github.event.issue.body, '@gemini-cli') ||
+          (
+            contains(github.event.issue.body, '@gemini-cli') &&
+            !(contains(github.event.issue.body, 'plan#') && contains(github.event.issue.body, 'approved'))
+          ) ||
           (
             contains(github.event.issue.body, 'plan#') &&
             !contains(github.event.issue.body, 'approved')
@@ -59,7 +62,10 @@ jobs:
       (
         github.event_name == 'issue_comment' &&
         (
-          contains(github.event.comment.body, '@gemini-cli') ||
+          (
+            contains(github.event.comment.body, '@gemini-cli') &&
+            !(contains(github.event.comment.body, 'plan#') && contains(github.event.comment.body, 'approved'))
+          ) ||
           (
             contains(github.event.comment.body, 'plan#') &&
             !contains(github.event.comment.body, 'approved')
@@ -78,7 +84,10 @@ jobs:
       (
         github.event_name == 'pull_request_review' &&
         (
-          contains(github.event.review.body, '@gemini-cli') ||
+          (
+            contains(github.event.review.body, '@gemini-cli') &&
+            !(contains(github.event.review.body, 'plan#') && contains(github.event.review.body, 'approved'))
+          ) ||
           (
             contains(github.event.review.body, 'plan#') &&
             !contains(github.event.review.body, 'approved')
@@ -97,7 +106,10 @@ jobs:
       (
         github.event_name == 'pull_request_review_comment' &&
         (
-          contains(github.event.comment.body, '@gemini-cli') ||
+          (
+            contains(github.event.comment.body, '@gemini-cli') &&
+            !(contains(github.event.comment.body, 'plan#') && contains(github.event.comment.body, 'approved'))
+          ) ||
           (
             contains(github.event.comment.body, 'plan#') &&
             !contains(github.event.comment.body, 'approved')

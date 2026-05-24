@@ -69,6 +69,19 @@ test('Gemini workflow separates planning from write-capable execution', () => {
   assert.doesNotMatch(planJob, /run_shell_command\(git commit\)/);
   assert.doesNotMatch(planJob, /run_shell_command\(git push\)/);
   assert.match(planJob, /Write Safety.*planning job MUST NOT run `git add`, `git commit`, `git push`/s);
+  assert.ok(
+    planJob.includes("!(contains(github.event.issue.body, 'plan#') && contains(github.event.issue.body, 'approved'))"),
+    'Planning job must not accept approved plan issue bodies'
+  );
+  assert.equal(
+    planJob.split("!(contains(github.event.comment.body, 'plan#') && contains(github.event.comment.body, 'approved'))").length - 1,
+    2,
+    'Planning job must not accept approved plan issue or review comments'
+  );
+  assert.ok(
+    planJob.includes("!(contains(github.event.review.body, 'plan#') && contains(github.event.review.body, 'approved'))"),
+    'Planning job must not accept approved plan reviews'
+  );
 
   assert.match(executeJob, /actions\/create-github-app-token@[0-9a-f]{40}/);
   assert.match(executeJob, /request_type=plan_execution/);
