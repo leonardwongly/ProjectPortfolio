@@ -32,6 +32,27 @@ function ensureString(value, fieldPath) {
   return value.trim();
 }
 
+
+function ensureVendorPath(rawPath, fieldPath) {
+  const relativePath = ensureString(rawPath, fieldPath);
+  if (path.isAbsolute(relativePath)) {
+    fail(`Invalid manifest at ${fieldPath}: expected relative path`);
+  }
+
+  const normalized = path.posix.normalize(relativePath);
+  if (normalized !== relativePath) {
+    fail(`Invalid manifest at ${fieldPath}: path must already be normalized`);
+  }
+  if (!normalized.startsWith('js/vendor/')) {
+    fail(`Invalid manifest at ${fieldPath}: path must stay under js/vendor/`);
+  }
+  if (normalized.includes('../') || normalized === '..') {
+    fail(`Invalid manifest at ${fieldPath}: path traversal is not allowed`);
+  }
+
+  return normalized;
+}
+
 function ensureHttpsUrl(rawUrl, fieldPath) {
   const urlString = ensureString(rawUrl, fieldPath);
   let parsed;
@@ -108,7 +129,7 @@ function listManifestFiles(manifest) {
       const fieldPath = `manifest.dependencies[${dependencyIndex}].files[${fileIndex}]`;
       const fileObject = ensureObject(fileEntry, fieldPath);
       const upstreamUrl = ensureHttpsUrl(fileObject.upstream_url, `${fieldPath}.upstream_url`);
-      const relativePath = ensureString(fileObject.path, `${fieldPath}.path`);
+      const relativePath = ensureVendorPath(fileObject.path, `${fieldPath}.path`);
       const signatures = Array.isArray(fileObject.signatures) ? fileObject.signatures.map((signature, signatureIndex) =>
         ensureString(signature, `${fieldPath}.signatures[${signatureIndex}]`)
       ) : fail(`Invalid manifest at ${fieldPath}.signatures: expected non-empty array`);
@@ -282,6 +303,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 
 export {
   ensureHttpsUrl,
+  ensureVendorPath,
   fetchVendorFiles,
   parseArgs,
   runVendorRefresh,

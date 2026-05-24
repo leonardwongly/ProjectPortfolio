@@ -6,6 +6,7 @@ import test from 'node:test';
 
 import {
   ensureHttpsUrl,
+  ensureVendorPath,
   fetchVendorFiles,
   parseArgs,
   runVendorRefresh,
@@ -58,6 +59,13 @@ test('parseArgs defaults to dry-run and validates known flags', () => {
   assert.throws(() => parseArgs(['--bogus']), /Unknown argument/);
 });
 
+
+
+test('ensureVendorPath rejects traversal and non-vendor paths', () => {
+  assert.equal(ensureVendorPath('js/vendor/workbox/test-file.js', 'file.path'), 'js/vendor/workbox/test-file.js');
+  assert.throws(() => ensureVendorPath('../pwned.txt', 'file.path'), /path must stay under js\/vendor\//);
+  assert.throws(() => ensureVendorPath('scripts/build.js', 'file.path'), /path must stay under js\/vendor\//);
+});
 test('fetchVendorFiles downloads upstream content and verifies signatures', async () => {
   const manifest = makeManifest();
   const payload = '/* workbox:test:9.9.9 */\nconsole.log("test-file.js");\n';
