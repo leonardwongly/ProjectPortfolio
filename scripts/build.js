@@ -615,6 +615,12 @@ function validateReadingData(items) {
     if (typeof entry.year !== 'number' && typeof entry.year !== 'string') {
       failValidation(`${fieldPath}.year`, 'expected year as number or string');
     }
+    if (typeof entry.year === 'number' && !Number.isInteger(entry.year)) {
+      failValidation(`${fieldPath}.year`, 'expected an integer year');
+    }
+    if (typeof entry.year === 'string' && !/^\d{4}$/.test(entry.year.trim())) {
+      failValidation(`${fieldPath}.year`, 'expected a four-digit year');
+    }
     const year = Number.parseInt(String(entry.year), 10);
     if (!Number.isInteger(year) || year < 1900 || year > 2100) {
       failValidation(`${fieldPath}.year`, 'expected year in range 1900..2100');
@@ -1172,7 +1178,7 @@ function renderReadingGrid(reading) {
   const missingCovers = new Set();
   const items = reading.map((entry, entryIndex) => {
     const tags = (entry.tags && entry.tags.length ? entry.tags : inferTags(entry)) || [];
-    const tagAttr = tags.map((tag) => tag.toLowerCase()).join(',');
+    const tagAttr = escapeHtml(tags.map((tag) => tag.toLowerCase()).join(','));
     const year = escapeHtml(entry.year);
     const title = escapeHtml(entry.title);
     const author = escapeHtml(entry.author);
@@ -1255,7 +1261,7 @@ function renderReadingGrid(reading) {
   const yearButtons = ['All', ...years.map(String)]
     .map((value) => {
       const label = value === 'All' ? 'All years' : value;
-      return `<button type="button" class="filter-pill" data-filter-group="year" data-filter-value="${value}">${label}</button>`;
+      return `<button type="button" class="filter-pill" data-filter-group="year" data-filter-value="${escapeHtml(value)}">${escapeHtml(label)}</button>`;
     })
     .join('');
 
@@ -1412,6 +1418,7 @@ module.exports = {
   injectCspScriptHashes,
   renderCspScriptHashesDirective,
   renderProfileSchema,
+  renderReadingGrid,
   sanitizeHref,
   sanitizeAssetPath,
   sanitizeRelativeLink,

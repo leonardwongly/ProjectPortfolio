@@ -11,6 +11,7 @@ const {
   hashInlineScript,
   injectCspScriptHashes,
   renderCspScriptHashesDirective,
+  renderReadingGrid,
   renderProfileSchema,
   sanitizeHref,
   sanitizeAssetPath,
@@ -209,6 +210,10 @@ test('validateDataCollections rejects malformed payloads', () => {
   badShape.reading[0].year = 1500;
   assert.throws(() => validateDataCollections(badShape), /year in range 1900\.\.2100/);
 
+  const nonCanonicalYear = makeValidData();
+  nonCanonicalYear.reading[0].year = '2025" autofocus onfocus="alert(1)';
+  assert.throws(() => validateDataCollections(nonCanonicalYear), /expected a four-digit year/);
+
   const unknownField = makeValidData();
   unknownField.skills[0].unexpected = 'value';
   assert.throws(() => validateDataCollections(unknownField), /unexpected key\(s\): unexpected/);
@@ -228,6 +233,21 @@ test('validateDataCollections rejects malformed payloads', () => {
   const badCommunityId = makeValidData();
   badCommunityId.profile.community[0].id = 'bad id';
   assert.throws(() => validateDataCollections(badCommunityId), /expected an identifier/);
+});
+
+test('renderReadingGrid escapes data attribute filter values', () => {
+  const html = renderReadingGrid([
+    {
+      year: 2025,
+      title: 'Secure Design',
+      author: 'A. Author',
+      isbn: '978-1-234567-89-7',
+      tags: ['Security" autofocus onfocus="alert(1)']
+    }
+  ]);
+
+  assert.match(html, /data-tags="security&quot; autofocus onfocus=&quot;alert\(1\)"/);
+  assert.doesNotMatch(html, /data-tags="[^"]*" autofocus/);
 });
 
 test('validateReadingAssetInventory requires declared cover files to exist', () => {
