@@ -36,3 +36,11 @@ Expected:
 1. Each endpoint returns all required security headers listed above.
 2. `Content-Security-Policy` includes `style-src 'self'` and `frame-ancestors 'none'`.
 3. `Access-Control-Allow-Origin` for HTML responses is `https://leonardwong.tech`.
+
+## CSP Monitoring
+
+CSP enforcement is repo-owned through `src/_headers.template` and generated
+`_headers`. CSP reporting is not enabled until a real HTTPS collector endpoint is
+approved and tested. Use `docs/security/csp-monitoring.md` for the current
+manual review process and the required rollout steps before adding `report-uri`
+or `report-to`.

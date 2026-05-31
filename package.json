@@ -17,7 +17,9 @@
     "check:links": "node scripts/check-link-health.mjs",
     "check:performance": "node scripts/check-performance-budget.mjs",
     "check:reading": "node scripts/audit-reading-metadata.mjs",
-    "validate:vendor": "node scripts/check-vendor-governance.mjs && node scripts/update-vendor.mjs && node scripts/check-vendor-upstream.mjs",
+    "validate:vendor:governance": "node scripts/check-vendor-governance.mjs",
+    "validate:vendor:upstream": "node scripts/update-vendor.mjs && node scripts/check-vendor-upstream.mjs",
+    "validate:vendor": "npm run validate:vendor:governance && npm run validate:vendor:upstream",
     "validate": "npm run build && npm run test:security",
     "validate:full": "npm run build && npm run check:generated && npm run test:security && npm run check:reading && npm run check:performance && npm run audit:high && npm run validate:vendor && npm run test:integration"
   },

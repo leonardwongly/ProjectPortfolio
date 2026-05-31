@@ -40,7 +40,7 @@ The content parity tests verify that source-backed profile facts such as the cur
 
 The reading audit rejects missing authors, missing ISBNs, invalid years, duplicate ISBN/title-year records, and missing declared cover files. Reading years must be canonical four-digit years or integer years in the accepted range, and generated filter attributes must remain escaped so quote-bearing metadata cannot break out of HTML attributes.
 
-The link-health checker validates URL shape before network access and blocks non-HTTPS, credential-bearing, localhost, and private literal host references. The default mode reports network failures without failing the build; use `npm run check:links -- --strict` before release if you need broken-link enforcement.
+The link-health checker performs URL-shape and DNS preflight checks before fetches and blocks non-HTTPS, credential-bearing, localhost, private literal host, and private DNS-resolved references. This is a maintainer-side hardening control for repository content, not a general-purpose network sandbox; the subsequent fetch still uses the original hostname and therefore depends on resolver stability between preflight and request. The default mode reports network failures without failing the build; use `npm run check:links -- --strict` before release if you need broken-link enforcement.
 
 The performance budget check caps generated page sizes, key static assets, asset directories, and individual book/image/font files. Update `docs/media-asset-policy.md` before changing those budgets.
 
@@ -67,6 +67,7 @@ The Gemini assistant workflow separates planning from execution. Planning can in
 - [ ] `npm run validate:vendor`
 - [ ] `npm run test:integration`
 - [ ] `npm run check:generated` after committing generated files
+- [ ] Review `docs/security/csp-monitoring.md` for CSP console checks and Cloudflare event review when header policy changes.
 - [ ] Verify production security headers after merge:
   ```bash
   curl -sSI https://leonardwong.tech/ | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy):"

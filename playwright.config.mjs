@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const integrationPort = Number.parseInt(process.env.PLAYWRIGHT_PORT || '4173', 10);
+const integrationBaseURL = `http://127.0.0.1:${integrationPort}`;
+
 export default defineConfig({
   testDir: './tests/integration',
   timeout: 30_000,
@@ -9,14 +12,14 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [['list']],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: integrationBaseURL,
     trace: 'on-first-retry',
     serviceWorkers: 'block'
   },
   webServer: {
-    command: 'python3 -m http.server 4173 --bind 127.0.0.1',
-    url: 'http://127.0.0.1:4173/index.html',
-    reuseExistingServer: !process.env.CI,
+    command: `python3 -m http.server ${integrationPort} --bind 127.0.0.1`,
+    url: `${integrationBaseURL}/index.html`,
+    reuseExistingServer: false,
     timeout: 120_000
   },
   projects: [
