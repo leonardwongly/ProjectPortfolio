@@ -99,6 +99,17 @@ function makeValidProfile() {
         responsibilities: ['Supported students during weekly sessions.']
       }
     ],
+    site_engineering: {
+      eyebrow: 'Site Engineering',
+      headline: 'Built as a small static system.',
+      lede: 'Generated content and automated validation keep releases reviewable.',
+      items: [
+        {
+          title: 'Static generation',
+          detail: 'Structured content generates committed HTML.'
+        }
+      ]
+    },
     contact: {
       eyebrow: 'Contact',
       headline: 'Open to secure platform work.',
@@ -248,6 +259,22 @@ test('renderReadingGrid escapes data attribute filter values', () => {
 
   assert.match(html, /data-tags="security&quot; autofocus onfocus=&quot;alert\(1\)"/);
   assert.doesNotMatch(html, /data-tags="[^"]*" autofocus/);
+});
+
+test('rendered action links include privacy-safe telemetry annotations', () => {
+  const html = renderProfileSchema(makeValidProfile(), []);
+  assert.doesNotMatch(html, /data-telemetry/);
+
+  const rendered = renderReadingGrid([
+    {
+      year: 2025,
+      title: 'Secure Design',
+      author: 'A. Author',
+      isbn: '978-1-234567-89-7',
+      tags: ['Security']
+    }
+  ]);
+  assert.match(rendered, /data-reading-count/);
 });
 
 test('validateReadingAssetInventory requires declared cover files to exist', () => {

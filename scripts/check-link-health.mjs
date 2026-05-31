@@ -24,6 +24,7 @@ const GENERATED_HTML_FILES = [
 
 function parseArgs(argv = process.argv.slice(2)) {
   const options = {
+    preflightOnly: false,
     strict: false,
     timeoutMs: DEFAULT_TIMEOUT_MS
   };
@@ -32,6 +33,10 @@ function parseArgs(argv = process.argv.slice(2)) {
     const arg = argv[index];
     if (arg === '--strict') {
       options.strict = true;
+      continue;
+    }
+    if (arg === '--preflight-only') {
+      options.preflightOnly = true;
       continue;
     }
     if (arg === '--timeout-ms') {
@@ -150,6 +155,14 @@ async function checkUrl(entry, options) {
       fieldPath: entry.source,
       lookupImpl: options.lookupImpl
     });
+    if (options.preflightOnly) {
+      return {
+        ...entry,
+        ok: true,
+        category: 'preflight-ok',
+        detail: 'URL shape and DNS preflight passed'
+      };
+    }
     let response = await fetchWithTimeout(url, {
       method: 'HEAD',
       timeoutMs: options.timeoutMs,

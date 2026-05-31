@@ -45,7 +45,10 @@ Feel free to follow me on my socials 😶‍🌫️<br/>
   ```bash
   npm run check:reading
   npm run check:links
+  npm run check:links:preflight
   npm run check:performance
+  npm run check:assets
+  npm run check:telemetry
   ```
 - Local vendor scripts are stored in `js/vendor/` and governed by:
   ```bash

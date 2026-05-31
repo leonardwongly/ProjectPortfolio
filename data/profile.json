@@ -161,6 +161,29 @@
       ]
     }
   ],
+  "site_engineering": {
+    "eyebrow": "Site Engineering",
+    "headline": "Built as a small, testable static system.",
+    "lede": "The portfolio is generated from structured data and guarded by security, content, performance, and integration checks before release.",
+    "items": [
+      {
+        "title": "Static generation",
+        "detail": "Source templates and JSON data produce committed HTML, headers, and offline pages through a repeatable build."
+      },
+      {
+        "title": "Strict browser policy",
+        "detail": "A self-hosted asset model, strict CSP, frame blocking, and service-worker checks keep the runtime boundary narrow."
+      },
+      {
+        "title": "Supply-chain governance",
+        "detail": "Vendored scripts are governed by manifest policy, hashes, upstream review, and CI dependency gates."
+      },
+      {
+        "title": "Release validation",
+        "detail": "The local release gate covers generated-file drift, metadata, performance budgets, dependency audit, vendor checks, and Playwright smoke tests."
+      }
+    ]
+  },
   "contact": {
     "eyebrow": "Let's connect",
     "headline": "Open to impactful platform, security, and responsible AI work.",

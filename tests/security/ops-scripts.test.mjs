@@ -60,11 +60,17 @@ test('reading metadata audit detects missing fields, duplicate records, and miss
 });
 
 test('performance budget check reports clean fixtures and oversized generated files', async () => {
-  const { checkPerformanceBudget } = await import('../../scripts/check-performance-budget.mjs');
+  const { checkPerformanceBudget, createAssetInventoryReport } = await import('../../scripts/check-performance-budget.mjs');
   const rootDir = makeTempRoot();
 
   writePerformanceFixture(rootDir);
+  writeFile(rootDir, 'book/large-cover.jpg', Buffer.alloc(500, 'a'));
+  writeFile(rootDir, 'images/logo.png', Buffer.alloc(100, 'a'));
   assert.deepEqual(checkPerformanceBudget({ rootDir }).failures, []);
+  assert.deepEqual(createAssetInventoryReport({ rootDir, limit: 2 }).largestFiles, [
+    { path: 'book/large-cover.jpg', size: 500 },
+    { path: 'images/logo.png', size: 100 }
+  ]);
 
   writePerformanceFixture(rootDir, {
     'index.html': Buffer.alloc(91 * 1024, 'a')
@@ -126,4 +132,26 @@ test('network safety rejects private and reserved DNS answers before fetch', asy
     }),
     'https://public.example/status'
   );
+});
+
+test('link health preflight mode validates DNS without fetching URLs', async () => {
+  const { runLinkHealth } = await import('../../scripts/check-link-health.mjs');
+  const results = await runLinkHealth({
+    preflightOnly: true,
+    strict: true,
+    lookupImpl: async () => [{ address: '93.184.216.34', family: 4 }],
+    fetchImpl: async () => {
+      throw new Error('fetch should not run in preflight-only mode');
+    }
+  });
+
+  assert.ok(results.length > 0);
+  assert.ok(results.every((result) => result.ok || result.category === 'unsafe-url'));
+  assert.ok(results.some((result) => result.category === 'preflight-ok'));
+});
+
+test('telemetry policy check rejects external runtime analytics adapters', async () => {
+  const { collectTelemetryPolicyFindings } = await import('../../scripts/check-telemetry-policy.mjs');
+
+  assert.deepEqual(collectTelemetryPolicyFindings(), []);
 });

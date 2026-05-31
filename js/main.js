@@ -8,11 +8,20 @@ const REVEAL_SELECTORS = [
   '.article-card',
   '.honor-card',
   '.accordion-item',
+  '.trust-item',
   '.book-card',
   '.contact-card'
 ];
 
 const THEME_STORAGE_KEY = 'theme-preference';
+const TELEMETRY_STORAGE_KEY = 'portfolio-telemetry-session';
+const TELEMETRY_ALLOWED_EVENTS = new Set([
+  'portfolio_action_clicked',
+  'reading_filter_changed',
+  'reading_view_changed',
+  'reading_share_clicked',
+  'reading_share_completed'
+]);
 const REVEAL_DELAY_CLASS_PREFIX = 'reveal-delay-';
 const MAX_REVEAL_DELAY_CLASS = 8;
 const SW_UPDATE_EVENT_TYPE = 'SKIP_WAITING';
@@ -23,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAccordionState();
   initThemeToggle();
   initRevealOnScroll();
+  initPrivacySafeTelemetry();
   initReadingFilters();
   initServiceWorker();
   window.addEventListener('hashchange', initNavActive);
@@ -386,50 +396,60 @@ function initServiceWorker() {
   });
 }
 
+function sanitizeTelemetryValue(value) {
+  if (typeof value === 'boolean' || Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return value.trim().replace(/\s+/g, '_').toLowerCase().slice(0, 80);
+  }
+
+  return undefined;
+}
+
+function readTelemetrySession() {
+  try {
+    const raw = sessionStorage.getItem(TELEMETRY_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function writeTelemetrySession(snapshot) {
+  try {
+    sessionStorage.setItem(TELEMETRY_STORAGE_KEY, JSON.stringify(snapshot));
+  } catch (error) {
+    // Ignore storage errors (private mode, storage disabled, etc.).
+  }
+}
+
 function trackEvent(eventName, properties = {}) {
-  if (typeof eventName !== 'string' || !/^[a-z0-9_]+$/i.test(eventName)) {
+  if (
+    typeof eventName !== 'string' ||
+    !TELEMETRY_ALLOWED_EVENTS.has(eventName) ||
+    !/^[a-z0-9_]+$/.test(eventName)
+  ) {
     return;
   }
 
   const safeProperties = {};
   Object.entries(properties).forEach(([key, value]) => {
-    if (typeof key !== 'string' || !/^[a-z0-9_]+$/i.test(key)) {
+    if (typeof key !== 'string' || !/^[a-z0-9_]+$/.test(key)) {
       return;
     }
 
-    if (typeof value === 'boolean' || Number.isFinite(value)) {
-      safeProperties[key] = value;
-      return;
-    }
-
-    if (typeof value === 'string') {
-      safeProperties[key] = value.slice(0, 120);
+    const sanitized = sanitizeTelemetryValue(value);
+    if (sanitized !== undefined) {
+      safeProperties[key] = sanitized;
     }
   });
 
-  try {
-    if (Array.isArray(window.dataLayer)) {
-      window.dataLayer.push({ event: eventName, ...safeProperties });
-    }
-  } catch (error) {
-    // Ignore analytics adapter errors.
-  }
-
-  try {
-    if (typeof window.gtag === 'function') {
-      window.gtag('event', eventName, safeProperties);
-    }
-  } catch (error) {
-    // Ignore analytics adapter errors.
-  }
-
-  try {
-    if (typeof window.plausible === 'function') {
-      window.plausible(eventName, { props: safeProperties });
-    }
-  } catch (error) {
-    // Ignore analytics adapter errors.
-  }
+  const sessionSnapshot = readTelemetrySession();
+  sessionSnapshot[eventName] = (Number.parseInt(sessionSnapshot[eventName] || 0, 10) || 0) + 1;
+  writeTelemetrySession(sessionSnapshot);
 
   try {
     window.dispatchEvent(new CustomEvent('portfolio:track', {
@@ -438,6 +458,19 @@ function trackEvent(eventName, properties = {}) {
   } catch (error) {
     // Ignore analytics adapter errors.
   }
+}
+
+function initPrivacySafeTelemetry() {
+  document.querySelectorAll('[data-telemetry-event]').forEach((element) => {
+    element.addEventListener('click', () => {
+      const eventName = element.getAttribute('data-telemetry-event') || '';
+      trackEvent(eventName, {
+        surface: element.getAttribute('data-telemetry-surface') || 'unknown',
+        action: element.getAttribute('data-telemetry-action') || 'unknown',
+        destination: element.getAttribute('data-telemetry-destination') || 'unknown'
+      });
+    });
+  });
 }
 
 function sanitizeReadingQuery(value) {
@@ -469,6 +502,7 @@ function initReadingFilters() {
   const searchInput = section.querySelector('#readingSearch');
   const items = Array.from(section.querySelectorAll('[data-reading-item]'));
   const emptyState = section.querySelector('[data-reading-empty]');
+  const resultCount = section.querySelector('[data-reading-count]');
   const grid = section.querySelector('[data-reading-grid]');
   const filterButtons = Array.from(section.querySelectorAll('.filter-pill'));
   const viewButtons = Array.from(section.querySelectorAll('.view-pill'));
@@ -479,7 +513,7 @@ function initReadingFilters() {
     element: item,
     year: item.dataset.year || '',
     tags: (item.dataset.tags || '').split(',').filter(Boolean),
-    searchableText: `${item.dataset.title || ''} ${item.dataset.author || ''} ${item.dataset.isbn || ''}`.toLowerCase()
+    searchableText: `${item.dataset.title || ''} ${item.dataset.author || ''} ${item.dataset.isbn || ''} ${item.dataset.tags || ''}`.toLowerCase()
   }));
   const yearValues = new Set(
     filterButtons
@@ -609,6 +643,12 @@ function initReadingFilters() {
     if (emptyState) {
       emptyState.hidden = visibleCount !== 0;
     }
+    if (resultCount) {
+      const total = indexedItems.length;
+      resultCount.textContent = visibleCount === total
+        ? `${total} books shown`
+        : `${visibleCount} of ${total} books shown`;
+    }
   };
 
   filterButtons.forEach((button) => {
@@ -625,6 +665,10 @@ function initReadingFilters() {
 
       updateFilters();
       updateAddressBar();
+      trackEvent('reading_filter_changed', {
+        group,
+        value: value === 'All' ? 'all' : 'active'
+      });
     });
   });
 
@@ -645,6 +689,7 @@ function initReadingFilters() {
       const view = button.dataset.view;
       setActiveView(view);
       updateAddressBar();
+      trackEvent('reading_view_changed', { view: activeView });
     });
   });
 

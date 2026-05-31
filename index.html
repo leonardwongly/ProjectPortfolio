@@ -453,7 +453,7 @@
       <p class="eyebrow">Software Engineer · Singapore</p>
       <h1>Building secure, data-driven platforms with measurable impact.</h1>
       <p class="lead">Software Engineer at NCS Group, currently serving Public Service Commission Singapore as an IT vendor. I ship reliable internal products, automate data-heavy workflows, and integrate security early.</p>
-      <div class="hero-actions"><a class="btn btn-primary" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">View Resume</a><a class="btn btn-ghost" href="#writing">Writing</a><a class="btn btn-ghost" href="#contact">Contact</a></div>
+      <div class="hero-actions"><a class="btn btn-primary" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="view_resume" data-telemetry-destination="pdf">View Resume</a><a class="btn btn-ghost" href="#writing" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="writing" data-telemetry-destination="section">Writing</a><a class="btn btn-ghost" href="#contact" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="contact" data-telemetry-destination="section">Contact</a></div>
       <div class="hero-highlights">
 
         <div class="highlight-card">
@@ -911,6 +911,33 @@
 
     </section>
 
+<section class="section-block trust-section" id="site-engineering">
+  <div class="section-header">
+    <p class="eyebrow">Site Engineering</p>
+    <h2>Built as a small, testable static system.</h2>
+    <p class="section-lede">The portfolio is generated from structured data and guarded by security, content, performance, and integration checks before release.</p>
+  </div>
+  <div class="trust-grid">
+
+      <div class="trust-item">
+        <h3>Static generation</h3>
+        <p>Source templates and JSON data produce committed HTML, headers, and offline pages through a repeatable build.</p>
+      </div>
+      <div class="trust-item">
+        <h3>Strict browser policy</h3>
+        <p>A self-hosted asset model, strict CSP, frame blocking, and service-worker checks keep the runtime boundary narrow.</p>
+      </div>
+      <div class="trust-item">
+        <h3>Supply-chain governance</h3>
+        <p>Vendored scripts are governed by manifest policy, hashes, upstream review, and CI dependency gates.</p>
+      </div>
+      <div class="trust-item">
+        <h3>Release validation</h3>
+        <p>The local release gate covers generated-file drift, metadata, performance budgets, dependency audit, vendor checks, and Playwright smoke tests.</p>
+      </div>
+  </div>
+</section>
+
 <section class="section-block" id="contact">
   <div class="contact-card">
     <div>
@@ -918,7 +945,7 @@
       <h2>Open to impactful platform, security, and responsible AI work.</h2>
       <p class="section-lede">For roles, collaborations, or speaking requests, reach out directly.</p>
     </div>
-    <div class="contact-actions"><a class="btn btn-primary" href="https://linkedin.leonardwong.tech/" target="_blank" rel="noopener noreferrer">LinkedIn</a><a class="btn btn-ghost" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">Resume</a></div>
+    <div class="contact-actions"><a class="btn btn-primary" href="https://linkedin.leonardwong.tech/" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="contact_actions" data-telemetry-action="linkedin" data-telemetry-destination="external">LinkedIn</a><a class="btn btn-ghost" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="contact_actions" data-telemetry-action="resume" data-telemetry-destination="pdf">Resume</a></div>
     <div class="contact-meta">
       <span>Based in Singapore</span><span>Security + Platform Engineering</span><span>AI-aware product delivery</span>
     </div>

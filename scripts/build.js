@@ -1,6 +1,11 @@
-const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const {
+  escapeHtml,
+  escapeJsonLd,
+  hashInlineScript,
+  stripTrailingWhitespace
+} = require('./lib/static-rendering.cjs');
 
 const projectRoot = process.cwd();
 const srcDir = path.join(projectRoot, 'src');
@@ -21,33 +26,6 @@ function readJson(name) {
     throw new Error(`Missing data file: ${file}`);
   }
   return JSON.parse(fs.readFileSync(file, 'utf8'));
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function escapeJsonLd(value) {
-  return JSON.stringify(value, null, 8)
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026');
-}
-
-function stripTrailingWhitespace(content) {
-  return content
-    .split('\n')
-    .map((line) => line.replace(/[ \t]+$/g, ''))
-    .join('\n');
-}
-
-function hashInlineScript(content) {
-  return `sha256-${crypto.createHash('sha256').update(content, 'utf8').digest('base64')}`;
 }
 
 function isAsciiWhitespace(char) {
@@ -489,6 +467,7 @@ function validateProfileData(profile) {
     'honors',
     'languages',
     'community',
+    'site_engineering',
     'contact'
   ]);
 
@@ -589,6 +568,19 @@ function validateProfileData(profile) {
 
   ensureArray(profile.community || [], 'profile.community', { max: 20 }).forEach((entry, index) => {
     validateCommunityEntry(entry, `profile.community[${index}]`);
+  });
+
+  const siteEngineering = ensureObject(profile.site_engineering, 'profile.site_engineering');
+  ensureAllowedKeys(siteEngineering, 'profile.site_engineering', ['eyebrow', 'headline', 'lede', 'items']);
+  ensureString(siteEngineering.eyebrow, 'profile.site_engineering.eyebrow', { maxLength: 80 });
+  ensureString(siteEngineering.headline, 'profile.site_engineering.headline', { maxLength: 160 });
+  ensureString(siteEngineering.lede, 'profile.site_engineering.lede', { maxLength: 320 });
+  ensureArray(siteEngineering.items, 'profile.site_engineering.items', { min: 1, max: 8 }).forEach((item, index) => {
+    const fieldPath = `profile.site_engineering.items[${index}]`;
+    ensureObject(item, fieldPath);
+    ensureAllowedKeys(item, fieldPath, ['title', 'detail']);
+    ensureString(item.title, `${fieldPath}.title`, { maxLength: 80 });
+    ensureString(item.detail, `${fieldPath}.detail`, { maxLength: 220 });
   });
 
   const contact = ensureObject(profile.contact, 'profile.contact');
@@ -694,13 +686,35 @@ function linkShouldOpenInNewTab(href) {
   return hasUrlScheme(href) || href.endsWith('.pdf');
 }
 
+function slugForTelemetry(value) {
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 80) || 'unknown';
+}
+
+function telemetryDestinationType(href) {
+  if (href.endsWith('.pdf')) return 'pdf';
+  if (href.startsWith('#')) return 'section';
+  if (hasUrlScheme(href)) return 'external';
+  return 'internal';
+}
+
 function renderActionLinks(actions, fieldPath, className = 'hero-actions') {
   const links = actions
     .map((action, index) => {
       const href = safeHref(action.href, `${fieldPath}[${index}].href`);
       const target = linkShouldOpenInNewTab(href) ? ' target="_blank" rel="noopener noreferrer"' : '';
       const variant = action.variant === 'primary' ? 'btn-primary' : 'btn-ghost';
-      return `<a class="btn ${variant}" href="${escapeHtml(href)}"${target}>${escapeHtml(action.label)}</a>`;
+      const telemetry = [
+        'data-telemetry-event="portfolio_action_clicked"',
+        `data-telemetry-surface="${escapeHtml(slugForTelemetry(className))}"`,
+        `data-telemetry-action="${escapeHtml(slugForTelemetry(action.label))}"`,
+        `data-telemetry-destination="${escapeHtml(telemetryDestinationType(href))}"`
+      ].join(' ');
+      return `<a class="btn ${variant}" href="${escapeHtml(href)}"${target} ${telemetry}>${escapeHtml(action.label)}</a>`;
     })
     .join('');
 
@@ -1301,6 +1315,7 @@ function renderReadingGrid(reading) {
       <button type="button" class="btn btn-ghost" data-reading-share>Share this view</button>
       <p class="reading-share-status" data-reading-share-status role="status" aria-live="polite"></p>
     </div>
+    <p class="reading-result-count" data-reading-count role="status" aria-live="polite"></p>
   </div>
 
   <div class="reading-grid" data-reading-grid data-view="grid">
@@ -1330,6 +1345,29 @@ function renderContact(profile) {
 </section>`;
 }
 
+function renderSiteEngineering(profile) {
+  const section = profile.site_engineering;
+  const items = section.items
+    .map((item) => `
+      <div class="trust-item">
+        <h3>${escapeHtml(item.title)}</h3>
+        <p>${escapeHtml(item.detail)}</p>
+      </div>`)
+    .join('');
+
+  return `
+<section class="section-block trust-section" id="site-engineering">
+  <div class="section-header">
+    <p class="eyebrow">${escapeHtml(section.eyebrow)}</p>
+    <h2>${escapeHtml(section.headline)}</h2>
+    <p class="section-lede">${escapeHtml(section.lede)}</p>
+  </div>
+  <div class="trust-grid">
+    ${items}
+  </div>
+</section>`;
+}
+
 function buildSite() {
   const data = {
     profile: readJson('profile.json'),
@@ -1355,6 +1393,7 @@ function buildSite() {
     CERTIFICATIONS: renderCertifications(data.certifications),
     HONORS: renderHonors(data.profile),
     COMMUNITY: renderCommunity(data.profile),
+    SITE_ENGINEERING: renderSiteEngineering(data.profile),
     READING_GRID: renderReadingGrid(data.reading),
     CONTACT: renderContact(data.profile)
   };
