@@ -38,3 +38,9 @@ jobs:
 
       - name: Run security and content tests
         run: npm run test:security
+
+      - name: Run high severity dependency audit
+        run: npm run audit:high
+
+      - name: Validate vendored dependency governance
+        run: npm run validate:vendor:governance

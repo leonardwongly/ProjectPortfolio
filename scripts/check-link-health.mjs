@@ -1,7 +1,8 @@
 import fs from 'node:fs';
-import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import { assertPublicHttpsUrl, normalizePublicHttpsUrl } from './lib/network-safety.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,48 +49,21 @@ function parseArgs(argv = process.argv.slice(2)) {
   return options;
 }
 
-function isPrivateLiteralHost(hostname) {
-  const lower = hostname.toLowerCase();
-  if (lower === 'localhost' || lower.endsWith('.localhost')) return true;
-  if (lower === '0.0.0.0') return true;
-
-  const ipVersion = net.isIP(lower);
-  if (ipVersion === 4) {
-    const parts = lower.split('.').map((part) => Number.parseInt(part, 10));
-    return (
-      parts[0] === 10 ||
-      parts[0] === 127 ||
-      (parts[0] === 169 && parts[1] === 254) ||
-      (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
-      (parts[0] === 192 && parts[1] === 168)
-    );
-  }
-  if (ipVersion === 6) {
-    return lower === '::1' || lower.startsWith('fc') || lower.startsWith('fd') || lower.startsWith('fe80');
-  }
-  return false;
-}
-
 function validateExternalUrl(rawUrl, source) {
-  let parsed;
   try {
-    parsed = new URL(rawUrl);
+    const parsed = normalizePublicHttpsUrl(rawUrl, { fieldPath: source });
+    parsed.hash = '';
+    return { ok: true, source, url: parsed.toString() };
   } catch (error) {
-    return { ok: false, source, url: rawUrl, category: 'invalid-url', detail: 'malformed URL' };
+    const detail = error?.message || 'invalid URL';
+    return {
+      ok: false,
+      source,
+      url: rawUrl,
+      category: detail.includes('malformed URL') ? 'invalid-url' : 'unsafe-url',
+      detail: detail.replace(/^Invalid [^:]+:\s*/, '')
+    };
   }
-
-  if (parsed.protocol !== 'https:') {
-    return { ok: false, source, url: rawUrl, category: 'unsafe-url', detail: 'only https URLs are checked' };
-  }
-  if (parsed.username || parsed.password) {
-    return { ok: false, source, url: rawUrl, category: 'unsafe-url', detail: 'credentials in URL are not allowed' };
-  }
-  if (isPrivateLiteralHost(parsed.hostname)) {
-    return { ok: false, source, url: rawUrl, category: 'unsafe-url', detail: 'local/private literal host is blocked' };
-  }
-
-  parsed.hash = '';
-  return { ok: true, source, url: parsed.toString() };
 }
 
 function collectJsonUrls(value, source, urls = []) {
@@ -150,11 +124,11 @@ function collectExternalUrls() {
     });
 }
 
-async function fetchWithTimeout(url, { method, timeoutMs }) {
+async function fetchWithTimeout(url, { method, timeoutMs, fetchImpl = fetch }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, {
+    return await fetchImpl(url, {
       method,
       redirect: 'manual',
       signal: controller.signal,
@@ -172,9 +146,21 @@ async function checkUrl(entry, options) {
   if (!entry.ok) return entry;
 
   try {
-    let response = await fetchWithTimeout(entry.url, { method: 'HEAD', timeoutMs: options.timeoutMs });
+    const url = await assertPublicHttpsUrl(entry.url, {
+      fieldPath: entry.source,
+      lookupImpl: options.lookupImpl
+    });
+    let response = await fetchWithTimeout(url, {
+      method: 'HEAD',
+      timeoutMs: options.timeoutMs,
+      fetchImpl: options.fetchImpl
+    });
     if (response.status === 405 || response.status === 501) {
-      response = await fetchWithTimeout(entry.url, { method: 'GET', timeoutMs: options.timeoutMs });
+      response = await fetchWithTimeout(url, {
+        method: 'GET',
+        timeoutMs: options.timeoutMs,
+        fetchImpl: options.fetchImpl
+      });
     }
 
     const reachable = response.status >= 200 && response.status < 400;
@@ -189,7 +175,9 @@ async function checkUrl(entry, options) {
     return {
       ...entry,
       ok: false,
-      category: error?.name === 'AbortError' ? 'timeout' : 'network-error',
+      category: error?.message?.includes('blocked address') || error?.message?.includes('local/private')
+        ? 'unsafe-url'
+        : error?.name === 'AbortError' ? 'timeout' : 'network-error',
       detail: error?.message || 'network error'
     };
   }

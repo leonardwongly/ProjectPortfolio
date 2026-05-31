@@ -53,6 +53,30 @@ test('workflow uses references are pinned by SHA', () => {
   assert.deepEqual(unpinned, [], `Found unpinned action references:\n${unpinned.join('\n')}`);
 });
 
+test('workflow npm installs disable dependency lifecycle scripts', () => {
+  const unsafeInstalls = [];
+
+  for (const file of WORKFLOW_FILES) {
+    const content = fs.readFileSync(file, 'utf8');
+    const lines = content.split('\n');
+    lines.forEach((line, index) => {
+      if (/\brun:\s*npm ci\b/.test(line) && !line.includes('--ignore-scripts')) {
+        unsafeInstalls.push(`${file}:${index + 1}:${line.trim()}`);
+      }
+    });
+  }
+
+  assert.deepEqual(unsafeInstalls, [], `Found npm ci without --ignore-scripts:\n${unsafeInstalls.join('\n')}`);
+});
+
+test('scan workflow enforces dependency audit and vendor governance gates', () => {
+  const content = fs.readFileSync('.github/workflows/scan.yml', 'utf8');
+
+  assert.match(content, /npm run audit:high/);
+  assert.match(content, /npm run validate:vendor:governance/);
+  assert.doesNotMatch(content, /npm run validate:vendor(?:\s|$)/);
+});
+
 test('Gemini workflow separates planning from write-capable execution', () => {
   const content = fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8');
   const planJobStart = content.indexOf('  gemini-cli-plan:');
@@ -140,6 +164,17 @@ test('_headers includes required runtime security headers', () => {
   assert.match(content, /X-Frame-Options:\s*DENY/i);
   assert.match(content, /X-Content-Type-Options:\s*nosniff/i);
   assert.match(content, /Referrer-Policy:\s*strict-origin-when-cross-origin/i);
+});
+
+test('CSP monitoring fallback and rollout requirements are documented', () => {
+  const monitoring = fs.readFileSync('docs/security/csp-monitoring.md', 'utf8');
+  const deploymentHeaders = fs.readFileSync('docs/security/deployment-headers.md', 'utf8');
+
+  assert.match(monitoring, /no committed\s+CSP report collector endpoint/i);
+  assert.match(monitoring, /No `report-uri` or `report-to` directive should be added without a real,\s+approved HTTPS collector endpoint\./i);
+  assert.match(monitoring, /Cloudflare security events/i);
+  assert.match(monitoring, /Collector Rollout Requirements/);
+  assert.match(deploymentHeaders, /docs\/security\/csp-monitoring\.md/);
 });
 
 test('target=_blank always includes noopener and noreferrer', () => {

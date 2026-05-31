@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { ensureVendorHttpsUrl, ensureVendorUpstreamMatchesSource } from './lib/vendor-policy.mjs';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
@@ -73,21 +75,13 @@ function ensureVendorPath(rawPath, fieldPath) {
 
 function ensureHttpsUrl(rawUrl, fieldPath) {
   const value = ensureString(rawUrl, fieldPath);
-  let parsed;
   try {
-    parsed = new URL(value);
+    return ensureVendorHttpsUrl(value, fieldPath);
   } catch (error) {
-    fail(`Invalid manifest at ${fieldPath}: malformed URL`);
+    fail(error?.message?.startsWith('Invalid ')
+      ? error.message.replace(/^Invalid /, 'Invalid manifest at ')
+      : `Invalid manifest at ${fieldPath}: malformed URL`);
   }
-
-  if (parsed.protocol !== 'https:') {
-    fail(`Invalid manifest at ${fieldPath}: only https URLs are allowed`);
-  }
-  if (parsed.username || parsed.password) {
-    fail(`Invalid manifest at ${fieldPath}: credentials in URL are not allowed`);
-  }
-
-  return parsed.toString();
 }
 
 function parseIsoDate(rawDate, fieldPath) {
@@ -181,7 +175,7 @@ function validateVendorGovernance(manifest, options = {}) {
     ensureAllowedKeys(dependencyObject, fieldPath, ['name', 'registry_package', 'source', 'version', 'files']);
     ensureString(dependencyObject.name, `${fieldPath}.name`);
     ensureString(dependencyObject.registry_package, `${fieldPath}.registry_package`);
-    ensureString(dependencyObject.source, `${fieldPath}.source`);
+    const sourceUrl = ensureHttpsUrl(dependencyObject.source, `${fieldPath}.source`);
     ensureString(dependencyObject.version, `${fieldPath}.version`);
 
     ensureArray(dependencyObject.files, `${fieldPath}.files`).forEach((fileEntry, fileIndex) => {
@@ -190,7 +184,11 @@ function validateVendorGovernance(manifest, options = {}) {
       ensureAllowedKeys(fileObject, filePath, ['path', 'upstream_url', 'sha256', 'signatures']);
 
       const relativeFilePath = ensureVendorPath(fileObject.path, `${filePath}.path`);
-      ensureHttpsUrl(fileObject.upstream_url, `${filePath}.upstream_url`);
+      ensureVendorUpstreamMatchesSource(
+        ensureHttpsUrl(fileObject.upstream_url, `${filePath}.upstream_url`),
+        sourceUrl,
+        `${filePath}.upstream_url`
+      );
       const expectedSha = ensureString(fileObject.sha256, `${filePath}.sha256`).toLowerCase();
       if (!/^[0-9a-f]{64}$/.test(expectedSha)) {
         fail(`Invalid manifest at ${filePath}.sha256: expected 64 hex chars`);

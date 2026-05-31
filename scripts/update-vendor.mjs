@@ -4,6 +4,11 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { loadManifest, validateVendorGovernance } from './check-vendor-governance.mjs';
+import {
+  assertPublicVendorUrl,
+  ensureVendorHttpsUrl,
+  ensureVendorUpstreamMatchesSource
+} from './lib/vendor-policy.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,21 +60,13 @@ function ensureVendorPath(rawPath, fieldPath) {
 
 function ensureHttpsUrl(rawUrl, fieldPath) {
   const urlString = ensureString(rawUrl, fieldPath);
-  let parsed;
   try {
-    parsed = new URL(urlString);
+    return ensureVendorHttpsUrl(urlString, fieldPath);
   } catch (error) {
-    fail(`Invalid manifest at ${fieldPath}: malformed URL`);
+    fail(error?.message?.startsWith('Invalid ')
+      ? error.message.replace(/^Invalid /, 'Invalid manifest at ')
+      : `Invalid manifest at ${fieldPath}: malformed URL`);
   }
-
-  if (parsed.protocol !== 'https:') {
-    fail(`Invalid manifest at ${fieldPath}: only https URLs are allowed`);
-  }
-  if (parsed.username || parsed.password) {
-    fail(`Invalid manifest at ${fieldPath}: credentials in URL are not allowed`);
-  }
-
-  return parsed.toString();
 }
 
 function parseArgs(argv = process.argv.slice(2)) {
@@ -120,6 +117,7 @@ function parseArgs(argv = process.argv.slice(2)) {
 function listManifestFiles(manifest) {
   return manifest.dependencies.flatMap((dependency, dependencyIndex) => {
     const dependencyObject = ensureObject(dependency, `manifest.dependencies[${dependencyIndex}]`);
+    const sourceUrl = ensureHttpsUrl(dependencyObject.source, `manifest.dependencies[${dependencyIndex}].source`);
     const files = dependencyObject.files;
     if (!Array.isArray(files) || files.length === 0) {
       fail(`Invalid manifest at manifest.dependencies[${dependencyIndex}].files: expected non-empty array`);
@@ -128,7 +126,11 @@ function listManifestFiles(manifest) {
     return files.map((fileEntry, fileIndex) => {
       const fieldPath = `manifest.dependencies[${dependencyIndex}].files[${fileIndex}]`;
       const fileObject = ensureObject(fileEntry, fieldPath);
-      const upstreamUrl = ensureHttpsUrl(fileObject.upstream_url, `${fieldPath}.upstream_url`);
+      const upstreamUrl = ensureVendorUpstreamMatchesSource(
+        ensureHttpsUrl(fileObject.upstream_url, `${fieldPath}.upstream_url`),
+        sourceUrl,
+        `${fieldPath}.upstream_url`
+      );
       const relativePath = ensureVendorPath(fileObject.path, `${fieldPath}.path`);
       const signatures = Array.isArray(fileObject.signatures) ? fileObject.signatures.map((signature, signatureIndex) =>
         ensureString(signature, `${fieldPath}.signatures[${signatureIndex}]`)
@@ -173,7 +175,10 @@ async function fetchVendorFiles(manifest, options = {}) {
   const results = [];
 
   for (const fileEntry of files) {
-    const response = await fetchWithTimeout(fileEntry.upstreamUrl, options);
+    const safeUrl = await assertPublicVendorUrl(fileEntry.upstreamUrl, `manifest.dependencies[${fileEntry.dependencyIndex}].files[${fileEntry.fileIndex}].upstream_url`, {
+      lookupImpl: options.lookupImpl
+    });
+    const response = await fetchWithTimeout(safeUrl, options);
     if (!response.ok) {
       fail(`Failed to fetch ${fileEntry.upstreamUrl}: ${response.status} ${response.statusText}`);
     }
@@ -256,6 +261,7 @@ async function runVendorRefresh(options = {}, dependencies = {}) {
 
   const fetchedFiles = await fetchVendorFiles(manifest, {
     fetchImpl: dependencies.fetchImpl || fetch,
+    lookupImpl: dependencies.lookupImpl,
     timeoutMs: options.timeoutMs
   });
 

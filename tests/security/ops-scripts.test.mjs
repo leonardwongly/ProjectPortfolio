@@ -82,6 +82,48 @@ test('link health validator rejects unsafe URL shapes before network access', as
   assert.equal(validateExternalUrl('https://user:pass@example.com', 'fixture').ok, false);
   assert.equal(validateExternalUrl('https://localhost/status', 'fixture').ok, false);
   assert.equal(validateExternalUrl('https://127.0.0.1/status', 'fixture').ok, false);
+  assert.equal(validateExternalUrl('https://[::1]/status', 'fixture').ok, false);
+  assert.equal(validateExternalUrl('https://[fd00::1]/status', 'fixture').ok, false);
   assert.equal(validateExternalUrl('https://192.168.0.10/status', 'fixture').ok, false);
   assert.equal(validateExternalUrl('notaurl', 'fixture').category, 'invalid-url');
+});
+
+test('network safety rejects private and reserved DNS answers before fetch', async () => {
+  const {
+    assertPublicHttpsUrl,
+    isBlockedIpAddress
+  } = await import('../../scripts/lib/network-safety.mjs');
+
+  assert.equal(isBlockedIpAddress('10.0.0.1'), true);
+  assert.equal(isBlockedIpAddress('100.64.0.1'), true);
+  assert.equal(isBlockedIpAddress('169.254.169.254'), true);
+  assert.equal(isBlockedIpAddress('198.51.100.10'), true);
+  assert.equal(isBlockedIpAddress('8.8.8.8'), false);
+  assert.equal(isBlockedIpAddress('::ffff:127.0.0.1'), true);
+  assert.equal(isBlockedIpAddress('2001:db8::1'), true);
+  assert.equal(isBlockedIpAddress('2606:4700:4700::1111'), false);
+
+  await assert.rejects(
+    () => assertPublicHttpsUrl('https://private.example/status', {
+      lookupImpl: async () => [{ address: '10.0.0.5', family: 4 }]
+    }),
+    /resolved to blocked address 10\.0\.0\.5/
+  );
+
+  await assert.rejects(
+    () => assertPublicHttpsUrl('https://mixed.example/status', {
+      lookupImpl: async () => [
+        { address: '93.184.216.34', family: 4 },
+        { address: 'fd00::1', family: 6 }
+      ]
+    }),
+    /resolved to blocked address fd00::1/
+  );
+
+  assert.equal(
+    await assertPublicHttpsUrl('https://public.example/status', {
+      lookupImpl: async () => [{ address: '93.184.216.34', family: 4 }]
+    }),
+    'https://public.example/status'
+  );
 });
