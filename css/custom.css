@@ -1509,6 +1509,30 @@ footer {
   gap: 1.4rem;
 }
 
+.trust-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.trust-item {
+  padding: 1.35rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--paper-strong);
+  box-shadow: var(--shadow-soft);
+}
+
+.trust-item h3 {
+  font-size: 1rem;
+  margin-bottom: 0.55rem;
+}
+
+.trust-item p {
+  color: var(--ink-quiet);
+  margin: 0;
+}
+
 .contact-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1615,6 +1639,12 @@ footer {
 
 .reading-share-status[data-state="error"] {
   color: var(--accent-strong);
+}
+
+.reading-result-count {
+  color: var(--ink-quiet);
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 .reading-grid {

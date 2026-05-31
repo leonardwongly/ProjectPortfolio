@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     '.article-card',
     '.honor-card',
     '.accordion-item',
+    '.trust-item',
     '.book-card',
     '.contact-card'
   ];

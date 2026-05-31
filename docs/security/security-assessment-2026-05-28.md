@@ -17,7 +17,7 @@ The main findings were operational and supply-chain oriented:
 
 This branch remediates the actionable repository-side findings from this assessment:
 
-- PP-SA-001 and PP-SA-002 add URL-shape validation, public-host allowlisting for vendor upstreams, and DNS preflight rejection of private or reserved A/AAAA answers before link-health and vendor-refresh fetches. The remaining limitation is DNS rebinding/TOCTOU between preflight and the actual fetch; the scripts are maintainer-side CI/developer controls for repository content, not a complete network sandbox.
+- PP-SA-001 and PP-SA-002 add URL-shape validation, public-host allowlisting for vendor upstreams, and DNS preflight rejection of private or reserved A/AAAA answers before link-health and vendor-refresh fetches. The remaining limitation is DNS rebinding/TOCTOU between preflight and the actual fetch; the scripts are maintainer-side CI/developer controls for repository content, not a complete network sandbox. A lower-risk `npm run check:links:preflight` mode validates URL shape and DNS without issuing HTTP requests.
 - PP-SA-003 changes the Playwright integration workflow to install dependencies with `npm ci --ignore-scripts`.
 - PP-SA-004 adds `npm run audit:high` and `npm run validate:vendor:governance` to the default PR scan workflow while keeping networked upstream vendor refresh in the explicit/scheduled validation path.
 - PP-SA-005 adds `docs/security/csp-monitoring.md` and runbook references for Cloudflare/security-event review and future collector rollout. The repo still intentionally omits `report-uri` and `report-to` until a real approved HTTPS collector exists.

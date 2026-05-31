@@ -27,6 +27,12 @@ const DIRECTORY_BUDGETS = [
 ];
 
 const MAX_SINGLE_ASSET_BYTES = 20 * MiB;
+const ASSET_INVENTORY_DIRECTORIES = [
+  'book',
+  'fonts',
+  'images',
+  'js/vendor'
+];
 
 function formatBytes(bytes) {
   if (bytes >= MiB) return `${(bytes / MiB).toFixed(2)} MiB`;
@@ -90,13 +96,39 @@ function checkPerformanceBudget({ rootDir = projectRoot } = {}) {
       }
     });
 
-  return { failures, report };
+  return { failures, report, inventory: createAssetInventoryReport({ rootDir }) };
+}
+
+function createAssetInventoryReport({ rootDir = projectRoot, limit = 20 } = {}) {
+  const files = ASSET_INVENTORY_DIRECTORIES
+    .flatMap((directory) => walkFiles(directory, { rootDir }))
+    .map((file) => ({
+      path: file,
+      size: fileSize(file, { rootDir })
+    }))
+    .sort((a, b) => b.size - a.size || a.path.localeCompare(b.path));
+
+  const directoryTotals = ASSET_INVENTORY_DIRECTORIES
+    .map((directory) => ({
+      path: `${directory}/`,
+      size: directorySize(directory, { rootDir })
+    }))
+    .sort((a, b) => b.size - a.size || a.path.localeCompare(b.path));
+
+  return {
+    directoryTotals,
+    largestFiles: files.slice(0, limit)
+  };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const result = checkPerformanceBudget();
   console.log('Performance budget report:');
   result.report.forEach((line) => console.log(`- ${line}`));
+  console.log('Largest asset files:');
+  result.inventory.largestFiles.forEach((asset) => {
+    console.log(`- ${asset.path}: ${formatBytes(asset.size)}`);
+  });
   if (result.failures.length > 0) {
     console.error(`Performance budget failed with ${result.failures.length} finding(s):`);
     result.failures.forEach((failure) => console.error(`- ${failure}`));
@@ -105,5 +137,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 
 export {
-  checkPerformanceBudget
+  checkPerformanceBudget,
+  createAssetInventoryReport
 };

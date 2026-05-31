@@ -262,6 +262,21 @@ test('reading share measurement hooks remain wired in client script', () => {
 
   assert.match(content, /reading_share_clicked/);
   assert.match(content, /reading_share_completed/);
+  assert.doesNotMatch(content, /\bfetch\s*\(/);
+  assert.doesNotMatch(content, /\bsendBeacon\s*\(/);
+  assert.doesNotMatch(content, /\bdataLayer\b/);
+  assert.doesNotMatch(content, /\bgtag\b/);
+  assert.doesNotMatch(content, /\bplausible\b/i);
+});
+
+test('privacy-safe telemetry posture is documented and visible in generated actions', () => {
+  const docs = fs.readFileSync('docs/privacy-safe-telemetry.md', 'utf8');
+  const index = fs.readFileSync('index.html', 'utf8');
+
+  assert.match(docs, /does not enable third-party analytics/i);
+  assert.match(docs, /No `fetch`, `sendBeacon`, image beacon, third-party script/i);
+  assert.match(index, /data-telemetry-event="portfolio_action_clicked"/);
+  assert.match(index, /id="site-engineering"/);
 });
 
 test('service worker update flow has a single active client implementation', () => {

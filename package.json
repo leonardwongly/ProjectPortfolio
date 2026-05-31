@@ -14,14 +14,17 @@
     "test:integration": "npx --no-install playwright test tests/integration/mobile-nav-and-accordion.spec.mjs --config=playwright.config.mjs",
     "audit:high": "npm audit --audit-level=high",
     "check:generated": "git diff --exit-code -- index.html reading.html offline.html _headers",
+    "check:assets": "node scripts/check-performance-budget.mjs",
     "check:links": "node scripts/check-link-health.mjs",
+    "check:links:preflight": "node scripts/check-link-health.mjs --preflight-only --strict",
     "check:performance": "node scripts/check-performance-budget.mjs",
     "check:reading": "node scripts/audit-reading-metadata.mjs",
+    "check:telemetry": "node scripts/check-telemetry-policy.mjs",
     "validate:vendor:governance": "node scripts/check-vendor-governance.mjs",
     "validate:vendor:upstream": "node scripts/update-vendor.mjs && node scripts/check-vendor-upstream.mjs",
     "validate:vendor": "npm run validate:vendor:governance && npm run validate:vendor:upstream",
     "validate": "npm run build && npm run test:security",
-    "validate:full": "npm run build && npm run check:generated && npm run test:security && npm run check:reading && npm run check:performance && npm run audit:high && npm run validate:vendor && npm run test:integration"
+    "validate:full": "npm run build && npm run check:generated && npm run test:security && npm run check:reading && npm run check:performance && npm run check:telemetry && npm run audit:high && npm run validate:vendor && npm run test:integration"
   },
   "devDependencies": {
     "@playwright/test": "1.60.0"
