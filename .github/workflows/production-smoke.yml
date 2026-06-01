@@ -1,0 +1,39 @@
+name: Production Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '42 4 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  production-smoke:
+    name: Production Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # ratchet:actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Check production pages and headers
+        run: npm run check:production
+        env:
+          SMOKE_ATTEMPTS: '6'
+          SMOKE_RETRY_DELAY_MS: '10000'
+          SMOKE_TIMEOUT_MS: '10000'

@@ -30,8 +30,12 @@ test('workflow uses references are pinned by SHA', () => {
   assert.deepEqual(WORKFLOW_FILES, [
     '.github/workflows/build.yml',
     '.github/workflows/codeql.yml',
+    '.github/workflows/dependency-review.yml',
     '.github/workflows/gemini-cli.yml',
+    '.github/workflows/link-health.yml',
     '.github/workflows/playwright-integration.yml',
+    '.github/workflows/production-smoke.yml',
+    '.github/workflows/release-candidate.yml',
     '.github/workflows/scan.yml',
     '.github/workflows/vendor-review.yml'
   ]);
