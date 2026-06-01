@@ -30,6 +30,12 @@ jobs:
       - name: Install Node dependencies
         run: npm ci --ignore-scripts
 
+      - name: Check repository hygiene
+        run: npm run check:hygiene
+
+      - name: Check workflow hygiene
+        run: npm run check:workflows
+
       - name: Build generated pages
         run: npm run build
 
@@ -38,6 +44,9 @@ jobs:
 
       - name: Run security and content tests
         run: npm run test:security
+
+      - name: Run PR-safe link preflight
+        run: npm run check:links:preflight
 
       - name: Run high severity dependency audit
         run: npm run audit:high

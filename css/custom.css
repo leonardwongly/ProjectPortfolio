@@ -9,6 +9,8 @@
   --border-strong: rgba(32, 24, 18, 0.22);
   --accent: #d3572f;
   --accent-strong: #b84725;
+  --accent-button: #b84725;
+  --accent-button-hover: #9f3a1e;
   --accent-cool: #2b6f68;
   --accent-soft: rgba(211, 87, 47, 0.14);
   --grid: rgba(210, 168, 115, 0.2);
@@ -39,6 +41,8 @@
   --border-strong: rgba(242, 239, 233, 0.25);
   --accent: #f08a5d;
   --accent-strong: #e06a40;
+  --accent-button: #b84725;
+  --accent-button-hover: #9f3a1e;
   --accent-cool: #74b7ad;
   --accent-soft: rgba(240, 138, 93, 0.18);
   --grid: rgba(240, 138, 93, 0.15);
@@ -64,6 +68,8 @@
     --border-strong: rgba(242, 239, 233, 0.25);
     --accent: #f08a5d;
     --accent-strong: #e06a40;
+    --accent-button: #b84725;
+    --accent-button-hover: #9f3a1e;
     --accent-cool: #74b7ad;
     --accent-soft: rgba(240, 138, 93, 0.18);
     --grid: rgba(240, 138, 93, 0.15);
@@ -1228,16 +1234,16 @@ footer {
 }
 
 .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-button);
+  border-color: var(--accent-button);
   color: #fff;
   box-shadow: 0 16px 30px -20px rgba(211, 87, 47, 0.6);
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
-  background: var(--accent-strong);
-  border-color: var(--accent-strong);
+  background: var(--accent-button-hover);
+  border-color: var(--accent-button-hover);
   color: #fff;
 }
 

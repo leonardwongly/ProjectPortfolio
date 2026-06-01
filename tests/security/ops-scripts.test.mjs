@@ -150,6 +150,53 @@ test('link health preflight mode validates DNS without fetching URLs', async () 
   assert.ok(results.some((result) => result.category === 'preflight-ok'));
 });
 
+test('repository hygiene detects junk files in git-visible paths', async () => {
+  const { isJunkPath } = await import('../../scripts/check-repository-hygiene.mjs');
+
+  assert.equal(isJunkPath('.github/workflows/.DS_Store'), true);
+  assert.equal(isJunkPath('notes/debug.log'), true);
+  assert.equal(isJunkPath('src/index.html'), false);
+});
+
+test('workflow hygiene enforces pinned actions and safe npm installs', async () => {
+  const { collectWorkflowHygieneFindings } = await import('../../scripts/check-workflow-hygiene.mjs');
+
+  assert.deepEqual(collectWorkflowHygieneFindings(), []);
+});
+
+test('production smoke validator reports missing headers and markers', async () => {
+  const { validatePage } = await import('../../scripts/check-production-smoke.mjs');
+  const headers = new Headers({
+    'content-security-policy': "default-src 'self'",
+    'x-content-type-options': 'nosniff'
+  });
+
+  assert.deepEqual(
+    validatePage({
+      url: 'https://example.test/reading',
+      response: { status: 200, headers },
+      body: '<h1>Reading</h1>',
+      check: {
+        marker: /Reading/i,
+        headers: ['content-security-policy', 'x-content-type-options']
+      }
+    }),
+    []
+  );
+
+  assert.ok(
+    validatePage({
+      url: 'https://example.test/offline',
+      response: { status: 200, headers: new Headers() },
+      body: '<h1>Unexpected</h1>',
+      check: {
+        marker: /Offline/i,
+        headers: ['content-security-policy', 'x-content-type-options']
+      }
+    }).length > 0
+  );
+});
+
 test('telemetry policy check rejects external runtime analytics adapters', async () => {
   const { collectTelemetryPolicyFindings } = await import('../../scripts/check-telemetry-policy.mjs');
 
