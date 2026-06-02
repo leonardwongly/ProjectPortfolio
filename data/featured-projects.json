@@ -1,46 +1,70 @@
 [
   {
-    "id": "project-vendors",
-    "title": "Project Vendors",
-    "timeframe": "May–Jul 2020",
-    "problem": "Needed to evaluate three AIS data vendors to select a reliable data source.",
-    "impact": "Built a multi-vendor ingestion pipeline and comparison workflow to support a data-driven vendor decision.",
-    "tech": ["C#", "ASP.NET", "AWS DynamoDB", "JSON", "APIs"],
+    "id": "agentforge",
+    "title": "AgentForge Merge Guard",
+    "timeframe": "2026",
+    "problem": "High-risk and agent-assisted pull requests need change control that is deterministic and auditable, not dependent on manual review alone.",
+    "impact": "Built a GitHub-first PR governance service with policy-as-code rules, deterministic detectors, required evidence, reviewer routing, check runs, and durable Change Control Records — deterministic checks decide, AI explains, humans approve risk.",
+    "tech": ["TypeScript", "GitHub Apps", "Policy as Code", "CI/CD Governance"],
     "links": [
-      { "label": "VesselTracker", "url": "https://github.com/leonardwongly/VesselTracker-OpenSource" },
-      { "label": "VesselFinder", "url": "https://github.com/leonardwongly/VesselFinder-OpenSource" },
-      { "label": "BOD", "url": "https://github.com/leonardwongly/BOD-OpenSource" }
+      { "label": "GitHub", "url": "https://github.com/leonardwongly/AgentForge" }
     ]
   },
   {
-    "id": "project-xmldata",
-    "title": "Project XMLData",
-    "timeframe": "May–Jul 2020",
-    "problem": "Large XML datasets needed to be normalized and loaded for analytics.",
-    "impact": "Automated conversion and upload of aggregated data into AWS DynamoDB to enable downstream analysis.",
-    "tech": ["C#", "ASP.NET", "AWS DynamoDB", "JSON", "jQuery"],
+    "id": "agentic",
+    "title": "Agentic Control Plane",
+    "timeframe": "2026",
+    "problem": "Autonomous and human-in-the-loop work needs a governed control plane for goals, commitments, approvals, and long-running automations.",
+    "impact": "Built a TypeScript control plane (Next.js dashboard/API plus a worker process) around a bounded execution loop with risk classification, durable worker jobs, and Postgres-backed state.",
+    "tech": ["TypeScript", "Next.js", "PostgreSQL", "Background Workers"],
     "links": [
-      { "label": "GitHub", "url": "https://github.com/leonardwongly/XMLData-OpenSource" }
+      { "label": "GitHub", "url": "https://github.com/leonardwongly/agentic" }
     ]
   },
   {
-    "id": "ship-agency-portal",
-    "title": "Ship Agency Portal",
-    "timeframe": "May–Oct 2018",
-    "problem": "Agency operations relied on manual email triage at high volume.",
-    "impact": "Built a system to streamline agency workflows handling 160+ emails/hour.",
-    "tech": ["Web Apps", "APIs", "Workflow Automation"],
-    "links": []
+    "id": "apple-calendar-mcp",
+    "title": "Apple Calendar MCP Server",
+    "timeframe": "2026",
+    "problem": "AI assistants and command-line workflows lacked a safe, local way to read and manage Apple Calendar on macOS.",
+    "impact": "Built a Swift/EventKit tool exposing calendar list, search, create, update, and delete over the MCP protocol and a CLI with JSON and table output.",
+    "tech": ["Swift", "EventKit", "MCP", "macOS"],
+    "links": [
+      { "label": "GitHub", "url": "https://github.com/leonardwongly/AppleCalendarMCPServer" }
+    ]
+  },
+  {
+    "id": "human-operating-model",
+    "title": "Human Operating Model",
+    "timeframe": "2026",
+    "problem": "Autonomous agents struggle with ambiguous, real-world tasks that require judgment, prioritization, and end-to-end ownership.",
+    "impact": "Authored a Codex skill providing a human-inspired operating model for autonomous task ownership, on-the-fly skill creation, validation, and transparent communication that it is an AI system.",
+    "tech": ["AI Agents", "Codex", "Responsible AI"],
+    "links": [
+      { "label": "GitHub", "url": "https://github.com/leonardwongly/human-operating-model" }
+    ]
   },
   {
     "id": "myipsw",
     "title": "myIPSW",
-    "timeframe": "Jan 2020–Jan 2022",
-    "problem": "Finding official Apple firmware downloads was fragmented and manual.",
-    "impact": "Built a site using the ipsw.me API to surface firmware downloads quickly.",
-    "tech": ["C#", "ASP.NET", "JavaScript", "ipsw.me API"],
+    "timeframe": "2020–2026",
+    "problem": "Finding official Apple firmware (IPSW/OTA) downloads across devices was fragmented and manual.",
+    "impact": "Built a site on the ipsw.me API surfacing iOS, iPadOS, tvOS, and watchOS firmware downloads with a custom design.",
+    "tech": ["C#", "ASP.NET", "ipsw.me API", "JavaScript"],
     "links": [
+      { "label": "Live", "url": "https://ipsw.leonardwong.tech" },
       { "label": "GitHub", "url": "https://github.com/leonardwongly/MyIPSW" }
+    ]
+  },
+  {
+    "id": "pricehikesg",
+    "title": "PriceHikeSG",
+    "timeframe": "2024",
+    "problem": "Upcoming price increases across Singapore were hard to track in one place.",
+    "impact": "Built a lightweight web app that aggregates and publishes updates on upcoming Singapore price hikes.",
+    "tech": ["HTML", "JavaScript", "Web App"],
+    "links": [
+      { "label": "Live", "url": "https://pricehikesg.leonardwong.tech" },
+      { "label": "GitHub", "url": "https://github.com/leonardwongly/PriceHikeSG" }
     ]
   }
 ]
