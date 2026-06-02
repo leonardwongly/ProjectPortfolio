@@ -127,21 +127,5 @@
     "link": "https://www.credly.com/badges/ec1caa83-7603-4d6d-a5aa-a5500fad36a1?source=linked_in_profile",
     "icon": "images/scrum_org-30.png",
     "icon_alt": "Scrum.org logo"
-  },
-  {
-    "title": "Bachelor of Science: Information Systems (Major in Cyber Security)",
-    "issuer": "Singapore Management University",
-    "issued": "Issued Jan 2022",
-    "link": "https://r2.leonardwong.tech/Certs/BScIS.png",
-    "icon": "images/smu-30.jpeg",
-    "icon_alt": "SMU logo"
-  },
-  {
-    "title": "Diploma in Business Informatics with Merit",
-    "issuer": "Nanyang Polytechnic",
-    "issued": "Issued May 2017",
-    "link": "https://r2.leonardwong.tech/Certs/Dip-BI-M.jpg",
-    "icon": "images/nyp-30.jpeg",
-    "icon_alt": "Nanyang Polytechnic logo"
   }
 ]

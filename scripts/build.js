@@ -1008,7 +1008,7 @@ function renderCertifications(certifications) {
         const iconSrcset = hasIcon2x ? `${iconSrc} 1x, ${escapeHtml(icon2x)} 2x` : `${iconSrc} 1x`;
         iconMarkup = `<img decoding="async" src="${iconSrc}" alt="" loading="lazy" width="24" height="24" class="circle-img" srcset="${iconSrcset}" sizes="24px"/>`;
       }
-      const rows = group.certs
+      const rowMarkup = group.certs
         .map(({ cert, certIndex }) => {
           const title = escapeHtml(cert.title);
           const date = escapeHtml(String(cert.issued).replace(/^Issued\s+/i, '').replace(/\s*[-·].*$/, ''));
@@ -1022,12 +1022,23 @@ function renderCertifications(certifications) {
           <span class="cert-row__date">${date}</span>
           ${action}
         </li>`;
-        })
-        .join('');
+        });
+      const VISIBLE = 4;
+      let listMarkup;
+      if (rowMarkup.length > VISIBLE) {
+        const moreCount = rowMarkup.length - VISIBLE;
+        listMarkup = `<ul class="cert-list">${rowMarkup.slice(0, VISIBLE).join('')}</ul>
+        <details class="cert-more">
+          <summary class="cert-more__summary"><span class="cert-more__open">Show ${moreCount} more</span><span class="cert-more__close">Show less</span></summary>
+          <ul class="cert-list">${rowMarkup.slice(VISIBLE).join('')}</ul>
+        </details>`;
+      } else {
+        listMarkup = `<ul class="cert-list">${rowMarkup.join('')}</ul>`;
+      }
       return `
       <div class="cert-group">
         <p class="cert-group__head">${iconMarkup}<span class="cert-group__issuer">${issuer}</span><span class="cert-group__count">${group.certs.length}</span></p>
-        <ul class="cert-list">${rows}</ul>
+        ${listMarkup}
       </div>`;
     })
     .join('');

@@ -2416,3 +2416,45 @@ main.container-xxl {
     order: 3;
   }
 }
+
+.cert-more {
+  border-top: 1px solid var(--border-strong);
+}
+
+.cert-more__summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.55rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--accent-cool);
+}
+
+.cert-more__summary::-webkit-details-marker {
+  display: none;
+}
+
+.cert-more__summary::before {
+  content: "+ ";
+}
+
+.cert-more[open] .cert-more__summary::before {
+  content: "- ";
+}
+
+.cert-more__summary:focus-visible {
+  outline: 2px solid var(--accent-cool);
+  outline-offset: -2px;
+}
+
+.cert-more__close {
+  display: none;
+}
+
+.cert-more[open] .cert-more__open {
+  display: none;
+}
+
+.cert-more[open] .cert-more__close {
+  display: inline;
+}
