@@ -981,43 +981,60 @@ function renderExperience(experience) {
 }
 
 function renderCertifications(certifications) {
-  const cards = certifications
-    .map((cert, certIndex) => {
-      const title = escapeHtml(cert.title);
-      const issuer = escapeHtml(cert.issuer);
-      const issued = escapeHtml(cert.issued);
-      const credentialId = cert.credential_id ? escapeHtml(cert.credential_id) : '';
-      const link = cert.link ? escapeHtml(safeHref(cert.link, `certifications[${certIndex}].link`)) : '';
-      const iconPath = cert.icon ? safeAssetPath(String(cert.icon), `certifications[${certIndex}].icon`) : '';
-      const iconAlt = escapeHtml(cert.icon_alt || `${cert.issuer} logo`);
+  const groups = [];
+  const byIssuer = new Map();
+  certifications.forEach((cert, certIndex) => {
+    if (!byIssuer.has(cert.issuer)) {
+      const group = { issuer: cert.issuer, icon: '', certs: [] };
+      byIssuer.set(cert.issuer, group);
+      groups.push(group);
+    }
+    const group = byIssuer.get(cert.issuer);
+    if (!group.icon && cert.icon) {
+      group.icon = cert.icon;
+    }
+    group.certs.push({ cert, certIndex });
+  });
 
+  const groupMarkup = groups
+    .map((group) => {
+      const issuer = escapeHtml(group.issuer);
       let iconMarkup = '';
-      if (iconPath) {
+      if (group.icon) {
+        const iconPath = safeAssetPath(String(group.icon), 'certifications.icon');
         const icon2x = iconPath.replace('-30.', '-60.');
         const hasIcon2x = icon2x !== iconPath && fs.existsSync(path.join(projectRoot, icon2x));
         const iconSrc = escapeHtml(iconPath);
         const iconSrcset = hasIcon2x ? `${iconSrc} 1x, ${escapeHtml(icon2x)} 2x` : `${iconSrc} 1x`;
-        iconMarkup = `<img decoding="async" src="${iconSrc}" alt="${iconAlt}" loading="lazy" width="30" height="30" class="circle-img" srcset="${iconSrcset}" sizes="30px"/>`;
+        iconMarkup = `<img decoding="async" src="${iconSrc}" alt="" loading="lazy" width="24" height="24" class="circle-img" srcset="${iconSrcset}" sizes="24px"/>`;
       }
-
-      const meta = credentialId ? `${issued} · Credential ID ${credentialId}` : issued;
-      const linkMarkup = link
-        ? `<a class="badge rounded-pill bg-dark shadow" href="${link}" target="_blank" rel="noopener noreferrer">View Certification&nbsp;<svg class="icon icon-arrow" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>`
-        : '<span class="badge rounded-pill bg-secondary shadow-sm">Credential link pending</span>';
-
+      const rows = group.certs
+        .map(({ cert, certIndex }) => {
+          const title = escapeHtml(cert.title);
+          const date = escapeHtml(String(cert.issued).replace(/^Issued\s+/i, '').replace(/\s*[-·].*$/, ''));
+          const link = cert.link ? escapeHtml(safeHref(cert.link, `certifications[${certIndex}].link`)) : '';
+          const action = link
+            ? `<a class="cert-row__link" href="${link}" target="_blank" rel="noopener noreferrer" aria-label="Verify ${title}">verify&nbsp;<svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-arrow-up-right-square"/></svg></a>`
+            : '<span class="cert-row__pending">pending</span>';
+          return `
+        <li class="cert-row">
+          <span class="cert-row__name">${title}</span>
+          <span class="cert-row__date">${date}</span>
+          ${action}
+        </li>`;
+        })
+        .join('');
       return `
-      <article class="card p-3">
-        <h3 class="card-title">${iconMarkup ? `${iconMarkup}&nbsp;` : ''}${title}</h3>
-        <p>${issuer}</p>
-        <p class="card-text fw-light">${meta}</p>
-        ${linkMarkup}
-      </article>`;
+      <div class="cert-group">
+        <p class="cert-group__head">${iconMarkup}<span class="cert-group__issuer">${issuer}</span><span class="cert-group__count">${group.certs.length}</span></p>
+        <ul class="cert-list">${rows}</ul>
+      </div>`;
     })
     .join('');
 
   return `
-<div class="certifications-grid">
-  ${cards}
+<div class="cert-manifest">
+  ${groupMarkup}
 </div>`;
 }
 
