@@ -31,12 +31,130 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavCollapse();
   initAccordionState();
   initThemeToggle();
+  initCommandPalette();
   initRevealOnScroll();
   initPrivacySafeTelemetry();
   initReadingFilters();
   initServiceWorker();
   window.addEventListener('hashchange', initNavActive);
 });
+
+function initCommandPalette() {
+  const palette = document.getElementById('commandPalette');
+  const input = document.getElementById('cmdkInput');
+  const list = document.getElementById('cmdkList');
+  if (!palette || !input || !list) {
+    return;
+  }
+
+  const empty = document.getElementById('cmdkEmpty');
+  const items = Array.from(list.querySelectorAll('.cmdk__item'));
+  const openers = Array.from(document.querySelectorAll('[data-cmdk-open]'));
+  let lastFocused = null;
+
+  const visibleItems = () => items.filter((item) => !item.closest('li').hidden);
+
+  const setActive = (nextItem) => {
+    items.forEach((item) => item.classList.remove('is-active'));
+    if (nextItem) {
+      nextItem.classList.add('is-active');
+      nextItem.scrollIntoView({ block: 'nearest' });
+    }
+  };
+
+  const filter = () => {
+    const query = input.value.trim().toLowerCase();
+    let matches = 0;
+    items.forEach((item) => {
+      const hit = item.textContent.toLowerCase().includes(query);
+      item.closest('li').hidden = !hit;
+      if (hit) {
+        matches += 1;
+      }
+    });
+    if (empty) {
+      empty.hidden = matches > 0;
+    }
+    setActive(visibleItems()[0] || null);
+  };
+
+  const open = () => {
+    if (!palette.hidden) {
+      return;
+    }
+    lastFocused = document.activeElement;
+    palette.hidden = false;
+    input.value = '';
+    filter();
+    input.focus();
+  };
+
+  const close = () => {
+    if (palette.hidden) {
+      return;
+    }
+    palette.hidden = true;
+    if (lastFocused && typeof lastFocused.focus === 'function') {
+      lastFocused.focus();
+    }
+  };
+
+  openers.forEach((opener) => opener.addEventListener('click', open));
+
+  document.addEventListener('keydown', (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      if (palette.hidden) {
+        open();
+      } else {
+        close();
+      }
+    } else if (event.key === 'Escape' && !palette.hidden) {
+      close();
+    }
+  });
+
+  input.addEventListener('input', filter);
+
+  input.addEventListener('keydown', (event) => {
+    const current = visibleItems();
+    if (!current.length) {
+      return;
+    }
+    const activeIndex = current.findIndex((item) => item.classList.contains('is-active'));
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActive(current[Math.min(activeIndex + 1, current.length - 1)]);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActive(current[Math.max(activeIndex - 1, 0)]);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      (current[activeIndex] || current[0]).click();
+    }
+  });
+
+  list.addEventListener('click', (event) => {
+    const item = event.target.closest('.cmdk__item');
+    if (!item) {
+      return;
+    }
+    if (item.dataset.cmdkAction === 'theme') {
+      event.preventDefault();
+      const toggle = document.querySelector('[data-theme-toggle]');
+      if (toggle) {
+        toggle.click();
+      }
+    }
+    close();
+  });
+
+  palette.addEventListener('click', (event) => {
+    if (event.target === palette) {
+      close();
+    }
+  });
+}
 
 function initNavActive() {
   const links = Array.from(document.querySelectorAll('.navbar .nav-link'));

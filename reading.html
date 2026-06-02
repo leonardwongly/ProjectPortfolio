@@ -24,10 +24,10 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" class="circle-img"/>
     <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png" class="circle-img"/>
     <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png" class="circle-img"/>
-    <meta name="msapplication-TileColor" content="#f7f1ea"/>
+    <meta name="msapplication-TileColor" content="#0d1117"/>
     <meta name="msapplication-TileImage" content="favicon/ms-icon-144x144.png" class="circle-img"/>
-    <meta name="theme-color" content="#f7f1ea" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#12110f" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
     <!-- End favicon -->
     <script src="js/main.js" defer></script>
     <script src="js/site.js" defer></script>
@@ -87,6 +87,10 @@
                 </li>
             </ul>
             <div class="navbar-actions d-flex align-items-center gap-2 mt-3 mt-lg-0 ms-lg-auto">
+                <button class="cmdk-trigger" type="button" data-cmdk-open aria-haspopup="dialog" aria-controls="commandPalette">
+                    <span>Jump to</span>
+                    <kbd>&#8984;K</kbd>
+                </button>
                 <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
                     <span class="theme-toggle__label">Theme</span>
                     <span class="theme-toggle__state" data-theme-label>Light</span>
@@ -96,6 +100,25 @@
     </div>
 </nav>
 
+<div class="cmdk" id="commandPalette" hidden role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="cmdk__panel">
+        <input class="cmdk__input" id="cmdkInput" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Jump to a section, page, or action…" aria-label="Filter commands" aria-controls="cmdkList"/>
+        <ul class="cmdk__list" id="cmdkList">
+            <li><a class="cmdk__item" href="/index.html#home">home<span class="cmdk__hint">intro</span></a></li>
+            <li><a class="cmdk__item" href="/index.html#work">work<span class="cmdk__hint">selected projects</span></a></li>
+            <li><a class="cmdk__item" href="/index.html#skills">skills<span class="cmdk__hint">stack</span></a></li>
+            <li><a class="cmdk__item" href="/index.html#experience">experience<span class="cmdk__hint">timeline</span></a></li>
+            <li><a class="cmdk__item" href="/index.html#writing">writing<span class="cmdk__hint">publications</span></a></li>
+            <li><a class="cmdk__item" href="/index.html#credentials">credentials<span class="cmdk__hint">education + certs</span></a></li>
+            <li><a class="cmdk__item" href="/index.html#contact">contact<span class="cmdk__hint">get in touch</span></a></li>
+            <li><a class="cmdk__item" href="/reading.html">reading<span class="cmdk__hint">bookshelf</span></a></li>
+            <li><a class="cmdk__item" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">resume.pdf<span class="cmdk__hint">open</span></a></li>
+            <li><button class="cmdk__item" type="button" data-cmdk-action="theme">toggle theme<span class="cmdk__hint">dark / light</span></button></li>
+        </ul>
+        <p class="cmdk__empty" id="cmdkEmpty" hidden>no matches</p>
+    </div>
+</div>
 
 <main id="content" class="container-xxl">
 
