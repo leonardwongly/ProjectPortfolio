@@ -2463,3 +2463,8 @@ main.container-xxl {
 .text-muted {
   color: var(--ink-quiet) !important;
 }
+
+/* Bootstrap .card forces a fixed body color; use the theme token (fixes dark-mode card text). */
+.card {
+  color: var(--ink);
+}
