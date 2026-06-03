@@ -912,7 +912,7 @@ function renderFeaturedWork(items) {
   <div class="section-header">
     <p class="eyebrow">Featured Work</p>
     <h2>Selected projects that highlight impact</h2>
-    <p class="section-lede">A focused set of projects that show how I deliver secure, data-heavy systems.</p>
+    <p class="section-lede">A focused set of recent work across AI agent governance, platform tooling, and security.</p>
   </div>
   <div class="featured-grid">
     ${cards}
@@ -1384,7 +1384,7 @@ function renderSiteEngineering(profile) {
     .join('');
 
   return `
-<section class="section-block trust-section" id="site-engineering">
+<section class="section-block trust-section colophon" id="site-engineering">
   <div class="section-header">
     <p class="eyebrow">${escapeHtml(section.eyebrow)}</p>
     <h2>${escapeHtml(section.headline)}</h2>
