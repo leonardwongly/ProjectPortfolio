@@ -2458,3 +2458,8 @@ main.container-xxl {
 .cert-more[open] .cert-more__close {
   display: inline;
 }
+
+/* Bootstrap .text-muted uses a fixed dark color; map it to the theme token (fixes dark mode). */
+.text-muted {
+  color: var(--ink-quiet) !important;
+}
