@@ -1023,7 +1023,7 @@ function renderCertifications(certifications) {
           ${action}
         </li>`;
         });
-      const VISIBLE = 4;
+      const VISIBLE = 5;
       let listMarkup;
       if (rowMarkup.length > VISIBLE) {
         const moreCount = rowMarkup.length - VISIBLE;
