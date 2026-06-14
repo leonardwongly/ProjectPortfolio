@@ -1,0 +1,33 @@
+{
+  "name": "Leonard Wong",
+  "title": "Software Engineer · AI & Agentic Development · LLM Applications",
+  "location": "Singapore",
+  "contact": {
+    "email": "me@leonardwong.tech",
+    "phone": "+65 8754 5096",
+    "links": [
+      { "label": "leonardwong.tech", "url": "https://leonardwong.tech" },
+      { "label": "github.leonardwong.tech", "url": "https://github.leonardwong.tech/" },
+      { "label": "linkedin.leonardwong.tech", "url": "https://linkedin.leonardwong.tech" }
+    ]
+  },
+  "summary": "Software Engineer specializing in AI and agentic development — building LLM-powered applications and agentic, tool-using workflows on a foundation of secure, data-driven platform delivery. AI Singapore LLM Application Developer; NUS-ISS Responsible & Explainable AI and AI + Cybersecurity.",
+  "ai_highlights": {
+    "heading": "AI & Agentic Highlights",
+    "items": [
+      "Agentic development: designing LLM-driven, tool-using agent workflows with retrieval (RAG), function calling, and prompt engineering.",
+      "LLM application development through the AI Singapore LLM Application Developer Programme (2026).",
+      "Responsible & Explainable AI — NUS-ISS graduate certificates covering model transparency and governance.",
+      "AI + Cybersecurity — applying security rigor (SAST/DAST, OWASP) to AI-enabled systems (NUS-ISS, 2025)."
+    ]
+  },
+  "section_order": [
+    "summary",
+    "ai_highlights",
+    "skills",
+    "experience",
+    "education",
+    "publication",
+    "certifications"
+  ]
+}

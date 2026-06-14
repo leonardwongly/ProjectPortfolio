@@ -7,6 +7,8 @@
   },
   "scripts": {
     "build": "node scripts/build.js",
+    "build:resume": "node scripts/build-resume.mjs",
+    "build:resume:html": "node scripts/build-resume.mjs --html-only",
     "test": "npx --no-install playwright test",
     "test:security": "node --test tests/security/*.test.mjs",
     "test:content": "node --test tests/security/content-parity.test.mjs",
@@ -22,13 +24,14 @@
     "check:performance": "node scripts/check-performance-budget.mjs",
     "check:production": "node scripts/check-production-smoke.mjs",
     "check:reading": "node scripts/audit-reading-metadata.mjs",
+    "check:resume": "node scripts/check-resume-freshness.mjs",
     "check:telemetry": "node scripts/check-telemetry-policy.mjs",
     "check:workflows": "node scripts/check-workflow-hygiene.mjs",
     "validate:vendor:governance": "node scripts/check-vendor-governance.mjs",
     "validate:vendor:upstream": "node scripts/update-vendor.mjs && node scripts/check-vendor-upstream.mjs",
     "validate:vendor": "npm run validate:vendor:governance && npm run validate:vendor:upstream",
     "validate": "npm run build && npm run test:security",
-    "validate:full": "npm run build && npm run check:generated && npm run check:hygiene && npm run check:workflows && npm run test:security && npm run check:reading && npm run check:performance && npm run check:telemetry && npm run check:links:preflight && npm run audit:high && npm run validate:vendor && npm run test:integration && npm run check:accessibility"
+    "validate:full": "npm run build && npm run check:generated && npm run check:resume && npm run check:hygiene && npm run check:workflows && npm run test:security && npm run check:reading && npm run check:performance && npm run check:telemetry && npm run check:links:preflight && npm run audit:high && npm run validate:vendor && npm run test:integration && npm run check:accessibility"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",

@@ -1,0 +1,12 @@
+{
+  "$generatedBy": "scripts/build-resume.mjs",
+  "description": "Freshness manifest for docs/resume.pdf. htmlSha256 is the hash of the deterministic rendered resume HTML. Run `npm run build:resume` after editing the sources below, then commit docs/resume.pdf and this manifest.",
+  "htmlSha256": "sha256-56e8244cbf68c2093f0517f7fc2fbefb16de02666cd27d946eb54c96f4f73ae3",
+  "sources": [
+    "data/resume.json",
+    "data/profile.json",
+    "data/experience.json",
+    "data/skills.json",
+    "data/certifications.json"
+  ]
+}
