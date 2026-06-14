@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-iHUarK8P58kIM1Gs/t1UexG8JzVviEkS9FD6Vmfg0Tw='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-+1mJh2TGKVSx4kEOpiqyu5cFf8szRb71kXSYAWQfszI='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="manifest" href="manifest.json"/>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
@@ -88,6 +88,8 @@
                                 "https://threads.leonardwong.tech"
                         ],
                         "knowsAbout": [
+                                "Agentic AI",
+                                "LLM application development",
                                 "Secure software delivery",
                                 "Platform engineering",
                                 "Responsible AI",
@@ -398,6 +400,9 @@
                     <a class="nav-link" href="/index.html#work">Work</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="/index.html#site-engineering">Engineering</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="/index.html#skills">Skills</a>
                 </li>
                 <li class="nav-item">
@@ -437,6 +442,7 @@
         <ul class="cmdk__list" id="cmdkList">
             <li><a class="cmdk__item" href="/index.html#home">home<span class="cmdk__hint">intro</span></a></li>
             <li><a class="cmdk__item" href="/index.html#work">work<span class="cmdk__hint">selected projects</span></a></li>
+            <li><a class="cmdk__item" href="/index.html#site-engineering">engineering<span class="cmdk__hint">how this site is built</span></a></li>
             <li><a class="cmdk__item" href="/index.html#skills">skills<span class="cmdk__hint">stack</span></a></li>
             <li><a class="cmdk__item" href="/index.html#experience">experience<span class="cmdk__hint">timeline</span></a></li>
             <li><a class="cmdk__item" href="/index.html#writing">writing<span class="cmdk__hint">publications</span></a></li>
@@ -455,15 +461,15 @@
 <section class="hero-section section-block" id="home">
   <div class="hero-grid">
     <div class="hero-copy">
-      <p class="eyebrow">Software Engineer · Singapore</p>
-      <h1>Building secure, data-driven platforms with measurable impact.</h1>
-      <p class="lead">Software Engineer at NCS Group, currently serving Public Service Commission Singapore as an IT vendor. I ship reliable internal products, automate data-heavy workflows, and integrate security early.</p>
+      <p class="eyebrow">Software Engineer · AI &amp; Agentic Development</p>
+      <h1>Building AI and agentic systems on secure, data-driven platforms.</h1>
+      <p class="lead">Software Engineer at NCS Group, serving Public Service Commission Singapore as an IT vendor. I build LLM-powered applications and agentic workflows, automate data-heavy processes, and integrate security from the start.</p>
       <div class="hero-actions"><a class="btn btn-primary" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="view_resume" data-telemetry-destination="pdf">View Resume</a><a class="btn btn-ghost" href="#writing" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="writing" data-telemetry-destination="section">Writing</a><a class="btn btn-ghost" href="#contact" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="contact" data-telemetry-destination="section">Contact</a></div>
       <div class="hero-highlights">
 
         <div class="highlight-card">
           <span class="highlight-label">Focus</span>
-          <span class="highlight-value">Security · Platforms</span>
+          <span class="highlight-value">AI · Agentic · Security</span>
         </div>
         <div class="highlight-card">
           <span class="highlight-label">Strength</span>
@@ -595,6 +601,57 @@
         <div class="chip-row"><span class="chip">HTML</span><span class="chip">JavaScript</span><span class="chip">Web App</span></div>
         <div class="featured-links"><a href="https://pricehikesg.leonardwong.tech/" target="_blank" rel="noopener noreferrer">Live</a><a href="https://github.com/leonardwongly/PriceHikeSG" target="_blank" rel="noopener noreferrer">GitHub</a></div>
       </article>
+      <article class="featured-card" data-tags="Node.js,Static Site Generation,GitHub Actions,Content-Security-Policy,Policy as Code">
+        <header>
+          <p class="featured-kicker">2020–2026</p>
+          <h3>This Portfolio — Governed Static Delivery</h3>
+        </header>
+        <div class="featured-block">
+          <span class="block-label">Problem</span>
+          <p>A personal site is the easiest place to cut corners: hand-edited HTML, unvetted scripts, no tests. I wanted the opposite — a portfolio that demonstrates the same secure-delivery and AI-governance practices I apply to client work, on a codebase anyone can inspect.</p>
+        </div>
+        <div class="featured-block">
+          <span class="block-label">Impact</span>
+          <p>Built a static site generated from validated JSON by a single Node build and guarded by a fourteen-step release gate spanning security, content-parity, performance, telemetry, link-health, dependency, vendor, and accessibility checks. Inline scripts are CSP-hashed, vendored libraries are manifest- and hash-pinned, and an AI assistant can draft changes but only a human-approved plan can execute — deterministic checks decide, humans own the risk.</p>
+        </div>
+        <div class="chip-row"><span class="chip">Node.js</span><span class="chip">Static Site Generation</span><span class="chip">GitHub Actions</span><span class="chip">Content-Security-Policy</span><span class="chip">Policy as Code</span></div>
+        <div class="featured-links"><a href="https://leonardwong.tech/" target="_blank" rel="noopener noreferrer">Live</a><a href="https://github.com/leonardwongly/ProjectPortfolio" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+      </article>
+  </div>
+</section>
+
+<section class="section-block trust-section" id="site-engineering">
+  <div class="section-header">
+    <p class="eyebrow">Site Engineering</p>
+    <h2>This site is its own case study in secure, governed delivery.</h2>
+    <p class="section-lede">These pages are generated from validated JSON and shipped through the same controls I build for clients — a multi-stage release gate, supply-chain governance, and AI-assisted change control where deterministic checks decide and a human approves the risk.</p>
+  </div>
+  <div class="trust-grid">
+
+      <div class="trust-item">
+        <h3>Generated, never hand-edited</h3>
+        <p>Source templates and structured JSON compile to committed HTML through one Node build. A CI check fails the pipeline if the generated pages ever drift from their source.</p>
+      </div>
+      <div class="trust-item">
+        <h3>A fourteen-step release gate</h3>
+        <p>One command runs build, generated-drift, security and content tests, performance and telemetry budgets, link health, dependency audit, vendor governance, integration and accessibility checks.</p>
+      </div>
+      <div class="trust-item">
+        <h3>AI plans, a human approves</h3>
+        <p>An assistant workflow can read context and propose plans but cannot mint write tokens. Execution runs only after a reviewer approves a specific plan by id — deterministic checks decide, humans own the risk.</p>
+      </div>
+      <div class="trust-item">
+        <h3>Supply-chain governance</h3>
+        <p>Vendored browser scripts are pinned by manifest, verified against recorded hashes and upstream sources, and gated in CI by dependency review and automated update PRs.</p>
+      </div>
+      <div class="trust-item">
+        <h3>A narrow browser runtime</h3>
+        <p>A strict Content-Security-Policy with hashed inline scripts, self-hosted fonts and assets, blocked framing, and a tested service worker keep the client attack surface small.</p>
+      </div>
+      <div class="trust-item">
+        <h3>Content checked like code</h3>
+        <p>Every public claim is JSON validated for shape, length, URL scheme, and asset path before it renders, and CodeQL plus a custom Node test suite scan the code on every push.</p>
+      </div>
   </div>
 </section>
 
@@ -664,8 +721,12 @@
   <div class="skills-grid">
 
       <div class="skill-card">
+        <h3>AI &amp; Agentic</h3>
+        <div class="chip-row"><span class="chip">Agentic AI</span><span class="chip">AI Agents</span><span class="chip">LLM Application Development</span><span class="chip">RAG</span><span class="chip">Prompt Engineering</span><span class="chip">Tool Use / Function Calling</span><span class="chip">Responsible AI</span><span class="chip">Explainable AI</span><span class="chip">AI &amp; Cybersecurity</span></div>
+      </div>
+      <div class="skill-card">
         <h3>Languages</h3>
-        <div class="chip-row"><span class="chip">HTML</span><span class="chip">CSS</span><span class="chip">JavaScript</span><span class="chip">C#</span><span class="chip">SQL</span><span class="chip">PHP</span></div>
+        <div class="chip-row"><span class="chip">HTML</span><span class="chip">CSS</span><span class="chip">JavaScript</span><span class="chip">C#</span><span class="chip">SQL</span><span class="chip">PHP</span><span class="chip">Python</span></div>
       </div>
       <div class="skill-card">
         <h3>Frameworks</h3>
@@ -678,10 +739,6 @@
       <div class="skill-card">
         <h3>Security</h3>
         <div class="chip-row"><span class="chip">OWASP ZAP</span><span class="chip">SAST/DAST</span><span class="chip">XSS Research</span><span class="chip">AI and Cybersecurity</span></div>
-      </div>
-      <div class="skill-card">
-        <h3>AI &amp; Responsible Systems</h3>
-        <div class="chip-row"><span class="chip">LLM Application Development</span><span class="chip">Responsible AI</span><span class="chip">Explainable AI</span><span class="chip">AI Risk Awareness</span></div>
       </div>
       <div class="skill-card">
         <h3>Product &amp; Delivery</h3>
@@ -952,33 +1009,6 @@
     <div class="contact-meta">
       <span>Based in Singapore</span><span>Security + Platform Engineering</span><span>AI-aware product delivery</span>
     </div>
-  </div>
-</section>
-
-<section class="section-block trust-section colophon" id="site-engineering">
-  <div class="section-header">
-    <p class="eyebrow">Site Engineering</p>
-    <h2>Built as a small, testable static system.</h2>
-    <p class="section-lede">The portfolio is generated from structured data and guarded by security, content, performance, and integration checks before release.</p>
-  </div>
-  <div class="trust-grid">
-
-      <div class="trust-item">
-        <h3>Static generation</h3>
-        <p>Source templates and JSON data produce committed HTML, headers, and offline pages through a repeatable build.</p>
-      </div>
-      <div class="trust-item">
-        <h3>Strict browser policy</h3>
-        <p>A self-hosted asset model, strict CSP, frame blocking, and service-worker checks keep the runtime boundary narrow.</p>
-      </div>
-      <div class="trust-item">
-        <h3>Supply-chain governance</h3>
-        <p>Vendored scripts are governed by manifest policy, hashes, upstream review, and CI dependency gates.</p>
-      </div>
-      <div class="trust-item">
-        <h3>Release validation</h3>
-        <p>The local release gate covers generated-file drift, metadata, performance budgets, dependency audit, vendor checks, and Playwright smoke tests.</p>
-      </div>
   </div>
 </section>
 </main>

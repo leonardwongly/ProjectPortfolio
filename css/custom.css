@@ -2469,41 +2469,4 @@ main.container-xxl {
   color: var(--ink);
 }
 
-/* Site Engineering demoted to a quiet colophon above the footer */
-.colophon {
-  padding-block: clamp(2rem, 4vw, 2.75rem);
-  margin-top: 2rem;
-  border-top: 1px solid var(--border-strong);
-}
-
-.colophon .section-header {
-  border-left: none;
-  padding-left: 0;
-  margin-bottom: 1.25rem;
-}
-
-.colophon .section-header h2 {
-  font-size: 1.15rem;
-}
-
-.colophon .eyebrow {
-  background: none;
-  border: none;
-  padding: 0;
-}
-
-.colophon .trust-item {
-  background: none;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-}
-
-.colophon .trust-item h3 {
-  font-size: 0.85rem;
-  color: var(--ink-soft);
-}
-
-.colophon .trust-item p {
-  font-size: 0.85rem;
-}
+/* Site Engineering is a first-class exhibit; it inherits full .trust-section styling. */

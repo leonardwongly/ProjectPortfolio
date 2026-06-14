@@ -66,5 +66,17 @@
       { "label": "Live", "url": "https://pricehikesg.leonardwong.tech" },
       { "label": "GitHub", "url": "https://github.com/leonardwongly/PriceHikeSG" }
     ]
+  },
+  {
+    "id": "portfolio",
+    "title": "This Portfolio — Governed Static Delivery",
+    "timeframe": "2020–2026",
+    "problem": "A personal site is the easiest place to cut corners: hand-edited HTML, unvetted scripts, no tests. I wanted the opposite — a portfolio that demonstrates the same secure-delivery and AI-governance practices I apply to client work, on a codebase anyone can inspect.",
+    "impact": "Built a static site generated from validated JSON by a single Node build and guarded by a fourteen-step release gate spanning security, content-parity, performance, telemetry, link-health, dependency, vendor, and accessibility checks. Inline scripts are CSP-hashed, vendored libraries are manifest- and hash-pinned, and an AI assistant can draft changes but only a human-approved plan can execute — deterministic checks decide, humans own the risk.",
+    "tech": ["Node.js", "Static Site Generation", "GitHub Actions", "Content-Security-Policy", "Policy as Code"],
+    "links": [
+      { "label": "Live", "url": "https://leonardwong.tech/" },
+      { "label": "GitHub", "url": "https://github.com/leonardwongly/ProjectPortfolio" }
+    ]
   }
 ]

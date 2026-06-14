@@ -1,7 +1,11 @@
 [
   {
+    "category": "AI & Agentic",
+    "items": ["Agentic AI", "AI Agents", "LLM Application Development", "RAG", "Prompt Engineering", "Tool Use / Function Calling", "Responsible AI", "Explainable AI", "AI & Cybersecurity"]
+  },
+  {
     "category": "Languages",
-    "items": ["HTML", "CSS", "JavaScript", "C#", "SQL", "PHP"]
+    "items": ["HTML", "CSS", "JavaScript", "C#", "SQL", "PHP", "Python"]
   },
   {
     "category": "Frameworks",
@@ -14,10 +18,6 @@
   {
     "category": "Security",
     "items": ["OWASP ZAP", "SAST/DAST", "XSS Research", "AI and Cybersecurity"]
-  },
-  {
-    "category": "AI & Responsible Systems",
-    "items": ["LLM Application Development", "Responsible AI", "Explainable AI", "AI Risk Awareness"]
   },
   {
     "category": "Product & Delivery",

@@ -1384,7 +1384,7 @@ function renderSiteEngineering(profile) {
     .join('');
 
   return `
-<section class="section-block trust-section colophon" id="site-engineering">
+<section class="section-block trust-section" id="site-engineering">
   <div class="section-header">
     <p class="eyebrow">${escapeHtml(section.eyebrow)}</p>
     <h2>${escapeHtml(section.headline)}</h2>

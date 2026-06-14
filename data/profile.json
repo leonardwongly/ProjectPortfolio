@@ -13,6 +13,8 @@
       "https://threads.leonardwong.tech"
     ],
     "knows_about": [
+      "Agentic AI",
+      "LLM application development",
       "Secure software delivery",
       "Platform engineering",
       "Responsible AI",
@@ -22,16 +24,16 @@
     ]
   },
   "hero": {
-    "eyebrow": "Software Engineer · Singapore",
-    "headline": "Building secure, data-driven platforms with measurable impact.",
-    "lead": "Software Engineer at NCS Group, currently serving Public Service Commission Singapore as an IT vendor. I ship reliable internal products, automate data-heavy workflows, and integrate security early.",
+    "eyebrow": "Software Engineer · AI & Agentic Development",
+    "headline": "Building AI and agentic systems on secure, data-driven platforms.",
+    "lead": "Software Engineer at NCS Group, serving Public Service Commission Singapore as an IT vendor. I build LLM-powered applications and agentic workflows, automate data-heavy processes, and integrate security from the start.",
     "actions": [
       { "label": "View Resume", "href": "docs/resume.pdf", "variant": "primary" },
       { "label": "Writing", "href": "#writing", "variant": "ghost" },
       { "label": "Contact", "href": "#contact", "variant": "ghost" }
     ],
     "highlights": [
-      { "label": "Focus", "value": "Security · Platforms" },
+      { "label": "Focus", "value": "AI · Agentic · Security" },
       { "label": "Strength", "value": "Data Automation" },
       { "label": "Now", "value": "NCS · PSC Singapore" }
     ],
@@ -163,24 +165,32 @@
   ],
   "site_engineering": {
     "eyebrow": "Site Engineering",
-    "headline": "Built as a small, testable static system.",
-    "lede": "The portfolio is generated from structured data and guarded by security, content, performance, and integration checks before release.",
+    "headline": "This site is its own case study in secure, governed delivery.",
+    "lede": "These pages are generated from validated JSON and shipped through the same controls I build for clients — a multi-stage release gate, supply-chain governance, and AI-assisted change control where deterministic checks decide and a human approves the risk.",
     "items": [
       {
-        "title": "Static generation",
-        "detail": "Source templates and JSON data produce committed HTML, headers, and offline pages through a repeatable build."
+        "title": "Generated, never hand-edited",
+        "detail": "Source templates and structured JSON compile to committed HTML through one Node build. A CI check fails the pipeline if the generated pages ever drift from their source."
       },
       {
-        "title": "Strict browser policy",
-        "detail": "A self-hosted asset model, strict CSP, frame blocking, and service-worker checks keep the runtime boundary narrow."
+        "title": "A fourteen-step release gate",
+        "detail": "One command runs build, generated-drift, security and content tests, performance and telemetry budgets, link health, dependency audit, vendor governance, integration and accessibility checks."
+      },
+      {
+        "title": "AI plans, a human approves",
+        "detail": "An assistant workflow can read context and propose plans but cannot mint write tokens. Execution runs only after a reviewer approves a specific plan by id — deterministic checks decide, humans own the risk."
       },
       {
         "title": "Supply-chain governance",
-        "detail": "Vendored scripts are governed by manifest policy, hashes, upstream review, and CI dependency gates."
+        "detail": "Vendored browser scripts are pinned by manifest, verified against recorded hashes and upstream sources, and gated in CI by dependency review and automated update PRs."
       },
       {
-        "title": "Release validation",
-        "detail": "The local release gate covers generated-file drift, metadata, performance budgets, dependency audit, vendor checks, and Playwright smoke tests."
+        "title": "A narrow browser runtime",
+        "detail": "A strict Content-Security-Policy with hashed inline scripts, self-hosted fonts and assets, blocked framing, and a tested service worker keep the client attack surface small."
+      },
+      {
+        "title": "Content checked like code",
+        "detail": "Every public claim is JSON validated for shape, length, URL scheme, and asset path before it renders, and CodeQL plus a custom Node test suite scan the code on every push."
       }
     ]
   },
