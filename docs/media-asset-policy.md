@@ -42,7 +42,7 @@ npm run test:security
 
 ## Cover Handling
 
-The reading renderer caps known large high-DPI cover variants so the generated `srcset` does not encourage oversized downloads. When adding a cover:
+The reading renderer caps high-DPI cover variants so the generated `srcset` does not encourage oversized downloads, and `npm run check:performance` enforces aggregate rendered reading-media budgets in addition to per-file and directory budgets. When adding a cover:
 
 1. Add the original only if it is needed for production.
 2. Generate or provide the optimized `-300` and WebP variants when practical.

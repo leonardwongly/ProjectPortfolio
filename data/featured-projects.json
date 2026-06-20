@@ -51,7 +51,6 @@
     "impact": "Built a site on the ipsw.me API surfacing iOS, iPadOS, tvOS, and watchOS firmware downloads with a custom design.",
     "tech": ["C#", "ASP.NET", "ipsw.me API", "JavaScript"],
     "links": [
-      { "label": "Live", "url": "https://ipsw.leonardwong.tech" },
       { "label": "GitHub", "url": "https://github.com/leonardwongly/MyIPSW" }
     ]
   },
@@ -63,7 +62,6 @@
     "impact": "Built a lightweight web app that aggregates and publishes updates on upcoming Singapore price hikes.",
     "tech": ["HTML", "JavaScript", "Web App"],
     "links": [
-      { "label": "Live", "url": "https://pricehikesg.leonardwong.tech" },
       { "label": "GitHub", "url": "https://github.com/leonardwongly/PriceHikeSG" }
     ]
   },

@@ -18,6 +18,7 @@
     "check:generated": "git diff --exit-code -- index.html reading.html offline.html _headers",
     "check:hygiene": "node scripts/check-repository-hygiene.mjs",
     "check:assets": "node scripts/check-performance-budget.mjs",
+    "precheck:accessibility": "npx --no-install playwright install chromium",
     "check:accessibility": "npx --no-install playwright test tests/integration/accessibility-smoke.spec.mjs --config=playwright.config.mjs",
     "check:links": "node scripts/check-link-health.mjs",
     "check:links:preflight": "node scripts/check-link-health.mjs --preflight-only --strict",

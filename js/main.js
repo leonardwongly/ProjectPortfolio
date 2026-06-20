@@ -53,6 +53,47 @@ function initCommandPalette() {
   let lastFocused = null;
 
   const visibleItems = () => items.filter((item) => !item.closest('li').hidden);
+  const focusableSelector = [
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+  ].join(',');
+  const focusableItems = () => Array.from(palette.querySelectorAll(focusableSelector))
+    .filter((element) => !element.closest('[hidden]'));
+  const isVisible = (element) => element
+    && (element.offsetParent !== null || element.getClientRects().length > 0);
+  const canRestoreFocus = (element) => element
+    && element !== document.body
+    && element.isConnected
+    && !palette.contains(element)
+    && isVisible(element)
+    && typeof element.focus === 'function';
+
+  const focusFallback = () => {
+    const visibleOpener = openers.find((opener) => isVisible(opener));
+    if (visibleOpener) {
+      visibleOpener.focus();
+      return;
+    }
+
+    const content = document.getElementById('content');
+    if (!content || typeof content.focus !== 'function') {
+      return;
+    }
+
+    const hadTabIndex = content.hasAttribute('tabindex');
+    const previousTabIndex = content.getAttribute('tabindex');
+    content.setAttribute('tabindex', '-1');
+    content.focus({ preventScroll: true });
+    if (hadTabIndex) {
+      content.setAttribute('tabindex', previousTabIndex);
+    } else {
+      content.removeAttribute('tabindex');
+    }
+  };
 
   const setActive = (nextItem) => {
     items.forEach((item) => item.classList.remove('is-active'));
@@ -94,8 +135,10 @@ function initCommandPalette() {
       return;
     }
     palette.hidden = true;
-    if (lastFocused && typeof lastFocused.focus === 'function') {
+    if (canRestoreFocus(lastFocused)) {
       lastFocused.focus();
+    } else {
+      focusFallback();
     }
   };
 
@@ -111,6 +154,28 @@ function initCommandPalette() {
       }
     } else if (event.key === 'Escape' && !palette.hidden) {
       close();
+    }
+  });
+
+  palette.addEventListener('keydown', (event) => {
+    if (event.key !== 'Tab' || palette.hidden) {
+      return;
+    }
+
+    const focusable = focusableItems();
+    if (!focusable.length) {
+      event.preventDefault();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   });
 
@@ -223,18 +288,24 @@ function initNavCollapse() {
     setExpanded(!expanded);
   });
 
+  const closeOnEscape = (event) => {
+    if (event.key !== 'Escape' || toggle.getAttribute('aria-expanded') !== 'true') {
+      return;
+    }
+    event.preventDefault();
+    setExpanded(false);
+    toggle.focus();
+  };
+
+  toggle.addEventListener('keydown', closeOnEscape);
+
   panel.querySelectorAll('.nav-link').forEach((link) => {
     link.addEventListener('click', () => {
       setExpanded(false);
     });
   });
 
-  panel.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      setExpanded(false);
-      toggle.focus();
-    }
-  });
+  panel.addEventListener('keydown', closeOnEscape);
 }
 
 function initAccordionState() {
@@ -469,6 +540,48 @@ function initServiceWorker() {
   }
 
   let refreshing = false;
+  let updatePrompt = null;
+
+  const createUpdatePrompt = (activateUpdate) => {
+    if (updatePrompt) {
+      return updatePrompt;
+    }
+
+    const prompt = document.createElement('section');
+    prompt.className = 'sw-update-prompt';
+    prompt.hidden = true;
+    prompt.setAttribute('role', 'region');
+    prompt.setAttribute('aria-labelledby', 'sw-update-prompt-message');
+
+    const message = document.createElement('p');
+    message.id = 'sw-update-prompt-message';
+    message.className = 'sw-update-prompt__message';
+    message.setAttribute('aria-live', 'polite');
+    message.textContent = 'A site update is ready.';
+
+    const actions = document.createElement('div');
+    actions.className = 'sw-update-prompt__actions';
+
+    const reload = document.createElement('button');
+    reload.type = 'button';
+    reload.className = 'btn btn-primary btn-sm';
+    reload.textContent = 'Reload';
+    reload.addEventListener('click', activateUpdate);
+
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button';
+    dismiss.className = 'btn btn-ghost btn-sm';
+    dismiss.textContent = 'Later';
+    dismiss.addEventListener('click', () => {
+      prompt.hidden = true;
+    });
+
+    actions.append(reload, dismiss);
+    prompt.append(message, actions);
+    document.body.append(prompt);
+    updatePrompt = prompt;
+    return prompt;
+  };
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (refreshing) {
@@ -492,8 +605,13 @@ function initServiceWorker() {
         });
       };
 
+      const showUpdatePrompt = () => {
+        const prompt = createUpdatePrompt(requestActivation);
+        prompt.hidden = false;
+      };
+
       if (registration.waiting) {
-        requestActivation();
+        showUpdatePrompt();
       }
 
       registration.addEventListener('updatefound', () => {
@@ -504,7 +622,7 @@ function initServiceWorker() {
 
         installing.addEventListener('statechange', () => {
           if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-            requestActivation();
+            showUpdatePrompt();
           }
         });
       });
@@ -686,7 +804,9 @@ function initReadingFilters() {
         return;
       }
       const buttonValue = button.dataset.filterValue || 'All';
-      button.classList.toggle('is-active', buttonValue === value);
+      const isActive = buttonValue === value;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
   };
 
@@ -700,7 +820,7 @@ function initReadingFilters() {
     });
   };
 
-  const buildShareParams = () => {
+  const buildFilterParams = ({ includeQuery = false } = {}) => {
     const params = new URLSearchParams();
     if (activeYear !== 'All') {
       params.set('year', activeYear);
@@ -709,7 +829,7 @@ function initReadingFilters() {
       params.set('tag', activeTag);
     }
     const normalizedQuery = sanitizeReadingQuery(query);
-    if (normalizedQuery) {
+    if (includeQuery && normalizedQuery) {
       params.set('q', normalizedQuery);
     }
     if (activeView !== 'grid') {
@@ -719,7 +839,7 @@ function initReadingFilters() {
   };
 
   const updateAddressBar = () => {
-    const params = buildShareParams();
+    const params = buildFilterParams();
     const queryString = params.toString();
     const next = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
     const current = `${window.location.pathname}${window.location.search}`;
@@ -813,7 +933,7 @@ function initReadingFilters() {
 
   if (shareButton) {
     shareButton.addEventListener('click', async () => {
-      const params = buildShareParams();
+      const params = buildFilterParams({ includeQuery: true });
       const queryString = params.toString();
       const shareUrl = `${window.location.origin}${window.location.pathname}${queryString ? `?${queryString}` : ''}`;
       const metrics = buildShareMetrics();

@@ -1202,7 +1202,7 @@ function inferTags(entry) {
 }
 
 function renderReadingGrid(reading) {
-  const MAX_HIGH_DPI_IMAGE_BYTES = 250 * 1024;
+  const MAX_HIGH_DPI_IMAGE_BYTES = 128 * 1024;
 
   function shouldUseAsHighDpi(relativePath) {
     if (!relativePath) {
@@ -1303,13 +1303,13 @@ function renderReadingGrid(reading) {
   const yearButtons = ['All', ...years.map(String)]
     .map((value) => {
       const label = value === 'All' ? 'All years' : value;
-      return `<button type="button" class="filter-pill" data-filter-group="year" data-filter-value="${escapeHtml(value)}">${escapeHtml(label)}</button>`;
+      return `<button type="button" class="filter-pill" data-filter-group="year" data-filter-value="${escapeHtml(value)}" aria-pressed="false">${escapeHtml(label)}</button>`;
     })
     .join('');
 
   const tagButtons = tagList.length
-    ? [`<button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="All">All tags</button>`]
-        .concat(tagList.map((tag) => `<button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`))
+    ? [`<button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="All" aria-pressed="false">All tags</button>`]
+        .concat(tagList.map((tag) => `<button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="${escapeHtml(tag)}" aria-pressed="false">${escapeHtml(tag)}</button>`))
         .join('')
     : '';
 

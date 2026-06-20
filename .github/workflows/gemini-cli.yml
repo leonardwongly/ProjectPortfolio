@@ -206,10 +206,27 @@ jobs:
             fi
           fi
 
+          write_multiline_output() {
+            local name="$1"
+            local value="$2"
+            local delimiter
+            while true; do
+              delimiter="GITHUB_OUTPUT_$(uuidgen | tr '[:lower:]' '[:upper:]' | tr -d '-')"
+              if ! grep -Fqx "${delimiter}" <<< "${value}"; then
+                break
+              fi
+            done
+            {
+              echo "${name}<<${delimiter}"
+              printf '%s\n' "${value}"
+              echo "${delimiter}"
+            } >> "${GITHUB_OUTPUT}"
+          }
+
+          write_multiline_output "user_request" "${USER_REQUEST}"
+          write_multiline_output "plan_text" "${PLAN_TEXT}"
+
           {
-            echo "user_request<<EOF"
-            echo "${USER_REQUEST}"
-            echo "EOF"
             echo "issue_number=${ISSUE_NUMBER}"
             echo "is_pr=${IS_PR}"
             echo "request_type=${REQUEST_TYPE}"
@@ -217,9 +234,6 @@ jobs:
             echo "comment_id=${COMMENT_ID}"
             echo "comment_command=${COMMENT_COMMAND}"
             echo "comment_progress_command=${COMMENT_PROGRESS_COMMAND}"
-            echo "plan_text<<EOF"
-            echo "${PLAN_TEXT}"
-            echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
       - name: 'Checkout PR branch'
@@ -520,10 +534,27 @@ jobs:
             COMMENT_PROGRESS_COMMAND="gh issue comment --edit \"${COMMENT_ID}\" --body-file response.md"
           fi
 
+          write_multiline_output() {
+            local name="$1"
+            local value="$2"
+            local delimiter
+            while true; do
+              delimiter="GITHUB_OUTPUT_$(uuidgen | tr '[:lower:]' '[:upper:]' | tr -d '-')"
+              if ! grep -Fqx "${delimiter}" <<< "${value}"; then
+                break
+              fi
+            done
+            {
+              echo "${name}<<${delimiter}"
+              printf '%s\n' "${value}"
+              echo "${delimiter}"
+            } >> "${GITHUB_OUTPUT}"
+          }
+
+          write_multiline_output "user_request" "${USER_REQUEST}"
+          write_multiline_output "plan_text" "${PLAN_TEXT}"
+
           {
-            echo "user_request<<EOF"
-            echo "${USER_REQUEST}"
-            echo "EOF"
             echo "issue_number=${ISSUE_NUMBER}"
             echo "is_pr=${IS_PR}"
             echo "request_type=plan_execution"
@@ -531,9 +562,6 @@ jobs:
             echo "comment_id=${COMMENT_ID}"
             echo "comment_command=${COMMENT_COMMAND}"
             echo "comment_progress_command=${COMMENT_PROGRESS_COMMAND}"
-            echo "plan_text<<EOF"
-            echo "${PLAN_TEXT}"
-            echo "EOF"
           } >> "${GITHUB_OUTPUT}"
 
       - name: 'Set up git user for commits'

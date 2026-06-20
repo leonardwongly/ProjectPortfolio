@@ -27,6 +27,8 @@ const DIRECTORY_BUDGETS = [
 ];
 
 const MAX_SINGLE_ASSET_BYTES = 20 * MiB;
+const MAX_RENDERED_READING_MEDIA_BYTES = 12 * MiB;
+const MAX_RENDERED_READING_2X_BYTES = 6 * MiB;
 const ASSET_INVENTORY_DIRECTORIES = [
   'book',
   'fonts',
@@ -67,6 +69,47 @@ function directorySize(relativePath, { rootDir = projectRoot } = {}) {
   return walkFiles(relativePath, { rootDir }).reduce((sum, file) => sum + fileSize(file, { rootDir }), 0);
 }
 
+function collectRenderedAssetReferences(html) {
+  const references = new Set();
+  const highDpiReferences = new Set();
+  const attrPattern = /\b(src|srcset)="([^"]+)"/g;
+  let match = attrPattern.exec(html);
+
+  while (match) {
+    const [, attrName, rawValue] = match;
+    if (attrName === 'srcset') {
+      rawValue.split(',').forEach((candidate) => {
+        const parts = candidate.trim().split(/\s+/);
+        const url = parts[0];
+        if (url) {
+          references.add(url);
+          if (parts.includes('2x')) {
+            highDpiReferences.add(url);
+          }
+        }
+      });
+    } else {
+      references.add(rawValue.trim());
+    }
+    match = attrPattern.exec(html);
+  }
+
+  return {
+    references: Array.from(references).filter((url) => url && !url.startsWith('data:') && !/^[a-z][a-z\d+.-]*:/i.test(url)),
+    highDpiReferences: Array.from(highDpiReferences).filter((url) => url && !url.startsWith('data:') && !/^[a-z][a-z\d+.-]*:/i.test(url))
+  };
+}
+
+function sumExistingFiles(relativePaths, { rootDir = projectRoot } = {}) {
+  return relativePaths.reduce((sum, relativePath) => {
+    const absolutePath = path.join(rootDir, relativePath);
+    if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
+      return sum;
+    }
+    return sum + fs.statSync(absolutePath).size;
+  }, 0);
+}
+
 function checkPerformanceBudget({ rootDir = projectRoot } = {}) {
   const failures = [];
   const report = [];
@@ -95,6 +138,25 @@ function checkPerformanceBudget({ rootDir = projectRoot } = {}) {
         failures.push(`${file} is ${formatBytes(size)}, above single-asset budget ${formatBytes(MAX_SINGLE_ASSET_BYTES)}`);
       }
     });
+
+  const readingHtmlPath = path.join(rootDir, 'reading.html');
+  if (fs.existsSync(readingHtmlPath)) {
+    const renderedAssets = collectRenderedAssetReferences(fs.readFileSync(readingHtmlPath, 'utf8'));
+    const readingMediaReferences = renderedAssets.references.filter((reference) => reference.startsWith('book/'));
+    const highDpiReadingReferences = renderedAssets.highDpiReferences.filter((reference) => reference.startsWith('book/'));
+    const renderedReadingBytes = sumExistingFiles(readingMediaReferences, { rootDir });
+    const renderedReadingHighDpiBytes = sumExistingFiles(highDpiReadingReferences, { rootDir });
+
+    report.push(`rendered reading media: ${formatBytes(renderedReadingBytes)} / ${formatBytes(MAX_RENDERED_READING_MEDIA_BYTES)}`);
+    report.push(`rendered reading 2x media: ${formatBytes(renderedReadingHighDpiBytes)} / ${formatBytes(MAX_RENDERED_READING_2X_BYTES)}`);
+
+    if (renderedReadingBytes > MAX_RENDERED_READING_MEDIA_BYTES) {
+      failures.push(`rendered reading media is ${formatBytes(renderedReadingBytes)}, above ${formatBytes(MAX_RENDERED_READING_MEDIA_BYTES)}`);
+    }
+    if (renderedReadingHighDpiBytes > MAX_RENDERED_READING_2X_BYTES) {
+      failures.push(`rendered reading 2x media is ${formatBytes(renderedReadingHighDpiBytes)}, above ${formatBytes(MAX_RENDERED_READING_2X_BYTES)}`);
+    }
+  }
 
   return { failures, report, inventory: createAssetInventoryReport({ rootDir }) };
 }
@@ -138,5 +200,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
 export {
   checkPerformanceBudget,
+  collectRenderedAssetReferences,
   createAssetInventoryReport
 };
