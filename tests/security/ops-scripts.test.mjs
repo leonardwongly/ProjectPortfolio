@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -103,6 +104,25 @@ test('performance budget check reports clean fixtures and oversized generated fi
   assert.ok(result.failures.some((failure) => failure.includes('index.html')));
 });
 
+test('performance budget rejects unreferenced deployed assets', async () => {
+  const { checkPerformanceBudget } = await import('../../scripts/check-performance-budget.mjs');
+  const rootDir = makeTempRoot();
+
+  writePerformanceFixture(rootDir);
+  writeFile(rootDir, 'css/bootstrap-grid.min.css', 'unused');
+  writeFile(rootDir, 'js/bootstrap.bundle.min.js', 'unused');
+  writeFile(rootDir, 'fonts/SF-Pro-Display-Black.otf', 'unused');
+  writeFile(rootDir, 'book/large-original.jpg', Buffer.alloc(600 * 1024, 'a'));
+  writeFile(rootDir, 'reading.html', '<img src="book/large-cover.jpg">');
+
+  const result = checkPerformanceBudget({ rootDir });
+
+  assert.ok(result.failures.some((failure) => failure.includes('css/bootstrap-grid.min.css')));
+  assert.ok(result.failures.some((failure) => failure.includes('js/bootstrap.bundle.min.js')));
+  assert.ok(result.failures.some((failure) => failure.includes('fonts/SF-Pro-Display-Black.otf')));
+  assert.ok(result.failures.some((failure) => failure.includes('book/large-original.jpg')));
+});
+
 test('link health validator rejects unsafe URL shapes before network access', async () => {
   const { validateExternalUrl } = await import('../../scripts/check-link-health.mjs');
 
@@ -179,6 +199,25 @@ test('repository hygiene detects junk files in git-visible paths', async () => {
   assert.equal(isJunkPath('.github/workflows/.DS_Store'), true);
   assert.equal(isJunkPath('notes/debug.log'), true);
   assert.equal(isJunkPath('src/index.html'), false);
+});
+
+test('repository hygiene detects ignored junk files in authored directories', async () => {
+  const { collectRepositoryHygieneFindings } = await import('../../scripts/check-repository-hygiene.mjs');
+  const rootDir = makeTempRoot();
+
+  writeFile(rootDir, '.gitignore', '.DS_Store\nnode_modules/\n');
+  writeFile(rootDir, '.github/workflows/.DS_Store');
+  writeFile(rootDir, 'docs/.DS_Store');
+  writeFile(rootDir, 'node_modules/.DS_Store');
+  writeFile(rootDir, 'src/index.html', '<main></main>');
+  execFileSync('git', ['init'], { cwd: rootDir, stdio: 'ignore' });
+
+  const findings = collectRepositoryHygieneFindings({ cwd: rootDir });
+
+  assert.deepEqual(findings, [
+    '.github/workflows/.DS_Store',
+    'docs/.DS_Store'
+  ]);
 });
 
 test('workflow hygiene enforces pinned actions and safe npm installs', async () => {

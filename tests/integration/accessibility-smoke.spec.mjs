@@ -12,7 +12,7 @@ const THEMES = ['light', 'dark'];
 test.describe('accessibility smoke', () => {
   for (const pagePath of PAGE_PATHS) {
     for (const theme of THEMES) {
-      test(`${pagePath} (${theme}) has no serious or critical axe violations`, async ({ page }) => {
+      test(`${pagePath} (${theme}) has no axe violations`, async ({ page }) => {
         await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
         await page.goto(pagePath);
 
@@ -20,11 +20,7 @@ test.describe('accessibility smoke', () => {
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
           .analyze();
 
-        const blockingViolations = results.violations.filter((violation) => (
-          violation.impact === 'serious' || violation.impact === 'critical'
-        ));
-
-        expect(blockingViolations).toEqual([]);
+        expect(results.violations).toEqual([]);
       });
     }
   }

@@ -132,6 +132,49 @@ test.describe('command palette', () => {
       return commandPalette?.contains(document.activeElement) ?? false;
     })).toBe(false);
   });
+
+  test('exposes arrow-key command selection to assistive technology', async ({ page }, testInfo) => {
+    await page.goto('/index.html');
+
+    if (isMobileProject(testInfo)) {
+      await page.locator('.navbar-toggler').click();
+    }
+
+    await page.locator('[data-cmdk-open]').first().click();
+
+    const input = page.locator('#cmdkInput');
+    const workOption = page.getByRole('option', { name: /work selected projects/i });
+
+    await expect(input).toHaveAttribute('aria-activedescendant', /cmdk-option-1/);
+
+    await input.press('ArrowDown');
+
+    await expect(workOption).toHaveAttribute('aria-selected', 'true');
+    await expect(input).toHaveAttribute('aria-activedescendant', await workOption.getAttribute('id'));
+
+    await input.press('Enter');
+
+    await expect(page).toHaveURL(/\/index\.html#work$/);
+  });
+
+  test('announces empty command palette results', async ({ page }, testInfo) => {
+    await page.goto('/index.html');
+
+    if (isMobileProject(testInfo)) {
+      await page.locator('.navbar-toggler').click();
+    }
+
+    await page.locator('[data-cmdk-open]').first().click();
+
+    const input = page.locator('#cmdkInput');
+    const empty = page.getByRole('status').filter({ hasText: 'no matches' });
+
+    await input.fill('zzzzzz-no-command');
+
+    await expect(empty).toBeVisible();
+    await expect(input).toHaveAttribute('aria-describedby', 'cmdkEmpty');
+    await expect(input).not.toHaveAttribute('aria-activedescendant', /.*/);
+  });
 });
 
 test.describe('accordion behavior', () => {
@@ -202,9 +245,14 @@ test.describe('reading controls', () => {
   test('filter buttons expose selected state to assistive technology', async ({ page }) => {
     await page.goto('/reading.html?year=2022&tag=Data');
 
-    const activeYear = page.locator('.filter-pill[data-filter-group="year"][data-filter-value="2022"]');
-    const inactiveYear = page.locator('.filter-pill[data-filter-group="year"][data-filter-value="All"]');
-    const activeTag = page.locator('.filter-pill[data-filter-group="tag"][data-filter-value="Data"]');
+    const yearGroup = page.getByRole('group', { name: 'Year' });
+    const tagGroup = page.getByRole('group', { name: 'Tags' });
+    const activeYear = yearGroup.locator('.filter-pill[data-filter-value="2022"]');
+    const inactiveYear = yearGroup.locator('.filter-pill[data-filter-value="All"]');
+    const activeTag = tagGroup.locator('.filter-pill[data-filter-value="Data"]');
+
+    await expect(yearGroup).toBeVisible();
+    await expect(tagGroup).toBeVisible();
 
     await expect(activeYear).toHaveAttribute('aria-pressed', 'true');
     await expect(inactiveYear).toHaveAttribute('aria-pressed', 'false');

@@ -3,81 +3,31 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const {
+  AssetPathValidationError,
+  resolveContainedPath,
+  sanitizeRelativeAssetPath
+} = require('./lib/asset-paths.cjs');
 
 const projectRoot = process.cwd();
 const dataPath = path.join(projectRoot, 'data', 'reading.json');
 const COVER_FILE_PATTERN = /\.(jpe?g)$/i;
-const MAX_RELATIVE_PATH_LENGTH = 512;
-
-function failPathValidation(fieldPath, reason) {
-  throw new Error(`Invalid path at ${fieldPath}: ${reason}`);
-}
 
 function sanitizeCoverRelativePath(rawValue, fieldPath = 'cover') {
-  if (typeof rawValue !== 'string') {
-    failPathValidation(fieldPath, 'expected a string path');
-  }
-
-  const value = rawValue.trim();
-  if (!value) {
-    failPathValidation(fieldPath, 'path cannot be empty');
-  }
-  if (value.length > MAX_RELATIVE_PATH_LENGTH) {
-    failPathValidation(fieldPath, `path exceeds max length ${MAX_RELATIVE_PATH_LENGTH}`);
-  }
-  if (value.includes('\0') || value.includes('\\')) {
-    failPathValidation(fieldPath, 'path contains disallowed characters');
-  }
-  if (value.startsWith('/') || value.startsWith('//')) {
-    failPathValidation(fieldPath, 'path must be relative');
-  }
-  if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value)) {
-    failPathValidation(fieldPath, 'URI schemes are not allowed');
-  }
-  if (value.includes('?') || value.includes('#')) {
-    failPathValidation(fieldPath, 'query strings and fragments are not allowed');
-  }
-
-  let decoded = value;
   try {
-    decoded = decodeURIComponent(value);
+    return sanitizeRelativeAssetPath(rawValue, fieldPath, {
+      allowedExtensions: COVER_FILE_PATTERN
+    });
   } catch (error) {
-    failPathValidation(fieldPath, 'path contains invalid URL encoding');
+    if (error instanceof AssetPathValidationError && error.reason.startsWith('path must match')) {
+      throw new AssetPathValidationError(fieldPath, 'cover path must end in .jpg or .jpeg');
+    }
+    throw error;
   }
-
-  const decodedSegments = decoded.split('/');
-  if (decodedSegments.some((segment) => segment === '' || segment === '.' || segment === '..')) {
-    failPathValidation(fieldPath, 'dot segments and empty segments are not allowed');
-  }
-
-  const normalized = path.posix.normalize(value);
-  if (
-    normalized === '.' ||
-    normalized === '..' ||
-    normalized.startsWith('../') ||
-    normalized.includes('/../') ||
-    normalized.startsWith('/')
-  ) {
-    failPathValidation(fieldPath, 'path traversal is not allowed');
-  }
-
-  if (!COVER_FILE_PATTERN.test(normalized)) {
-    failPathValidation(fieldPath, 'cover path must end in .jpg or .jpeg');
-  }
-
-  return normalized;
 }
 
 function resolveProjectPath(rootPath, relativePath, fieldPath = 'cover') {
-  const resolvedRoot = path.resolve(rootPath);
-  const resolvedPath = path.resolve(resolvedRoot, relativePath);
-  const rootPrefix = `${resolvedRoot}${path.sep}`;
-
-  if (resolvedPath !== resolvedRoot && !resolvedPath.startsWith(rootPrefix)) {
-    failPathValidation(fieldPath, 'resolved path escapes project root');
-  }
-
-  return resolvedPath;
+  return resolveContainedPath(rootPath, relativePath, fieldPath);
 }
 
 function derive2xPath(coverPath) {

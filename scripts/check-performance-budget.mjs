@@ -21,14 +21,22 @@ const FILE_BUDGETS = [
 
 const DIRECTORY_BUDGETS = [
   { path: 'book', maxBytes: 80 * MiB },
-  { path: 'fonts', maxBytes: 45 * MiB },
+  { path: 'fonts', maxBytes: 512 * KiB },
   { path: 'images', maxBytes: 8 * MiB },
   { path: 'js/vendor', maxBytes: 2 * MiB }
 ];
 
 const MAX_SINGLE_ASSET_BYTES = 20 * MiB;
+const MAX_UNREFERENCED_BOOK_ASSET_BYTES = 512 * KiB;
 const MAX_RENDERED_READING_MEDIA_BYTES = 12 * MiB;
 const MAX_RENDERED_READING_2X_BYTES = 6 * MiB;
+const DISALLOWED_WEB_ROOT_ASSET_PATTERNS = [
+  /^css\/bootstrap(?:-grid|-reboot|-utilities|\.rtl|\.css|\.min\.css\.map)/,
+  /^css\/bootstrap.*\.map$/,
+  /^js\/bootstrap.*\.js(?:\.map)?$/,
+  /^fonts\/.*\.otf$/,
+  /^fonts\/bootstrap-icons\.(?:woff2?|ttf|eot|svg)$/
+];
 const ASSET_INVENTORY_DIRECTORIES = [
   'book',
   'fonts',
@@ -130,8 +138,21 @@ function checkPerformanceBudget({ rootDir = projectRoot } = {}) {
     }
   });
 
-  walkFiles('book', { rootDir })
-    .concat(walkFiles('images', { rootDir }), walkFiles('fonts', { rootDir }))
+  const bookFiles = walkFiles('book', { rootDir });
+  const fontFiles = walkFiles('fonts', { rootDir });
+  const imageFiles = walkFiles('images', { rootDir });
+  const cssFiles = walkFiles('css', { rootDir });
+  const jsFiles = walkFiles('js', { rootDir });
+
+  cssFiles
+    .concat(jsFiles, fontFiles)
+    .filter((file) => DISALLOWED_WEB_ROOT_ASSET_PATTERNS.some((pattern) => pattern.test(file)))
+    .forEach((file) => {
+      failures.push(`${file} is a disallowed unreferenced deployed asset`);
+    });
+
+  bookFiles
+    .concat(imageFiles, fontFiles)
     .forEach((file) => {
       const size = fileSize(file, { rootDir });
       if (size > MAX_SINGLE_ASSET_BYTES) {
@@ -146,6 +167,7 @@ function checkPerformanceBudget({ rootDir = projectRoot } = {}) {
     const highDpiReadingReferences = renderedAssets.highDpiReferences.filter((reference) => reference.startsWith('book/'));
     const renderedReadingBytes = sumExistingFiles(readingMediaReferences, { rootDir });
     const renderedReadingHighDpiBytes = sumExistingFiles(highDpiReadingReferences, { rootDir });
+    const renderedBookReferences = new Set(readingMediaReferences);
 
     report.push(`rendered reading media: ${formatBytes(renderedReadingBytes)} / ${formatBytes(MAX_RENDERED_READING_MEDIA_BYTES)}`);
     report.push(`rendered reading 2x media: ${formatBytes(renderedReadingHighDpiBytes)} / ${formatBytes(MAX_RENDERED_READING_2X_BYTES)}`);
@@ -156,6 +178,13 @@ function checkPerformanceBudget({ rootDir = projectRoot } = {}) {
     if (renderedReadingHighDpiBytes > MAX_RENDERED_READING_2X_BYTES) {
       failures.push(`rendered reading 2x media is ${formatBytes(renderedReadingHighDpiBytes)}, above ${formatBytes(MAX_RENDERED_READING_2X_BYTES)}`);
     }
+
+    bookFiles.forEach((file) => {
+      const size = fileSize(file, { rootDir });
+      if (!renderedBookReferences.has(file) && size > MAX_UNREFERENCED_BOOK_ASSET_BYTES) {
+        failures.push(`${file} is ${formatBytes(size)}, above unreferenced book asset budget ${formatBytes(MAX_UNREFERENCED_BOOK_ASSET_BYTES)}`);
+      }
+    });
   }
 
   return { failures, report, inventory: createAssetInventoryReport({ rootDir }) };

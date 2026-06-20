@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -26,6 +27,16 @@ const JUNK_EXTENSIONS = [
   '.tmp'
 ];
 
+const SKIPPED_DIRECTORY_NAMES = new Set([
+  '.git',
+  '.idea',
+  '.claude',
+  'artifacts',
+  'node_modules',
+  'playwright-report',
+  'test-results'
+]);
+
 function listGitVisibleFiles({ cwd = process.cwd() } = {}) {
   const output = execFileSync('git', [
     'ls-files',
@@ -42,6 +53,37 @@ function listGitVisibleFiles({ cwd = process.cwd() } = {}) {
     .split('\0')
     .filter(Boolean)
     .sort();
+}
+
+function listFilesystemJunkFiles({
+  cwd = process.cwd(),
+  skippedDirectoryNames = SKIPPED_DIRECTORY_NAMES
+} = {}) {
+  const findings = [];
+
+  function visit(directory, prefix = '') {
+    const entries = fs.readdirSync(directory, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const absolutePath = path.join(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        if (!skippedDirectoryNames.has(entry.name)) {
+          visit(absolutePath, relativePath);
+        }
+        continue;
+      }
+
+      if (entry.isFile() && isJunkPath(relativePath)) {
+        findings.push(relativePath);
+      }
+    }
+  }
+
+  visit(cwd);
+
+  return findings.sort();
 }
 
 function isJunkPath(filePath) {
@@ -66,7 +108,10 @@ function isJunkPath(filePath) {
 }
 
 function collectRepositoryHygieneFindings({ cwd = process.cwd() } = {}) {
-  return listGitVisibleFiles({ cwd }).filter(isJunkPath);
+  return [...new Set([
+    ...listGitVisibleFiles({ cwd }).filter(isJunkPath),
+    ...listFilesystemJunkFiles({ cwd })
+  ])].sort();
 }
 
 function formatFindings(findings) {
@@ -94,5 +139,6 @@ export {
   collectRepositoryHygieneFindings,
   formatFindings,
   isJunkPath,
+  listFilesystemJunkFiles,
   listGitVisibleFiles
 };

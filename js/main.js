@@ -52,6 +52,14 @@ function initCommandPalette() {
   const openers = Array.from(document.querySelectorAll('[data-cmdk-open]'));
   let lastFocused = null;
 
+  items.forEach((item, index) => {
+    if (!item.id) {
+      item.id = `cmdk-option-${index + 1}`;
+    }
+    item.setAttribute('role', 'option');
+    item.setAttribute('aria-selected', 'false');
+  });
+
   const visibleItems = () => items.filter((item) => !item.closest('li').hidden);
   const focusableSelector = [
     'a[href]',
@@ -96,10 +104,16 @@ function initCommandPalette() {
   };
 
   const setActive = (nextItem) => {
-    items.forEach((item) => item.classList.remove('is-active'));
+    items.forEach((item) => {
+      const isActive = item === nextItem;
+      item.classList.toggle('is-active', isActive);
+      item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
     if (nextItem) {
-      nextItem.classList.add('is-active');
+      input.setAttribute('aria-activedescendant', nextItem.id);
       nextItem.scrollIntoView({ block: 'nearest' });
+    } else {
+      input.removeAttribute('aria-activedescendant');
     }
   };
 
@@ -115,6 +129,11 @@ function initCommandPalette() {
     });
     if (empty) {
       empty.hidden = matches > 0;
+      if (matches > 0) {
+        input.removeAttribute('aria-describedby');
+      } else {
+        input.setAttribute('aria-describedby', empty.id);
+      }
     }
     setActive(visibleItems()[0] || null);
   };
@@ -125,6 +144,7 @@ function initCommandPalette() {
     }
     lastFocused = document.activeElement;
     palette.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
     input.value = '';
     filter();
     input.focus();
@@ -135,6 +155,9 @@ function initCommandPalette() {
       return;
     }
     palette.hidden = true;
+    input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
+    input.removeAttribute('aria-describedby');
     if (canRestoreFocus(lastFocused)) {
       lastFocused.focus();
     } else {
