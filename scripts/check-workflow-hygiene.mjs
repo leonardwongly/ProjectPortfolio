@@ -97,6 +97,9 @@ function validateRunBlocks(filePath, lines, findings) {
     if (BODY_INTERPOLATION_PATTERN.test(line)) {
       findings.push(`${filePath}:${lineNumber}: do not interpolate PR/comment body content directly into shell commands`);
     }
+    if (/<<EOF\b/.test(line) && /\bGITHUB_OUTPUT\b/.test(lines.slice(index, Math.min(index + 6, lines.length)).join('\n'))) {
+      findings.push(`${filePath}:${lineNumber}: do not use fixed EOF delimiters for multiline GITHUB_OUTPUT values`);
+    }
   });
 }
 

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -32,10 +33,12 @@ function writePerformanceFixture(rootDir, overrides = {}) {
   });
 }
 
-test('reading metadata audit detects missing fields, duplicate records, and missing covers', async () => {
+test('reading metadata audit detects missing fields, duplicate records, missing covers, and duplicate cover files', async () => {
   const { auditReadingMetadata } = await import('../../scripts/audit-reading-metadata.mjs');
   const rootDir = makeTempRoot();
   writeFile(rootDir, 'book/2026/a.jpg', 'cover');
+  writeFile(rootDir, 'book/2026/b.jpg', 'same-cover');
+  writeFile(rootDir, 'book/2026/c.jpg', 'same-cover');
 
   const findings = auditReadingMetadata([
     {
@@ -51,25 +54,46 @@ test('reading metadata audit detects missing fields, duplicate records, and miss
       year: '2026',
       isbn: '9780000000001',
       cover: 'book/2026/missing.jpg'
+    },
+    {
+      title: 'Different Cover Record',
+      author: 'Grace Hopper',
+      year: '2026',
+      isbn: '9780000000002',
+      cover: 'book/2026/b.jpg'
+    },
+    {
+      title: 'Duplicate Cover Record',
+      author: 'Katherine Johnson',
+      year: '2026',
+      isbn: '9780000000003',
+      cover: 'book/2026/c.jpg'
     }
   ], { rootDir });
 
   assert.ok(findings.some((finding) => finding.includes('missing author')));
   assert.ok(findings.some((finding) => finding.includes('duplicate isbn')));
   assert.ok(findings.some((finding) => finding.includes('declared cover is missing')));
+  assert.ok(findings.some((finding) => finding.includes('cover duplicates')));
 });
 
 test('performance budget check reports clean fixtures and oversized generated files', async () => {
-  const { checkPerformanceBudget, createAssetInventoryReport } = await import('../../scripts/check-performance-budget.mjs');
+  const { checkPerformanceBudget, collectRenderedAssetReferences, createAssetInventoryReport } = await import('../../scripts/check-performance-budget.mjs');
   const rootDir = makeTempRoot();
 
   writePerformanceFixture(rootDir);
   writeFile(rootDir, 'book/large-cover.jpg', Buffer.alloc(500, 'a'));
+  writeFile(rootDir, 'book/large-cover-2x.jpg', Buffer.alloc(500, 'b'));
+  writeFile(rootDir, 'reading.html', '<img src="book/large-cover.jpg" srcset="book/large-cover.jpg 1x, book/large-cover-2x.jpg 2x">');
   writeFile(rootDir, 'images/logo.png', Buffer.alloc(100, 'a'));
   assert.deepEqual(checkPerformanceBudget({ rootDir }).failures, []);
+  assert.deepEqual(collectRenderedAssetReferences(fs.readFileSync(path.join(rootDir, 'reading.html'), 'utf8')), {
+    references: ['book/large-cover.jpg', 'book/large-cover-2x.jpg'],
+    highDpiReferences: ['book/large-cover-2x.jpg']
+  });
   assert.deepEqual(createAssetInventoryReport({ rootDir, limit: 2 }).largestFiles, [
-    { path: 'book/large-cover.jpg', size: 500 },
-    { path: 'images/logo.png', size: 100 }
+    { path: 'book/large-cover-2x.jpg', size: 500 },
+    { path: 'book/large-cover.jpg', size: 500 }
   ]);
 
   writePerformanceFixture(rootDir, {
@@ -78,6 +102,25 @@ test('performance budget check reports clean fixtures and oversized generated fi
   const result = checkPerformanceBudget({ rootDir });
 
   assert.ok(result.failures.some((failure) => failure.includes('index.html')));
+});
+
+test('performance budget rejects unreferenced deployed assets', async () => {
+  const { checkPerformanceBudget } = await import('../../scripts/check-performance-budget.mjs');
+  const rootDir = makeTempRoot();
+
+  writePerformanceFixture(rootDir);
+  writeFile(rootDir, 'css/bootstrap-grid.min.css', 'unused');
+  writeFile(rootDir, 'js/bootstrap.bundle.min.js', 'unused');
+  writeFile(rootDir, 'fonts/SF-Pro-Display-Black.otf', 'unused');
+  writeFile(rootDir, 'book/large-original.jpg', Buffer.alloc(600 * 1024, 'a'));
+  writeFile(rootDir, 'reading.html', '<img src="book/large-cover.jpg">');
+
+  const result = checkPerformanceBudget({ rootDir });
+
+  assert.ok(result.failures.some((failure) => failure.includes('css/bootstrap-grid.min.css')));
+  assert.ok(result.failures.some((failure) => failure.includes('js/bootstrap.bundle.min.js')));
+  assert.ok(result.failures.some((failure) => failure.includes('fonts/SF-Pro-Display-Black.otf')));
+  assert.ok(result.failures.some((failure) => failure.includes('book/large-original.jpg')));
 });
 
 test('link health validator rejects unsafe URL shapes before network access', async () => {
@@ -156,6 +199,25 @@ test('repository hygiene detects junk files in git-visible paths', async () => {
   assert.equal(isJunkPath('.github/workflows/.DS_Store'), true);
   assert.equal(isJunkPath('notes/debug.log'), true);
   assert.equal(isJunkPath('src/index.html'), false);
+});
+
+test('repository hygiene detects ignored junk files in authored directories', async () => {
+  const { collectRepositoryHygieneFindings } = await import('../../scripts/check-repository-hygiene.mjs');
+  const rootDir = makeTempRoot();
+
+  writeFile(rootDir, '.gitignore', '.DS_Store\nnode_modules/\n');
+  writeFile(rootDir, '.github/workflows/.DS_Store');
+  writeFile(rootDir, 'docs/.DS_Store');
+  writeFile(rootDir, 'node_modules/.DS_Store');
+  writeFile(rootDir, 'src/index.html', '<main></main>');
+  execFileSync('git', ['init'], { cwd: rootDir, stdio: 'ignore' });
+
+  const findings = collectRepositoryHygieneFindings({ cwd: rootDir });
+
+  assert.deepEqual(findings, [
+    '.github/workflows/.DS_Store',
+    'docs/.DS_Store'
+  ]);
 });
 
 test('workflow hygiene enforces pinned actions and safe npm installs', async () => {

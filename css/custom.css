@@ -103,8 +103,7 @@
 
 @font-face {
   font-family: 'SF-Pro-Display';
-  src: url('../fonts/SF-Pro-Display-Regular.woff2') format('woff2'),
-    url('../fonts/SF-Pro-Display-Regular.otf') format('opentype');
+  src: url('../fonts/SF-Pro-Display-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -112,8 +111,7 @@
 
 @font-face {
   font-family: 'SF-Pro-Display';
-  src: url('../fonts/SF-Pro-Display-Medium.woff2') format('woff2'),
-    url('../fonts/SF-Pro-Display-Medium.otf') format('opentype');
+  src: url('../fonts/SF-Pro-Display-Medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -121,8 +119,7 @@
 
 @font-face {
   font-family: 'SF-Pro-Display';
-  src: url('../fonts/SF-Pro-Display-Semibold.woff2') format('woff2'),
-    url('../fonts/SF-Pro-Display-Semibold.otf') format('opentype');
+  src: url('../fonts/SF-Pro-Display-Semibold.woff2') format('woff2');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -130,8 +127,7 @@
 
 @font-face {
   font-family: 'SF-Pro-Display';
-  src: url('../fonts/SF-Pro-Display-Bold.woff2') format('woff2'),
-    url('../fonts/SF-Pro-Display-Bold.otf') format('opentype');
+  src: url('../fonts/SF-Pro-Display-Bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -2467,6 +2463,52 @@ main.container-xxl {
 /* Bootstrap .card forces a fixed body color; use the theme token (fixes dark-mode card text). */
 .card {
   color: var(--ink);
+}
+
+.sw-update-prompt {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1080;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: min(26rem, calc(100vw - 2rem));
+  padding: 0.8rem;
+  color: var(--ink);
+  background: var(--paper-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow);
+}
+
+.sw-update-prompt[hidden] {
+  display: none;
+}
+
+.sw-update-prompt__message {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.sw-update-prompt__actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+}
+
+@media (max-width: 575.98px) {
+  .sw-update-prompt {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sw-update-prompt__actions {
+    justify-content: flex-end;
+  }
 }
 
 /* Site Engineering is a first-class exhibit; it inherits full .trust-section styling. */

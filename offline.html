@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="manifest" href="manifest.json"/>
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
@@ -13,7 +13,6 @@
     <title>Offline | Leonard Wong</title>
 </head>
 <body class="page-bg">
-<h1 class="visually-hidden">Offline</h1>
 <a class="skip-link" href="#content">Skip to content</a>
 <nav class="navbar navbar-expand-lg fixed-top navbar-dark glass-nav" aria-label="Main navigation">
     <div class="container-fluid">
@@ -70,25 +69,28 @@
 <div class="cmdk" id="commandPalette" hidden role="dialog" aria-modal="true" aria-label="Command palette">
     <div class="cmdk__panel">
         <input class="cmdk__input" id="cmdkInput" type="text" autocomplete="off" spellcheck="false"
-               placeholder="Jump to a section, page, or action…" aria-label="Filter commands" aria-controls="cmdkList"/>
-        <ul class="cmdk__list" id="cmdkList">
-            <li><a class="cmdk__item" href="/index.html#home">home<span class="cmdk__hint">intro</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#work">work<span class="cmdk__hint">selected projects</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#site-engineering">engineering<span class="cmdk__hint">how this site is built</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#skills">skills<span class="cmdk__hint">stack</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#experience">experience<span class="cmdk__hint">timeline</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#writing">writing<span class="cmdk__hint">publications</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#credentials">credentials<span class="cmdk__hint">education + certs</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#contact">contact<span class="cmdk__hint">get in touch</span></a></li>
-            <li><a class="cmdk__item" href="/reading.html">reading<span class="cmdk__hint">bookshelf</span></a></li>
-            <li><a class="cmdk__item" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">resume.pdf<span class="cmdk__hint">open</span></a></li>
-            <li><button class="cmdk__item" type="button" data-cmdk-action="theme">toggle theme<span class="cmdk__hint">dark / light</span></button></li>
+               placeholder="Jump to a section, page, or action…" aria-label="Filter commands"
+               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cmdkList"/>
+        <ul class="cmdk__list" id="cmdkList" role="listbox" aria-label="Command results">
+            <li role="presentation"><a class="cmdk__item" href="/index.html#home" role="option" aria-selected="false">home<span class="cmdk__hint">intro</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#work" role="option" aria-selected="false">work<span class="cmdk__hint">selected projects</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#site-engineering" role="option" aria-selected="false">engineering<span class="cmdk__hint">how this site is built</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#skills" role="option" aria-selected="false">skills<span class="cmdk__hint">stack</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#experience" role="option" aria-selected="false">experience<span class="cmdk__hint">timeline</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#writing" role="option" aria-selected="false">writing<span class="cmdk__hint">publications</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#credentials" role="option" aria-selected="false">credentials<span class="cmdk__hint">education + certs</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#contact" role="option" aria-selected="false">contact<span class="cmdk__hint">get in touch</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/reading.html" role="option" aria-selected="false">reading<span class="cmdk__hint">bookshelf</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" role="option" aria-selected="false">resume.pdf<span class="cmdk__hint">open</span></a></li>
+            <li role="presentation"><button class="cmdk__item" type="button" data-cmdk-action="theme" role="option" aria-selected="false">toggle theme<span class="cmdk__hint">dark / light</span></button></li>
         </ul>
-        <p class="cmdk__empty" id="cmdkEmpty" hidden>no matches</p>
+        <p class="cmdk__empty" id="cmdkEmpty" hidden role="status" aria-live="polite" aria-atomic="true">no matches</p>
     </div>
 </div>
 
+
 <main id="content" class="container-xxl">
+    <h1 class="visually-hidden">Offline</h1>
     <section class="section-block">
         <div class="contact-card">
             <div>

@@ -19,7 +19,7 @@ export default defineConfig({
   webServer: {
     command: `python3 -m http.server ${integrationPort} --bind 127.0.0.1`,
     url: `${integrationBaseURL}/index.html`,
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI,
     timeout: 120_000
   },
   projects: [

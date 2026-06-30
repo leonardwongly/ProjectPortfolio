@@ -147,6 +147,21 @@ test('source CSP style-src does not permit unsafe-inline', () => {
   assert.deepEqual(offenders, [], `Found unsafe-inline style-src directives in: ${offenders.join(', ')}`);
 });
 
+test('frame ancestor protection is delivered through enforceable headers', () => {
+  const metaOffenders = [];
+
+  for (const file of SOURCE_HTML_FILES) {
+    const content = fs.readFileSync(file, 'utf8');
+    if (/http-equiv="Content-Security-Policy"[^>]*frame-ancestors/i.test(content)) {
+      metaOffenders.push(file);
+    }
+  }
+
+  const headersContent = fs.readFileSync('src/_headers.template', 'utf8');
+  assert.deepEqual(metaOffenders, [], `Found ignored frame-ancestors directives in meta CSP: ${metaOffenders.join(', ')}`);
+  assert.match(headersContent, /frame-ancestors 'none'/);
+});
+
 test('generated index CSP hashes match inline scripts in both HTML and runtime headers', () => {
   const sourceContent = fs.readFileSync('src/index.html', 'utf8');
   const generatedContent = fs.readFileSync('index.html', 'utf8');
@@ -287,6 +302,9 @@ test('service worker update flow has a single active client implementation', () 
   const mainScript = fs.readFileSync('js/main.js', 'utf8');
 
   assert.match(mainScript, /navigator\.serviceWorker\.register\('\/pwabuilder-sw\.js'\)/);
+  assert.match(mainScript, /createUpdatePrompt/);
+  assert.match(mainScript, /sw-update-prompt-message/);
+  assert.doesNotMatch(mainScript, /if \(registration\.waiting\) \{\s*requestActivation\(\);/);
   assert.equal(fs.existsSync('js/pwa-update.js'), false);
   assert.equal(fs.existsSync('js/vendor/pwa-update.js'), false);
 });

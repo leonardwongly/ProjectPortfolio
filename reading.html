@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="manifest" href="manifest.json" />
     <link rel="stylesheet" href="css/bootstrap.min.css"/>
@@ -49,7 +49,6 @@
     <title>Leonard Wong | Reading</title>
 </head>
 <body class="page-bg">
-<h1 class="visually-hidden">Leonard Wong Reading</h1>
 <a class="skip-link" href="#content">Skip to content</a>
 <nav class="navbar navbar-expand-lg fixed-top navbar-dark glass-nav" aria-label="Main navigation">
     <div class="container-fluid">
@@ -106,25 +105,28 @@
 <div class="cmdk" id="commandPalette" hidden role="dialog" aria-modal="true" aria-label="Command palette">
     <div class="cmdk__panel">
         <input class="cmdk__input" id="cmdkInput" type="text" autocomplete="off" spellcheck="false"
-               placeholder="Jump to a section, page, or action…" aria-label="Filter commands" aria-controls="cmdkList"/>
-        <ul class="cmdk__list" id="cmdkList">
-            <li><a class="cmdk__item" href="/index.html#home">home<span class="cmdk__hint">intro</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#work">work<span class="cmdk__hint">selected projects</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#site-engineering">engineering<span class="cmdk__hint">how this site is built</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#skills">skills<span class="cmdk__hint">stack</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#experience">experience<span class="cmdk__hint">timeline</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#writing">writing<span class="cmdk__hint">publications</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#credentials">credentials<span class="cmdk__hint">education + certs</span></a></li>
-            <li><a class="cmdk__item" href="/index.html#contact">contact<span class="cmdk__hint">get in touch</span></a></li>
-            <li><a class="cmdk__item" href="/reading.html">reading<span class="cmdk__hint">bookshelf</span></a></li>
-            <li><a class="cmdk__item" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">resume.pdf<span class="cmdk__hint">open</span></a></li>
-            <li><button class="cmdk__item" type="button" data-cmdk-action="theme">toggle theme<span class="cmdk__hint">dark / light</span></button></li>
+               placeholder="Jump to a section, page, or action…" aria-label="Filter commands"
+               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cmdkList"/>
+        <ul class="cmdk__list" id="cmdkList" role="listbox" aria-label="Command results">
+            <li role="presentation"><a class="cmdk__item" href="/index.html#home" role="option" aria-selected="false">home<span class="cmdk__hint">intro</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#work" role="option" aria-selected="false">work<span class="cmdk__hint">selected projects</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#site-engineering" role="option" aria-selected="false">engineering<span class="cmdk__hint">how this site is built</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#skills" role="option" aria-selected="false">skills<span class="cmdk__hint">stack</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#experience" role="option" aria-selected="false">experience<span class="cmdk__hint">timeline</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#writing" role="option" aria-selected="false">writing<span class="cmdk__hint">publications</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#credentials" role="option" aria-selected="false">credentials<span class="cmdk__hint">education + certs</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#contact" role="option" aria-selected="false">contact<span class="cmdk__hint">get in touch</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/reading.html" role="option" aria-selected="false">reading<span class="cmdk__hint">bookshelf</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" role="option" aria-selected="false">resume.pdf<span class="cmdk__hint">open</span></a></li>
+            <li role="presentation"><button class="cmdk__item" type="button" data-cmdk-action="theme" role="option" aria-selected="false">toggle theme<span class="cmdk__hint">dark / light</span></button></li>
         </ul>
-        <p class="cmdk__empty" id="cmdkEmpty" hidden>no matches</p>
+        <p class="cmdk__empty" id="cmdkEmpty" hidden role="status" aria-live="polite" aria-atomic="true">no matches</p>
     </div>
 </div>
 
+
 <main id="content" class="container-xxl">
+    <h1 class="visually-hidden">Leonard Wong Reading</h1>
 
 <section class="section-block reading-section" data-reading>
   <div class="section-header">
@@ -139,9 +141,9 @@
       <input type="search" id="readingSearch" placeholder="Search by title, author, ISBN" autocomplete="off" />
     </label>
     <div class="filter-group">
-      <p class="filter-label">Year</p>
-      <div class="filter-pills" data-filter-group="year"><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="All">All years</button><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="2025">2025</button><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="2024">2024</button><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="2022">2022</button></div>
-      <p class="filter-label">Tags</p><div class="filter-pills" data-filter-group="tag"><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="All">All tags</button><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="Biography">Biography</button><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="Business">Business</button><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="Data">Data</button></div>
+      <p class="filter-label" id="reading-year-filter-label">Year</p>
+      <div class="filter-pills" data-filter-group="year" role="group" aria-labelledby="reading-year-filter-label"><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="All" aria-pressed="false">All years</button><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="2025" aria-pressed="false">2025</button><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="2024" aria-pressed="false">2024</button><button type="button" class="filter-pill" data-filter-group="year" data-filter-value="2022" aria-pressed="false">2022</button></div>
+      <p class="filter-label" id="reading-tag-filter-label">Tags</p><div class="filter-pills" data-filter-group="tag" role="group" aria-labelledby="reading-tag-filter-label"><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="All" aria-pressed="false">All tags</button><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="Biography" aria-pressed="false">Biography</button><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="Business" aria-pressed="false">Business</button><button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="Data" aria-pressed="false">Data</button></div>
     </div>
     <div class="view-toggle" role="group" aria-label="Toggle reading view">
       <button type="button" class="view-pill" data-view="grid" aria-pressed="true">Grid</button>
@@ -187,8 +189,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="In This Together: Singapore&#39;s Covid-19 Story" data-author="The Straits Times Covid-19 Team" data-isbn="978-9814827966">
         <div class="book-media"><a href="https://www.stbooks.sg/products/in-this-together-singapore-s-covid-19-story" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2022/2022-1-300.webp 1x, book/2022/2022-1.webp 2x" />
-        <img decoding="async" src="book/2022/2022-1-300.jpg" class="book-cover" srcset="book/2022/2022-1-300.jpg 1x, book/2022/2022-1.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of In This Together: Singapore&#39;s Covid-19 Story" loading="lazy" />
+        <source type="image/webp" srcset="book/2022/2022-1-300.webp 1x" />
+        <img decoding="async" src="book/2022/2022-1-300.jpg" class="book-cover" srcset="book/2022/2022-1-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of In This Together: Singapore&#39;s Covid-19 Story" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -215,8 +217,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Build: An Unorthodox Guide to Making Things Worth Making" data-author="Tony Fadell" data-isbn="978-0063046061">
         <div class="book-media"><a href="https://www.amazon.sg/Build-Unorthodox-Guide-Making-Things/dp/0063046067" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2022/2022-3-300.webp 1x, book/2022/2022-3.webp 2x" />
-        <img decoding="async" src="book/2022/2022-3-300.jpg" class="book-cover" srcset="book/2022/2022-3-300.jpg 1x, book/2022/2022-3.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Build: An Unorthodox Guide to Making Things Worth Making" loading="lazy" />
+        <source type="image/webp" srcset="book/2022/2022-3-300.webp 1x" />
+        <img decoding="async" src="book/2022/2022-3-300.jpg" class="book-cover" srcset="book/2022/2022-3-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Build: An Unorthodox Guide to Making Things Worth Making" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -327,8 +329,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Amazon Unbound: Jeff Bezos and the Invention of a Global Empire" data-author="Brad Stone" data-isbn="978-1982132613">
         <div class="book-media"><a href="https://www.amazon.sg/Amazon-Unbound-Invention-Global-Empire/dp/1982132612" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2021/2021-3-300.webp 1x, book/2021/2021-3.webp 2x" />
-        <img decoding="async" src="book/2021/2021-3-300.jpg" class="book-cover" srcset="book/2021/2021-3-300.jpg 1x, book/2021/2021-3.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Amazon Unbound: Jeff Bezos and the Invention of a Global Empire" loading="lazy" />
+        <source type="image/webp" srcset="book/2021/2021-3-300.webp 1x" />
+        <img decoding="async" src="book/2021/2021-3-300.jpg" class="book-cover" srcset="book/2021/2021-3-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Amazon Unbound: Jeff Bezos and the Invention of a Global Empire" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -355,8 +357,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Bold Vision: The Untold Story of Singapore&#39;s Reserves and Its Sovereign Wealth Fund" data-author="Freddy Orchard" data-isbn="978-9814901796">
         <div class="book-media"><a href="https://singapore.kinokuniya.com/bw/9789814901796" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2021/2021-5-300.webp 1x, book/2021/2021-5.webp 2x" />
-        <img decoding="async" src="book/2021/2021-5-300.jpg" class="book-cover" srcset="book/2021/2021-5-300.jpg 1x, book/2021/2021-5.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Bold Vision: The Untold Story of Singapore&#39;s Reserves and Its Sovereign Wealth Fund" loading="lazy" />
+        <source type="image/webp" srcset="book/2021/2021-5-300.webp 1x" />
+        <img decoding="async" src="book/2021/2021-5-300.jpg" class="book-cover" srcset="book/2021/2021-5-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Bold Vision: The Untold Story of Singapore&#39;s Reserves and Its Sovereign Wealth Fund" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -369,8 +371,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Invention: A Life" data-author="James Dyson" data-isbn="978-1982188429">
         <div class="book-media"><a href="https://www.amazon.com/Invention-Life-James-Dyson/dp/1982188421/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2021/2021-6-300.webp 1x, book/2021/2021-6.webp 2x" />
-        <img decoding="async" src="book/2021/2021-6-300.jpg" class="book-cover" srcset="book/2021/2021-6-300.jpg 1x, book/2021/2021-6.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Invention: A Life" loading="lazy" />
+        <source type="image/webp" srcset="book/2021/2021-6-300.webp 1x" />
+        <img decoding="async" src="book/2021/2021-6-300.jpg" class="book-cover" srcset="book/2021/2021-6-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Invention: A Life" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -481,8 +483,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Good Habits, Bad Habits: The Science of Making Positive Changes That Stick" data-author="Wendy Wood" data-isbn="978-1250159076">
         <div class="book-media"><a href="https://www.amazon.com/Good-Habits-Bad-Science-Positive/dp/1250159091/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2020/2020-7-300.webp 1x, book/2020/2020-7.webp 2x" />
-        <img decoding="async" src="book/2020/2020-7-300.jpg" class="book-cover" srcset="book/2020/2020-7-300.jpg 1x, book/2020/2020-7.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Good Habits, Bad Habits: The Science of Making Positive Changes That Stick" loading="lazy" />
+        <source type="image/webp" srcset="book/2020/2020-7-300.webp 1x" />
+        <img decoding="async" src="book/2020/2020-7-300.jpg" class="book-cover" srcset="book/2020/2020-7-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Good Habits, Bad Habits: The Science of Making Positive Changes That Stick" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -621,8 +623,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Lee Kuan Yew : The Grand Master&#39;s Insights on China, the United States, and the World" data-author="Allison and Blackwill" data-isbn="978-0262539500">
         <div class="book-media"><a href="https://www.amazon.com/Lee-Kuan-Yew-Insights-international/dp/0262019124/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2020/2020-17-300.webp 1x, book/2020/2020-17.webp 2x" />
-        <img decoding="async" src="book/2020/2020-17-300.jpg" class="book-cover" srcset="book/2020/2020-17-300.jpg 1x, book/2020/2020-17.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Lee Kuan Yew : The Grand Master&#39;s Insights on China, the United States, and the World" loading="lazy" />
+        <source type="image/webp" srcset="book/2020/2020-17-300.webp 1x" />
+        <img decoding="async" src="book/2020/2020-17-300.jpg" class="book-cover" srcset="book/2020/2020-17-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Lee Kuan Yew : The Grand Master&#39;s Insights on China, the United States, and the World" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -649,8 +651,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="Connect the dots : leadership lessons in a start-up world" data-author="John Chambers with Diane Brady]" data-isbn="0008297037">
         <div class="book-media"><a href="https://www.amazon.com/Connecting-Dots-Lessons-Leadership-Startup/dp/031648654X/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-1-300.webp 1x, book/2019/2019-1.webp 2x" />
-        <img decoding="async" src="book/2019/2019-1-300.jpg" class="book-cover" srcset="book/2019/2019-1-300.jpg 1x, book/2019/2019-1.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Connect the dots : leadership lessons in a start-up world" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-1-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-1-300.jpg" class="book-cover" srcset="book/2019/2019-1-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Connect the dots : leadership lessons in a start-up world" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -719,8 +721,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="The Four: The Hidden DNA of Amazon, Apple, Facebook and Google" data-author="Scott Galoway" data-isbn="978-0552173438">
         <div class="book-media"><a href="https://www.amazon.com/Four-Hidden-Amazon-Facebook-Google/dp/0735213658/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-6-300.webp 1x, book/2019/2019-6.webp 2x" />
-        <img decoding="async" src="book/2019/2019-6-300.jpg" class="book-cover" srcset="book/2019/2019-6-300.jpg 1x, book/2019/2019-6.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Four: The Hidden DNA of Amazon, Apple, Facebook and Google" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-6-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-6-300.jpg" class="book-cover" srcset="book/2019/2019-6-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Four: The Hidden DNA of Amazon, Apple, Facebook and Google" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -775,8 +777,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="business" data-title="Jony Ive: The Genius Behind Apple’s Greatest Products" data-author="Leander Kahney" data-isbn="978-1591846178">
         <div class="book-media"><a href="https://www.amazon.com/Jony-Ive-Genius-Greatest-Products/dp/1591847060/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-10-300.webp 1x, book/2019/2019-10.webp 2x" />
-        <img decoding="async" src="book/2019/2019-10-300.jpg" class="book-cover" srcset="book/2019/2019-10-300.jpg 1x, book/2019/2019-10.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Jony Ive: The Genius Behind Apple’s Greatest Products" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-10-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-10-300.jpg" class="book-cover" srcset="book/2019/2019-10-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Jony Ive: The Genius Behind Apple’s Greatest Products" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -803,8 +805,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Lean In for Graduates: With New Chapters by Experts, Including Find Your First Job, Negotiate Your Salary, and Own Who You Are" data-author="Sheryl Sandberg" data-isbn="978-0385353670">
         <div class="book-media"><a href="https://www.amazon.com/Lean-Women-Work-Will-Lead/dp/0385349947/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-12-300.webp 1x, book/2019/2019-12.webp 2x" />
-        <img decoding="async" src="book/2019/2019-12-300.jpg" class="book-cover" srcset="book/2019/2019-12-300.jpg 1x, book/2019/2019-12.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Lean In for Graduates: With New Chapters by Experts, Including Find Your First Job, Negotiate Your Salary, and Own Who You Are" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-12-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-12-300.jpg" class="book-cover" srcset="book/2019/2019-12-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Lean In for Graduates: With New Chapters by Experts, Including Find Your First Job, Negotiate Your Salary, and Own Who You Are" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -817,8 +819,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Option B: Facing Adversity, Building Resilience, and Finding Joy" data-author="Sheryl Sandberg &amp; Adam Grant" data-isbn="978-1524732684">
         <div class="book-media"><a href="https://www.amazon.com/Option-Adversity-Building-Resilience-Finding/dp/1524732680/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-13-300.webp 1x, book/2019/2019-13.webp 2x" />
-        <img decoding="async" src="book/2019/2019-13-300.jpg" class="book-cover" srcset="book/2019/2019-13-300.jpg 1x, book/2019/2019-13.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Option B: Facing Adversity, Building Resilience, and Finding Joy" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-13-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-13-300.jpg" class="book-cover" srcset="book/2019/2019-13-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Option B: Facing Adversity, Building Resilience, and Finding Joy" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -859,8 +861,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Measure What Matters: How Google, Bono, and the Gates Foundation Rock the World with OKRs" data-author="John Doerr" data-isbn="978-0525536222">
         <div class="book-media"><a href="https://www.amazon.com/Measure-What-Matters-Google-Foundation/dp/0525536221/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-16-300.webp 1x, book/2019/2019-16.webp 2x" />
-        <img decoding="async" src="book/2019/2019-16-300.jpg" class="book-cover" srcset="book/2019/2019-16-300.jpg 1x, book/2019/2019-16.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Measure What Matters: How Google, Bono, and the Gates Foundation Rock the World with OKRs" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-16-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-16-300.jpg" class="book-cover" srcset="book/2019/2019-16-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Measure What Matters: How Google, Bono, and the Gates Foundation Rock the World with OKRs" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -887,8 +889,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="The Making of a Manager: What to Do When Everyone Looks to You" data-author="Julie Zhuo" data-isbn="978-0735219564">
         <div class="book-media"><a href="https://www.amazon.com/Making-Manager-What-Everyone-Looks/dp/0735219567/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-18-300.webp 1x, book/2019/2019-18.webp 2x" />
-        <img decoding="async" src="book/2019/2019-18-300.jpg" class="book-cover" srcset="book/2019/2019-18-300.jpg 1x, book/2019/2019-18.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Making of a Manager: What to Do When Everyone Looks to You" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-18-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-18-300.jpg" class="book-cover" srcset="book/2019/2019-18-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Making of a Manager: What to Do When Everyone Looks to You" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -915,8 +917,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Radical Candor: Be a Kick-Ass Boss Without Losing Your Humanity" data-author="Kim Scott" data-isbn="978-1250103505">
         <div class="book-media"><a href="https://www.amazon.com/Radical-Candor-Revised-Kick-Ass-Humanity/dp/1250235375/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-20-300.webp 1x, book/2019/2019-20.webp 2x" />
-        <img decoding="async" src="book/2019/2019-20-300.jpg" class="book-cover" srcset="book/2019/2019-20-300.jpg 1x, book/2019/2019-20.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Radical Candor: Be a Kick-Ass Boss Without Losing Your Humanity" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-20-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-20-300.jpg" class="book-cover" srcset="book/2019/2019-20-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Radical Candor: Be a Kick-Ass Boss Without Losing Your Humanity" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -929,8 +931,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="How Google Works" data-author="Eric Schmidt &amp; Jonathan Rosenberg" data-isbn="978-1455582341">
         <div class="book-media"><a href="https://www.amazon.com/How-Google-Works-Eric-Schmidt/dp/1455582328/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-21-300.webp 1x, book/2019/2019-21.webp 2x" />
-        <img decoding="async" src="book/2019/2019-21-300.jpg" class="book-cover" srcset="book/2019/2019-21-300.jpg 1x, book/2019/2019-21.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of How Google Works" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-21-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-21-300.jpg" class="book-cover" srcset="book/2019/2019-21-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of How Google Works" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -999,8 +1001,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="The Moment of Lift: How Empowering Women Changes the World" data-author="Melinda Gates" data-isbn="978-1250313577">
         <div class="book-media"><a href="https://www.amazon.com/Moment-Lift-Empowering-Women-Changes/dp/1250313570/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-26-300.webp 1x, book/2019/2019-26.webp 2x" />
-        <img decoding="async" src="book/2019/2019-26-300.jpg" class="book-cover" srcset="book/2019/2019-26-300.jpg 1x, book/2019/2019-26.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Moment of Lift: How Empowering Women Changes the World" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-26-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-26-300.jpg" class="book-cover" srcset="book/2019/2019-26-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Moment of Lift: How Empowering Women Changes the World" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -1041,8 +1043,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Secrets of Sand Hill Road: Venture Capital and How to Get It" data-author="Scott Kupor" data-isbn="978-0593083581">
         <div class="book-media"><a href="https://www.amazon.com/Secrets-Sand-Hill-Road-Venture/dp/059308358X/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-29-300.webp 1x, book/2019/2019-29.webp 2x" />
-        <img decoding="async" src="book/2019/2019-29-300.jpg" class="book-cover" srcset="book/2019/2019-29-300.jpg 1x, book/2019/2019-29.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Secrets of Sand Hill Road: Venture Capital and How to Get It" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-29-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-29-300.jpg" class="book-cover" srcset="book/2019/2019-29-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Secrets of Sand Hill Road: Venture Capital and How to Get It" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -1055,8 +1057,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Dare to Lead: Brave Work. Tough Conversations. Whole Hearts." data-author="Brené Brown" data-isbn="978-1785042140">
         <div class="book-media"><a href="https://www.amazon.com/Dare-Lead-Brave-Conversations-Hearts/dp/0399592520/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-30-300.webp 1x, book/2019/2019-30.webp 2x" />
-        <img decoding="async" src="book/2019/2019-30-300.jpg" class="book-cover" srcset="book/2019/2019-30-300.jpg 1x, book/2019/2019-30.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Dare to Lead: Brave Work. Tough Conversations. Whole Hearts." loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-30-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-30-300.jpg" class="book-cover" srcset="book/2019/2019-30-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Dare to Lead: Brave Work. Tough Conversations. Whole Hearts." loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -1111,8 +1113,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Tools and Weapons: The Promise and the Peril of the Digital Age" data-author="Brad Smith AND Carol Ann Browne" data-isbn="978-1984877710">
         <div class="book-media"><a href="https://www.amazon.com/Tools-Weapons-Promise-Peril-Digital/dp/1984877712/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-34-300.webp 1x, book/2019/2019-34.webp 2x" />
-        <img decoding="async" src="book/2019/2019-34-300.jpg" class="book-cover" srcset="book/2019/2019-34-300.jpg 1x, book/2019/2019-34.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Tools and Weapons: The Promise and the Peril of the Digital Age" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-34-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-34-300.jpg" class="book-cover" srcset="book/2019/2019-34-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Tools and Weapons: The Promise and the Peril of the Digital Age" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -1125,8 +1127,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="That Will Never Work: The Birth of Netflix and the Amazing Life of an Idea" data-author="Marc Randolph" data-isbn="978-0316530200">
         <div class="book-media"><a href="https://www.amazon.com/That-Will-Never-Work-Netflix/dp/0316530204/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-35-300.webp 1x, book/2019/2019-35.webp 2x" />
-        <img decoding="async" src="book/2019/2019-35-300.jpg" class="book-cover" srcset="book/2019/2019-35-300.jpg 1x, book/2019/2019-35.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of That Will Never Work: The Birth of Netflix and the Amazing Life of an Idea" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-35-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-35-300.jpg" class="book-cover" srcset="book/2019/2019-35-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of That Will Never Work: The Birth of Netflix and the Amazing Life of an Idea" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -1153,8 +1155,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="Outspoken: Why Women&#39;s Voices Get Silenced and How to Set Them Free" data-author="Veronica Rueckert" data-isbn="978-0062879349">
         <div class="book-media"><a href="https://www.amazon.com/Outspoken-Womens-Voices-Silenced-Them/dp/0062879340/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-37-300.webp 1x, book/2019/2019-37.webp 2x" />
-        <img decoding="async" src="book/2019/2019-37-300.jpg" class="book-cover" srcset="book/2019/2019-37-300.jpg 1x, book/2019/2019-37.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Outspoken: Why Women&#39;s Voices Get Silenced and How to Set Them Free" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-37-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-37-300.jpg" class="book-cover" srcset="book/2019/2019-37-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Outspoken: Why Women&#39;s Voices Get Silenced and How to Set Them Free" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -1195,8 +1197,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Pedra Branca: Story Of The Unheard Cases" data-author="S Jayakumar, Tommy Koh &amp; Lionel Yee" data-isbn="978-9814827157">
         <div class="book-media"><a href="https://www.amazon.com/PEDRA-BRANCA-STORY-UNHEARD-CASES/dp/9814827150/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-40-300.webp 1x, book/2019/2019-40.webp 2x" />
-        <img decoding="async" src="book/2019/2019-40-300.jpg" class="book-cover" srcset="book/2019/2019-40-300.jpg 1x, book/2019/2019-40.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Pedra Branca: Story Of The Unheard Cases" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-40-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-40-300.jpg" class="book-cover" srcset="book/2019/2019-40-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Pedra Branca: Story Of The Unheard Cases" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -1223,8 +1225,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="" data-title="The Big Nine: How the Tech Titans and Their Thinking Machines Could Warp Humanity" data-author="Amy Webb" data-isbn="978-1541773752">
         <div class="book-media"><a href="https://www.amazon.com/Big-Nine-Thinking-Machines-Humanity/dp/154177373X/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-42-300.webp 1x, book/2019/2019-42.webp 2x" />
-        <img decoding="async" src="book/2019/2019-42-300.jpg" class="book-cover" srcset="book/2019/2019-42-300.jpg 1x, book/2019/2019-42.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Big Nine: How the Tech Titans and Their Thinking Machines Could Warp Humanity" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-42-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-42-300.jpg" class="book-cover" srcset="book/2019/2019-42-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of The Big Nine: How the Tech Titans and Their Thinking Machines Could Warp Humanity" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -1237,8 +1239,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="biography" data-title="Know My Name: A Memoir" data-author="Chanel Miller" data-isbn="978-0735223707">
         <div class="book-media"><a href="https://www.amazon.com/Know-My-Name-Chanel-Miller/dp/0735223726/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2019/2019-43-300.webp 1x, book/2019/2019-43.webp 2x" />
-        <img decoding="async" src="book/2019/2019-43-300.jpg" class="book-cover" srcset="book/2019/2019-43-300.jpg 1x, book/2019/2019-43.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Know My Name: A Memoir" loading="lazy" />
+        <source type="image/webp" srcset="book/2019/2019-43-300.webp 1x" />
+        <img decoding="async" src="book/2019/2019-43-300.jpg" class="book-cover" srcset="book/2019/2019-43-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of Know My Name: A Memoir" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>
@@ -1307,8 +1309,8 @@
       <article class="book-card" data-reading-item data-year="2022" data-tags="data" data-title="AI superpowers : China, Silicon Valley, and the new world order" data-author="Kai-Fu Lee" data-isbn="978-1328546395">
         <div class="book-media"><a href="https://www.amazon.com/AI-Superpowers-China-Silicon-Valley/dp/132854639X/" target="_blank" rel="noopener noreferrer">
       <picture>
-        <source type="image/webp" srcset="book/2018/2018-5-300.webp 1x, book/2018/2018-5.webp 2x" />
-        <img decoding="async" src="book/2018/2018-5-300.jpg" class="book-cover" srcset="book/2018/2018-5-300.jpg 1x, book/2018/2018-5.jpg 2x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of AI superpowers : China, Silicon Valley, and the new world order" loading="lazy" />
+        <source type="image/webp" srcset="book/2018/2018-5-300.webp 1x" />
+        <img decoding="async" src="book/2018/2018-5-300.jpg" class="book-cover" srcset="book/2018/2018-5-300.jpg 1x" sizes="(min-width: 992px) 16vw, 44vw" alt="Cover of AI superpowers : China, Silicon Valley, and the new world order" loading="lazy" />
       </picture></a></div>
         <div class="book-body">
           <p class="book-year">2022</p>

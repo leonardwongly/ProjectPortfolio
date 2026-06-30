@@ -6,6 +6,10 @@ const {
   hashInlineScript,
   stripTrailingWhitespace
 } = require('./lib/static-rendering.cjs');
+const {
+  AssetPathValidationError,
+  sanitizeRelativeAssetPath
+} = require('./lib/asset-paths.cjs');
 
 const projectRoot = process.cwd();
 const srcDir = path.join(projectRoot, 'src');
@@ -297,15 +301,14 @@ function sanitizeHref(rawValue, fieldPath) {
 }
 
 function sanitizeAssetPath(rawValue, fieldPath) {
-  const value = ensureString(rawValue, fieldPath, { maxLength: 512 });
-  if (hasUrlScheme(value) || value.startsWith('/') || value.startsWith('//')) {
-    failValidation(fieldPath, 'asset path must be relative');
+  try {
+    return sanitizeRelativeAssetPath(rawValue, fieldPath);
+  } catch (error) {
+    if (error instanceof AssetPathValidationError) {
+      failValidation(fieldPath, error.reason);
+    }
+    throw error;
   }
-  if (value.includes('?') || value.includes('#')) {
-    failValidation(fieldPath, 'asset path cannot include query/hash');
-  }
-  assertNoTraversal(value, fieldPath);
-  return path.posix.normalize(value);
 }
 
 function safeHref(rawValue, fieldPath, { fallback = '#' } = {}) {
@@ -1202,7 +1205,7 @@ function inferTags(entry) {
 }
 
 function renderReadingGrid(reading) {
-  const MAX_HIGH_DPI_IMAGE_BYTES = 250 * 1024;
+  const MAX_HIGH_DPI_IMAGE_BYTES = 128 * 1024;
 
   function shouldUseAsHighDpi(relativePath) {
     if (!relativePath) {
@@ -1303,13 +1306,13 @@ function renderReadingGrid(reading) {
   const yearButtons = ['All', ...years.map(String)]
     .map((value) => {
       const label = value === 'All' ? 'All years' : value;
-      return `<button type="button" class="filter-pill" data-filter-group="year" data-filter-value="${escapeHtml(value)}">${escapeHtml(label)}</button>`;
+      return `<button type="button" class="filter-pill" data-filter-group="year" data-filter-value="${escapeHtml(value)}" aria-pressed="false">${escapeHtml(label)}</button>`;
     })
     .join('');
 
   const tagButtons = tagList.length
-    ? [`<button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="All">All tags</button>`]
-        .concat(tagList.map((tag) => `<button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`))
+    ? [`<button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="All" aria-pressed="false">All tags</button>`]
+        .concat(tagList.map((tag) => `<button type="button" class="filter-pill" data-filter-group="tag" data-filter-value="${escapeHtml(tag)}" aria-pressed="false">${escapeHtml(tag)}</button>`))
         .join('')
     : '';
 
@@ -1331,9 +1334,9 @@ function renderReadingGrid(reading) {
       <input type="search" id="readingSearch" placeholder="Search by title, author, ISBN" autocomplete="off" />
     </label>
     <div class="filter-group">
-      <p class="filter-label">Year</p>
-      <div class="filter-pills" data-filter-group="year">${yearButtons}</div>
-      ${tagList.length ? `<p class="filter-label">Tags</p><div class="filter-pills" data-filter-group="tag">${tagButtons}</div>` : ''}
+      <p class="filter-label" id="reading-year-filter-label">Year</p>
+      <div class="filter-pills" data-filter-group="year" role="group" aria-labelledby="reading-year-filter-label">${yearButtons}</div>
+      ${tagList.length ? `<p class="filter-label" id="reading-tag-filter-label">Tags</p><div class="filter-pills" data-filter-group="tag" role="group" aria-labelledby="reading-tag-filter-label">${tagButtons}</div>` : ''}
     </div>
     <div class="view-toggle" role="group" aria-label="Toggle reading view">
       <button type="button" class="view-pill" data-view="grid" aria-pressed="true">Grid</button>

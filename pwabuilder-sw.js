@@ -63,14 +63,6 @@ if (workbox.navigationPreload.isSupported()) {
   workbox.navigationPreload.enable();
 }
 
-workbox.routing.registerRoute(
-  ({ request }) => request.mode === 'navigate',
-  new workbox.strategies.NetworkFirst({
-    cacheName: CACHE,
-    networkTimeoutSeconds: 4
-  })
-);
-
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith((async () => {

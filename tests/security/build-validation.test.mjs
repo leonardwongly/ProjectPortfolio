@@ -188,9 +188,9 @@ test('sanitizeHref blocks dangerous schemes', () => {
 
 test('sanitizeAssetPath blocks traversal and absolute paths', () => {
   assert.equal(sanitizeAssetPath('book/2025/cover-300.jpg', 'cover'), 'book/2025/cover-300.jpg');
-  assert.throws(() => sanitizeAssetPath('../secret.jpg', 'cover'), /path traversal/);
+  assert.throws(() => sanitizeAssetPath('../secret.jpg', 'cover'), /path traversal|dot segments/);
   assert.throws(() => sanitizeAssetPath('/etc/passwd', 'cover'), /must be relative/);
-  assert.throws(() => sanitizeAssetPath('book/2025/../../secret.jpg', 'cover'), /path traversal/);
+  assert.throws(() => sanitizeAssetPath('book/2025/../../secret.jpg', 'cover'), /path traversal|dot segments/);
 });
 
 test('validateDataCollections accepts valid payload', () => {
@@ -253,6 +253,7 @@ test('renderReadingGrid escapes data attribute filter values', () => {
       title: 'Secure Design',
       author: 'A. Author',
       isbn: '978-1-234567-89-7',
+      cover: 'book/2025/2025-1-300.jpg',
       tags: ['Security" autofocus onfocus="alert(1)']
     }
   ]);
@@ -271,6 +272,7 @@ test('rendered action links include privacy-safe telemetry annotations', () => {
       title: 'Secure Design',
       author: 'A. Author',
       isbn: '978-1-234567-89-7',
+      cover: 'book/2025/2025-1-300.jpg',
       tags: ['Security']
     }
   ]);

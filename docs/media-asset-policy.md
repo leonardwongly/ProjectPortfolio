@@ -9,6 +9,7 @@ This project intentionally keeps book covers, profile images, vendor scripts, an
 - Keep vendored runtime libraries under `js/vendor/` and update them only through the vendor governance scripts.
 - Do not reference external image URLs from generated content unless the build validation is extended to allow and monitor that source.
 - Do not add archive files, originals, or design exports to web-served directories unless they are required for production rendering.
+- Do not keep unused Bootstrap bundles, source maps, OTF fallbacks, icon fonts, or oversized unrendered book originals in the deployed web root.
 
 ## Validation Rules
 
@@ -35,14 +36,17 @@ npm run test:security
 | `js/site.js` | 8 KiB |
 | `pwabuilder-sw.js` | 8 KiB |
 | `book/` | 80 MiB |
-| `fonts/` | 45 MiB |
+| `fonts/` | 512 KiB |
 | `images/` | 8 MiB |
 | `js/vendor/` | 2 MiB |
 | Single book/image/font asset | 20 MiB |
+| Unreferenced book asset | 512 KiB |
+| Rendered reading media | 12 MiB |
+| Rendered reading 2x media | 6 MiB |
 
 ## Cover Handling
 
-The reading renderer caps known large high-DPI cover variants so the generated `srcset` does not encourage oversized downloads. When adding a cover:
+The reading renderer caps high-DPI cover variants so the generated `srcset` does not encourage oversized downloads, and `npm run check:performance` enforces aggregate rendered reading-media budgets in addition to per-file, directory, and unreferenced-source budgets. When adding a cover:
 
 1. Add the original only if it is needed for production.
 2. Generate or provide the optimized `-300` and WebP variants when practical.
