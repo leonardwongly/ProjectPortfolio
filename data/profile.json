@@ -1,7 +1,7 @@
 {
   "person": {
     "name": "Leonard Wong",
-    "job_title": "Software Engineer",
+    "job_title": "AI Software Engineer",
     "location": "Singapore",
     "url": "https://leonardwong.tech/",
     "works_for": "NCS Group",
@@ -24,9 +24,9 @@
     ]
   },
   "hero": {
-    "eyebrow": "Software Engineer · AI & Agentic Development",
+    "eyebrow": "AI Software Engineer · Agentic Development",
     "headline": "Building AI and agentic systems on secure, data-driven platforms.",
-    "lead": "Software Engineer at NCS Group, serving Public Service Commission Singapore as an IT vendor. I build LLM-powered applications and agentic workflows, automate data-heavy processes, and integrate security from the start.",
+    "lead": "AI Software Engineer at NCS Group, serving Public Service Commission Singapore as an IT vendor. I build LLM-powered applications and agentic workflows, automate data-heavy processes, and integrate security from the start.",
     "actions": [
       { "label": "View Resume", "href": "docs/resume.pdf", "variant": "primary" },
       { "label": "Writing", "href": "#writing", "variant": "ghost" },
@@ -39,7 +39,7 @@
     ],
     "current": {
       "label": "Currently",
-      "value": "Software Engineer @ NCS Group",
+      "value": "AI Software Engineer @ NCS Group",
       "sub": "Serving Public Service Commission Singapore as an IT vendor"
     }
   },

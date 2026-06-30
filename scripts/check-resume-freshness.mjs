@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Guards against a stale docs/resume.pdf.
+ * Guards against stale resume artifacts.
  *
- * The PDF itself is non-deterministic (Chromium embeds a creation date and
- * object IDs), so byte comparison is unreliable. Instead we re-render the
- * deterministic resume HTML from the current data files, hash it, and compare
- * against the hash recorded in docs/resume.manifest.json when the PDF was last
- * generated. A mismatch means a source changed without regenerating the PDF.
+ * The PDF and DOCX outputs are non-deterministic, so byte comparison is
+ * unreliable. Instead we re-render the deterministic resume HTML from the
+ * current data files, hash it, and compare against the hash recorded in
+ * docs/resume.manifest.json when the artifacts were last generated. A mismatch
+ * means a source changed without regenerating the resume artifacts.
  *
  * Usage:
  *   node scripts/check-resume-freshness.mjs
@@ -26,15 +26,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 
 const PDF_REL = 'docs/resume.pdf';
+const DOCX_REL = 'docs/resume.docx';
 const MANIFEST_REL = 'docs/resume.manifest.json';
 
 function checkResumeFreshness({ rootDir = projectRoot } = {}) {
   const failures = [];
   const pdfPath = path.join(rootDir, PDF_REL);
+  const docxPath = path.join(rootDir, DOCX_REL);
   const manifestPath = path.join(rootDir, MANIFEST_REL);
 
   if (!fs.existsSync(pdfPath)) {
     failures.push(`Missing ${PDF_REL}. Run \`npm run build:resume\`.`);
+  }
+
+  if (!fs.existsSync(docxPath)) {
+    failures.push(`Missing ${DOCX_REL}. Run \`npm run build:resume\`.`);
   }
 
   if (!fs.existsSync(manifestPath)) {
@@ -56,10 +62,10 @@ function checkResumeFreshness({ rootDir = projectRoot } = {}) {
 
   if (manifest.htmlSha256 !== currentHash) {
     failures.push(
-      'Resume sources changed but docs/resume.pdf was not regenerated.\n' +
+      'Resume sources changed but docs/resume.pdf and docs/resume.docx were not regenerated.\n' +
         `  manifest htmlSha256: ${manifest.htmlSha256}\n` +
         `  current  htmlSha256: ${currentHash}\n` +
-        '  Fix: run `npm run build:resume`, then commit docs/resume.pdf and docs/resume.manifest.json.'
+        '  Fix: run `npm run build:resume`, then commit docs/resume.pdf, docs/resume.docx, and docs/resume.manifest.json.'
     );
   }
 

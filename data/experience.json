@@ -1,8 +1,20 @@
 [
   {
     "org": "NCS Pte. Ltd.",
+    "role": "AI Software Engineer · IT Vendor to Public Service Commission Singapore · Young Leaders · Brand Ambassador",
+    "dates": "April 2026–Present",
+    "impact_bullets": [
+      "Employed by NCS Group while serving Public Service Commission Singapore as an IT vendor.",
+      "Build LLM-powered applications and agentic workflows on secure, data-driven delivery foundations.",
+      "Apply AI Singapore LLM Application Developer and NUS-ISS Responsible AI training to practical AI software delivery.",
+      "Integrate security, stakeholder collaboration, and operational support into AI-enabled systems."
+    ],
+    "tech": ["LLM Applications", "Agentic Workflows", "Responsible AI", "Secure Software Delivery"]
+  },
+  {
+    "org": "NCS Pte. Ltd.",
     "role": "Software Engineer · IT Vendor to Public Service Commission Singapore · Young Leaders · Brand Ambassador",
-    "dates": "Jan 2022–Present",
+    "dates": "Jan 2022–31 March 2026",
     "impact_bullets": [
       "Employed by NCS Group while serving Public Service Commission Singapore as an IT vendor.",
       "Owned end-to-end delivery for a confidential internal project, from build to deployment.",

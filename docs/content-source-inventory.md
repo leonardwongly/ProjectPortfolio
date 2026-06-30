@@ -33,8 +33,9 @@ Until that contract exists, external content should be reviewed and committed by
 | Fact | Source status | Target file | Rendered surface | Gate |
 | --- | --- | --- | --- | --- |
 | Name is Leonard Wong | Present | `data/profile.json` | Hero, schema.org Person | `npm run test:content` |
-| Current role is Software Engineer | Present | `data/profile.json` | Hero, schema.org Person | `npm run test:content` |
+| Current role is AI Software Engineer | Present | `data/profile.json` | Hero, schema.org Person | `npm run test:content` |
 | Current employer context includes NCS Group | Present | `data/profile.json`, `data/experience.json` | Hero, experience, schema.org | `npm run test:content` |
+| NCS Software Engineer role ended on 31 March 2026, followed by AI Software Engineer from April 2026 | Present | `data/experience.json` | Experience, resume | `npm run build`, `npm run check:resume` |
 | Client context includes Public Service Commission Singapore as IT vendor | Present | `data/profile.json`, `data/experience.json` | Hero, experience, schema.org affiliation | `npm run test:content` |
 | Nanyang Polytechnic diploma dates are 2014-2017 | Present | `data/profile.json` | Credentials section | `npm run test:content` |
 | AI/security credentials remain visible and linked where public URLs exist | Present | `data/certifications.json` | Certifications grid | `npm run test:content` |

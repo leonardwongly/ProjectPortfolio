@@ -20,6 +20,7 @@ See `docs/content-source-inventory.md` before adding new public claims. New clai
 3. Review `index.html`, `reading.html`, `offline.html`, and `_headers` for expected generated changes.
 4. Run targeted validation for the surface changed:
    - Profile/content changes: `npm run test:content`
+   - Resume artifact changes: `npm run build:resume` and `npm run check:resume` (`build:resume` requires Playwright Chromium for PDF export and Pandoc for DOCX export)
    - Reading changes: `npm run check:reading`
    - Media or layout-heavy changes: `npm run check:performance`
    - External URL changes: `npm run check:links`
