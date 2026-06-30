@@ -118,6 +118,7 @@ test('freshness check fails when a source changes without regenerating', () => {
       path.join(tempRoot, 'docs/resume.manifest.json')
     );
     fs.writeFileSync(path.join(tempRoot, 'docs/resume.pdf'), 'placeholder'); // presence only
+    fs.writeFileSync(path.join(tempRoot, 'docs/resume.docx'), 'placeholder'); // presence only
 
     // In sync before mutation.
     assert.ok(checkResumeFreshness({ rootDir: tempRoot }).ok);
@@ -130,7 +131,7 @@ test('freshness check fails when a source changes without regenerating', () => {
 
     const result = checkResumeFreshness({ rootDir: tempRoot });
     assert.equal(result.ok, false);
-    assert.match(result.failures.join('\n'), /was not regenerated/);
+    assert.match(result.failures.join('\n'), /were not regenerated/);
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }

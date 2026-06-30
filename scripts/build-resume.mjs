@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Builds a print-optimized resume from structured data and exports a PDF.
+ * Builds a print-optimized resume from structured data and exports PDF/DOCX artifacts.
  *
  * Sources:
  *   - data/resume.json        (resume-only: title, contact, summary, AI highlights, order)
@@ -12,20 +12,24 @@
  * Output:
  *   - artifacts/resume.html       (intermediate, gitignored — handy for inspection)
  *   - docs/resume.pdf             (committed asset linked from the site)
+ *   - docs/resume.docx            (committed editable resume artifact)
  *   - docs/resume.manifest.json   (committed freshness manifest; hash of the rendered HTML)
  *
  * PDF rendering reuses the Playwright Chromium that the integration tests
  * already install, so no extra dependency is introduced. The generated PDF
  * keeps selectable, ATS-readable text (Chromium does not rasterize it).
+ * DOCX rendering uses Pandoc so the editable artifact stays derived from the
+ * same deterministic resume HTML as the PDF.
  *
  * Usage:
- *   node scripts/build-resume.mjs              # HTML + PDF
+ *   node scripts/build-resume.mjs              # HTML + PDF + DOCX
  *   node scripts/build-resume.mjs --html-only  # HTML only (no browser needed)
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,6 +38,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const artifactsDir = path.join(projectRoot, 'artifacts');
 const htmlOutPath = path.join(artifactsDir, 'resume.html');
 const pdfOutPath = path.join(projectRoot, 'docs', 'resume.pdf');
+const docxOutPath = path.join(projectRoot, 'docs', 'resume.docx');
 const manifestOutPath = path.join(projectRoot, 'docs', 'resume.manifest.json');
 
 const RESUME_SOURCE_FILES = ['resume.json', 'profile.json', 'experience.json', 'skills.json', 'certifications.json'];
@@ -504,6 +509,29 @@ async function exportPdf(html) {
   }
 }
 
+function exportDocx() {
+  try {
+    execFileSync(
+      'pandoc',
+      [
+        htmlOutPath,
+        '--from=html',
+        '--to=docx',
+        '--output',
+        docxOutPath,
+        '--metadata',
+        'title=Leonard Wong Resume'
+      ],
+      { stdio: 'pipe' }
+    );
+  } catch (error) {
+    const details = error.stderr?.toString().trim() || error.message;
+    throw new Error(
+      `Could not export DOCX with pandoc. Install pandoc or ensure it is on PATH.\nOriginal error: ${details}`
+    );
+  }
+}
+
 async function main() {
   const htmlOnly = process.argv.includes('--html-only');
 
@@ -523,12 +551,16 @@ async function main() {
 
   fs.mkdirSync(path.dirname(pdfOutPath), { recursive: true });
   await exportPdf(html);
-  const { size } = fs.statSync(pdfOutPath);
-  console.log(`Resume PDF written: ${path.relative(projectRoot, pdfOutPath)} (${(size / 1024).toFixed(1)} KiB)`);
+  const { size: pdfSize } = fs.statSync(pdfOutPath);
+  console.log(`Resume PDF written: ${path.relative(projectRoot, pdfOutPath)} (${(pdfSize / 1024).toFixed(1)} KiB)`);
+
+  exportDocx();
+  const { size: docxSize } = fs.statSync(docxOutPath);
+  console.log(`Resume DOCX written: ${path.relative(projectRoot, docxOutPath)} (${(docxSize / 1024).toFixed(1)} KiB)`);
 
   const manifest = {
     $generatedBy: 'scripts/build-resume.mjs',
-    description: 'Freshness manifest for docs/resume.pdf. htmlSha256 is the hash of the deterministic rendered resume HTML. Run `npm run build:resume` after editing the sources below, then commit docs/resume.pdf and this manifest.',
+    description: 'Freshness manifest for docs/resume.pdf and docs/resume.docx. htmlSha256 is the hash of the deterministic rendered resume HTML. Run `npm run build:resume` after editing the sources below, then commit docs/resume.pdf, docs/resume.docx, and this manifest.',
     htmlSha256: computeResumeHtmlHash(html),
     sources: RESUME_SOURCE_FILES.map((name) => `data/${name}`)
   };
