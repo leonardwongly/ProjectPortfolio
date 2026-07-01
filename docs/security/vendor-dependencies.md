@@ -5,7 +5,7 @@ This file tracks locally vendored browser dependencies that are committed under 
 ## Review policy
 
 - Cadence: monthly
-- Last reviewed: 2026-05-16
+- Last reviewed: 2026-07-01
 - Maximum review age: 45 days
 - Owner: repository maintainers
 
