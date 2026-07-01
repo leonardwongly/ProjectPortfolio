@@ -35,7 +35,7 @@
     "validate:full": "npm run build && npm run check:generated && npm run check:resume && npm run check:hygiene && npm run check:workflows && npm run test:security && npm run check:reading && npm run check:performance && npm run check:telemetry && npm run check:links:preflight && npm run audit:high && npm run validate:vendor && npm run test:integration && npm run check:accessibility"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.11.3",
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "1.60.0",
     "yaml": "^2.9.0"
   }
