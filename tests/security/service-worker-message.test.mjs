@@ -8,9 +8,12 @@ test('service worker validates source and schema before skipWaiting', () => {
   assert.match(content, /function\s+isTrustedWindowClient/);
   assert.match(content, /source\.type\s*!==\s*'window'/);
   assert.match(content, /new URL\(source\.url\)\.origin\s*===\s*self\.location\.origin/);
+  assert.match(content, /function\s+isTrustedMessageOrigin/);
+  assert.match(content, /event\.origin\s*===\s*self\.location\.origin/);
   assert.match(content, /function\s+isSkipWaitingMessage/);
   assert.match(content, /SW_UPDATE_TOKEN_PATTERN/);
   assert.match(content, /!isSkipWaitingMessage\(event\.data\)/);
+  assert.match(content, /!isTrustedMessageOrigin\(event\)/);
   assert.match(content, /!isTrustedWindowClient\(event\.source\)/);
   assert.doesNotMatch(content, /event\.data\s*&&\s*event\.data\.type\s*===\s*'SKIP_WAITING'/);
 });

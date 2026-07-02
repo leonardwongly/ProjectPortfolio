@@ -24,6 +24,10 @@ function isTrustedWindowClient(source) {
   }
 }
 
+function isTrustedMessageOrigin(event) {
+  return event && typeof event.origin === 'string' && event.origin === self.location.origin;
+}
+
 function isSkipWaitingMessage(data) {
   if (!data || typeof data !== 'object') {
     return false;
@@ -42,6 +46,10 @@ function isSkipWaitingMessage(data) {
 
 self.addEventListener('message', (event) => {
   if (!isSkipWaitingMessage(event.data)) {
+    return;
+  }
+
+  if (!isTrustedMessageOrigin(event)) {
     return;
   }
 
