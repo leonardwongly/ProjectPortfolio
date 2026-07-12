@@ -1,6 +1,11 @@
 [
   {
     "id": "agentforge",
+    "featured": true,
+    "featured_order": 1,
+    "status": "active",
+    "capabilities": ["Agentic AI", "Security Governance", "Platform Engineering"],
+    "case_study": "/case-study-agentforge.html",
     "title": "AgentForge Merge Guard",
     "timeframe": "2026",
     "problem": "High-risk and agent-assisted pull requests need change control that is deterministic and auditable, not dependent on manual review alone.",
@@ -12,6 +17,11 @@
   },
   {
     "id": "agentic",
+    "featured": true,
+    "featured_order": 2,
+    "status": "active",
+    "capabilities": ["Agentic AI", "Platform Engineering", "Data Systems"],
+    "case_study": "/case-study-agentic.html",
     "title": "Agentic Control Plane",
     "timeframe": "2026",
     "problem": "Autonomous and human-in-the-loop work needs a governed control plane for goals, commitments, approvals, and long-running automations.",
@@ -23,6 +33,11 @@
   },
   {
     "id": "apple-calendar-mcp",
+    "featured": true,
+    "featured_order": 3,
+    "status": "active",
+    "capabilities": ["Developer Tooling", "Local-First Software", "Safe Automation"],
+    "case_study": "/case-study-apple-calendar-mcp.html",
     "title": "Apple Calendar MCP Server",
     "timeframe": "2026",
     "problem": "AI assistants and command-line workflows lacked a safe, local way to read and manage Apple Calendar on macOS.",
@@ -34,6 +49,9 @@
   },
   {
     "id": "human-operating-model",
+    "featured": false,
+    "status": "active",
+    "capabilities": ["Agentic AI", "Responsible AI", "Developer Tooling"],
     "title": "Human Operating Model",
     "timeframe": "2026",
     "problem": "Autonomous agents struggle with ambiguous, real-world tasks that require judgment, prioritization, and end-to-end ownership.",
@@ -45,6 +63,9 @@
   },
   {
     "id": "myipsw",
+    "featured": false,
+    "status": "maintained",
+    "capabilities": ["Platform Engineering", "API Integration", "Public Web Product"],
     "title": "myIPSW",
     "timeframe": "2020–2026",
     "problem": "Finding official Apple firmware (IPSW/OTA) downloads across devices was fragmented and manual.",
@@ -56,6 +77,9 @@
   },
   {
     "id": "pricehikesg",
+    "featured": false,
+    "status": "completed",
+    "capabilities": ["Data Aggregation", "Public Web Product", "JavaScript"],
     "title": "PriceHikeSG",
     "timeframe": "2024",
     "problem": "Upcoming price increases across Singapore were hard to track in one place.",
@@ -67,6 +91,9 @@
   },
   {
     "id": "portfolio",
+    "featured": false,
+    "status": "active",
+    "capabilities": ["Secure Delivery", "Policy as Code", "Static Site Generation"],
     "title": "This Portfolio — Governed Static Delivery",
     "timeframe": "2020–2026",
     "problem": "A personal site is the easiest place to cut corners: hand-edited HTML, unvetted scripts, no tests. I wanted the opposite — a portfolio that demonstrates the same secure-delivery and AI-governance practices I apply to client work, on a codebase anyone can inspect.",

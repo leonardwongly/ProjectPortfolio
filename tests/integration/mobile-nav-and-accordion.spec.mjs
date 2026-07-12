@@ -15,7 +15,7 @@ test.describe('mobile navigation', () => {
 
     const toggle = page.locator('.navbar-toggler');
     const collapsePanel = page.locator('#navbarCollapse');
-    const workLink = page.locator('#navbarCollapse .nav-link[href$="#work"]');
+    const homeLink = page.locator('#navbarCollapse .nav-link[href$="#home"]');
 
     await expect(toggle).toBeVisible();
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
@@ -26,7 +26,7 @@ test.describe('mobile navigation', () => {
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await expect(collapsePanel).toHaveClass(/\bshow\b/);
 
-    await workLink.click();
+    await homeLink.click();
 
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await expect(collapsePanel).not.toHaveClass(/\bshow\b/);
@@ -78,12 +78,12 @@ test.describe('desktop navigation', () => {
 
     const toggle = page.locator('.navbar-toggler');
     const collapsePanel = page.locator('#navbarCollapse');
-    const workLink = page.locator('#navbarCollapse .nav-link[href$="#work"]');
+    const workLink = page.locator('#navbarCollapse .nav-link[href="/work.html"]');
 
     await expect(toggle).not.toBeVisible();
     await expect(collapsePanel).toBeVisible();
     await expect(workLink).toBeVisible();
-    await expect(workLink).toHaveAttribute('href', '/index.html#work');
+    await expect(workLink).toHaveAttribute('href', '/work.html');
   });
 });
 
@@ -143,7 +143,7 @@ test.describe('command palette', () => {
     await page.locator('[data-cmdk-open]').first().click();
 
     const input = page.locator('#cmdkInput');
-    const workOption = page.getByRole('option', { name: /work selected projects/i });
+    const workOption = page.getByRole('option', { name: /flagship work three selected systems/i });
 
     await expect(input).toHaveAttribute('aria-activedescendant', /cmdk-option-1/);
 
@@ -174,6 +174,36 @@ test.describe('command palette', () => {
     await expect(empty).toBeVisible();
     await expect(input).toHaveAttribute('aria-describedby', 'cmdkEmpty');
     await expect(input).not.toHaveAttribute('aria-activedescendant', /.*/);
+  });
+});
+
+test.describe('portfolio evidence hierarchy', () => {
+  test('home presents three flagship projects and linked proof points', async ({ page }) => {
+    await page.goto('/index.html');
+
+    await expect(page.locator('#work .featured-card')).toHaveCount(3);
+    await expect(page.locator('.hero-highlights a.highlight-card')).toHaveCount(3);
+    await expect(page.getByRole('link', { name: 'View all 7 projects' })).toHaveAttribute('href', '/work.html');
+  });
+
+  test('project archive presents the complete inventory with explicit status', async ({ page }) => {
+    await page.goto('/work.html');
+
+    await expect(page.locator('#projects .featured-card')).toHaveCount(7);
+    await expect(page.locator('#projects .project-status')).toHaveCount(7);
+    await expect(page.getByRole('heading', { name: 'Systems, tools, and public-interest products' })).toBeVisible();
+  });
+
+  test('flagship case studies expose architecture, evidence, and tradeoffs', async ({ page }) => {
+    await page.goto('/case-study-agentforge.html');
+
+    await expect(page.getByRole('heading', { name: 'AgentForge Merge Guard', level: 1 })).toBeVisible();
+    await expect(page.locator('.architecture-flow li')).toHaveCount(5);
+    await expect(page.locator('.decision-card')).toHaveCount(4);
+    await expect(page.locator('#evidence')).toBeVisible();
+    await expect(page.locator('#tradeoffs')).toBeVisible();
+    await expect(page.locator('.navbar .nav-link[href="/work.html"]')).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('link', { name: 'Next case study' })).toHaveAttribute('href', '/case-study-agentic.html');
   });
 });
 

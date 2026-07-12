@@ -11,9 +11,14 @@ const MiB = 1024 * KiB;
 
 const FILE_BUDGETS = [
   { path: 'index.html', maxBytes: 90 * KiB },
+  { path: 'work.html', maxBytes: 90 * KiB },
+  { path: 'case-study-agentforge.html', maxBytes: 48 * KiB },
+  { path: 'case-study-agentic.html', maxBytes: 48 * KiB },
+  { path: 'case-study-apple-calendar-mcp.html', maxBytes: 48 * KiB },
   { path: 'reading.html', maxBytes: 140 * KiB },
   { path: 'offline.html', maxBytes: 20 * KiB },
   { path: 'css/custom.css', maxBytes: 50 * KiB },
+  { path: 'css/case-study.css', maxBytes: 8 * KiB },
   { path: 'js/main.js', maxBytes: 32 * KiB },
   { path: 'js/site.js', maxBytes: 8 * KiB },
   { path: 'pwabuilder-sw.js', maxBytes: 8 * KiB }

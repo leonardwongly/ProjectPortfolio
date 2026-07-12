@@ -14,12 +14,18 @@ const WORKFLOW_FILES = fs.readdirSync('.github/workflows')
 
 const SOURCE_HTML_FILES = [
   'src/index.html',
+  'src/work.html',
+  'src/case-study.html',
   'src/reading.html',
   'src/offline.html'
 ];
 
 const GENERATED_HTML_FILES = [
   'index.html',
+  'work.html',
+  'case-study-agentforge.html',
+  'case-study-agentic.html',
+  'case-study-apple-calendar-mcp.html',
   'reading.html',
   'offline.html'
 ];

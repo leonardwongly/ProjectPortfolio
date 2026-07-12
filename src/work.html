@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link rel="manifest" href="manifest.json"/>
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/custom.css"/>
+    <link rel="preload" href="fonts/SF-Pro-Display-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/SF-Pro-Display-Semibold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png"/>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png"/>
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+    <script src="js/main.js" defer></script>
+    <script src="js/site.js" defer></script>
+    <noscript>Your browser does not support JavaScript!</noscript>
+    <meta name="description" content="Projects by Leonard Wong across governed AI, developer tooling, data products, and secure software delivery."/>
+    <link rel="canonical" href="https://leonardwong.tech/work.html"/>
+    <meta property="og:title" content="Leonard Wong | Project Archive"/>
+    <meta property="og:description" content="Systems, tools, and public-interest products built by Leonard Wong."/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="https://leonardwong.tech/work.html"/>
+    <meta property="og:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
+    <meta property="og:image:alt" content="Portrait of Leonard Wong"/>
+    <meta property="og:site_name" content="Leonard Wong"/>
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:title" content="Leonard Wong | Project Archive"/>
+    <meta name="twitter:description" content="Systems, tools, and public-interest products built by Leonard Wong."/>
+    <meta name="twitter:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
+    <title>Leonard Wong | Project Archive</title>
+</head>
+<body class="page-bg">
+{{NAV}}
+
+<main id="content" class="container-xxl">
+    <h1 class="visually-hidden">Leonard Wong Project Archive</h1>
+    {{PROJECT_ARCHIVE}}
+</main>
+
+{{FOOTER}}
+</body>
+</html>

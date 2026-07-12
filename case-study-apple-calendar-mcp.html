@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link rel="manifest" href="manifest.json"/>
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/custom.css"/>
+    <link rel="stylesheet" href="css/case-study.css"/>
+    <link rel="preload" href="fonts/SF-Pro-Display-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/SF-Pro-Display-Semibold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png"/>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png"/>
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+    <script src="js/main.js" defer></script>
+    <script src="js/site.js" defer></script>
+    <noscript>Your browser does not support JavaScript!</noscript>
+    <meta name="description" content="A native Swift bridge that gives AI assistants and command-line workflows controlled access to Apple Calendar without sending calendar data to a hosted intermediary."/>
+    <link rel="canonical" href="https://leonardwong.tech/case-study-apple-calendar-mcp.html"/>
+    <meta property="og:title" content="Apple Calendar MCP Server | Case Study"/>
+    <meta property="og:description" content="A native Swift bridge that gives AI assistants and command-line workflows controlled access to Apple Calendar without sending calendar data to a hosted intermediary."/>
+    <meta property="og:type" content="article"/>
+    <meta property="og:url" content="https://leonardwong.tech/case-study-apple-calendar-mcp.html"/>
+    <meta property="og:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
+    <meta property="og:image:alt" content="Portrait of Leonard Wong"/>
+    <meta property="og:site_name" content="Leonard Wong"/>
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:title" content="Apple Calendar MCP Server | Case Study"/>
+    <meta name="twitter:description" content="A native Swift bridge that gives AI assistants and command-line workflows controlled access to Apple Calendar without sending calendar data to a hosted intermediary."/>
+    <meta name="twitter:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
+    <title>Apple Calendar MCP Server | Leonard Wong</title>
+</head>
+<body class="page-bg case-study-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<nav class="navbar navbar-expand-lg fixed-top navbar-dark glass-nav" aria-label="Main navigation">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/index.html">Leonard Wong</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="navbar-collapse collapse" id="navbarCollapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#home">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/work.html">Work</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#site-engineering">Engineering</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#skills">Skills</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#experience">Experience</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#writing">Writing</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/reading.html">Reading</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#contact">Contact</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">Resume</a>
+                </li>
+            </ul>
+            <div class="navbar-actions d-flex align-items-center gap-2 mt-3 mt-lg-0 ms-lg-auto">
+                <button class="cmdk-trigger" type="button" data-cmdk-open aria-haspopup="dialog" aria-controls="commandPalette">
+                    <span>Jump to</span>
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+                    <span class="theme-toggle__label">Theme</span>
+                    <span class="theme-toggle__state" data-theme-label>Light</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="cmdk" id="commandPalette" hidden role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="cmdk__panel">
+        <input class="cmdk__input" id="cmdkInput" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Jump to a section, page, or action…" aria-label="Filter commands"
+               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cmdkList"/>
+        <ul class="cmdk__list" id="cmdkList" role="listbox" aria-label="Command results">
+            <li role="presentation"><a class="cmdk__item" href="/index.html#home" role="option" aria-selected="false">home<span class="cmdk__hint">intro</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#work" role="option" aria-selected="false">flagship work<span class="cmdk__hint">three selected systems</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/work.html" role="option" aria-selected="false">all projects<span class="cmdk__hint">project archive</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#site-engineering" role="option" aria-selected="false">engineering<span class="cmdk__hint">how this site is built</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#skills" role="option" aria-selected="false">skills<span class="cmdk__hint">stack</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#experience" role="option" aria-selected="false">experience<span class="cmdk__hint">timeline</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#writing" role="option" aria-selected="false">writing<span class="cmdk__hint">publications</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#credentials" role="option" aria-selected="false">credentials<span class="cmdk__hint">education + certs</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#contact" role="option" aria-selected="false">contact<span class="cmdk__hint">get in touch</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/reading.html" role="option" aria-selected="false">reading<span class="cmdk__hint">bookshelf</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" role="option" aria-selected="false">resume.pdf<span class="cmdk__hint">open</span></a></li>
+            <li role="presentation"><button class="cmdk__item" type="button" data-cmdk-action="theme" role="option" aria-selected="false">toggle theme<span class="cmdk__hint">dark / light</span></button></li>
+        </ul>
+        <p class="cmdk__empty" id="cmdkEmpty" hidden role="status" aria-live="polite" aria-atomic="true">no matches</p>
+    </div>
+</div>
+
+
+<main id="content" class="container-xxl">
+
+<article class="case-study" data-case-study="apple-calendar-mcp">
+  <header class="case-hero section-block">
+    <nav class="case-breadcrumb" aria-label="Breadcrumb">
+      <a href="/work.html">Project archive</a><span aria-hidden="true">/</span><span>Apple Calendar MCP Server</span>
+    </nav>
+    <div class="case-hero__grid">
+      <div>
+        <p class="eyebrow">Case Study 03 · Local Automation</p>
+        <h1>Apple Calendar MCP Server</h1>
+        <p class="case-summary">A native Swift bridge that gives AI assistants and command-line workflows controlled access to Apple Calendar without sending calendar data to a hosted intermediary.</p>
+      </div>
+      <dl class="case-facts">
+        <div><dt>Role</dt><dd>Designer and principal engineer</dd></div>
+        <div><dt>Timeframe</dt><dd>2026 · Active</dd></div>
+        <div><dt>Source</dt><dd><a href="https://github.com/leonardwongly/AppleCalendarMCPServer" target="_blank" rel="noopener noreferrer">View repository</a></dd></div>
+      </dl>
+    </div>
+  </header>
+
+  <section class="case-section" id="challenge">
+    <div class="case-section__head">
+      <span class="case-index">01 / CHALLENGE</span>
+      <div><h2>Designing for accountable autonomy</h2><p>Calendar automation is useful but sensitive: the system must cross macOS privacy permissions, support both human and agent workflows, and prevent a convenient write API from becoming unrestricted authority over every calendar.</p></div>
+    </div>
+  </section>
+
+  <section class="case-section" id="architecture">
+    <div class="case-section__head">
+      <span class="case-index">02 / ARCHITECTURE</span>
+      <div><h2>A bounded path from intent to evidence</h2><p>A single Swift executable supports MCP, CLI, and native app modes. Each mode shares typed command models and one calendar-service boundary, which applies macOS permission, read-only policy, and calendar allowlist checks before EventKit writes.</p></div>
+    </div>
+    <ol class="architecture-flow" aria-label="Architecture flow"><li><strong>Interface</strong><p>MCP JSON-RPC, CLI commands, and the native app translate user intent into typed requests.</p></li><li><strong>Validate</strong><p>Strict argument parsing rejects unknown fields, invalid dates, unsupported URLs, and excessive search ranges.</p></li><li><strong>Authorize</strong><p>Server configuration enforces read-only mode and an optional exact calendar-ID write allowlist.</p></li><li><strong>Execute</strong><p>A shared EventKit service lists calendars, searches events, and performs allowed create, update, or delete operations.</p></li><li><strong>Return</strong><p>Structured MCP responses and JSON or table CLI output make results useful to both programs and people.</p></li></ol>
+  </section>
+
+  <section class="case-section" id="ownership">
+    <div class="case-section__head">
+      <span class="case-index">03 / OWNERSHIP</span>
+      <div><h2>What I owned and shaped</h2><p>Product boundaries, system structure, delivery controls, and the evidence needed to operate the system responsibly.</p></div>
+    </div>
+    <div class="case-grid">
+      <div class="case-panel"><h3>Scope and execution</h3><ul class="case-list"><li>Designed one Swift package to serve MCP clients, shell users, and a native macOS operator interface.</li><li>Implemented EventKit access, permission handling, typed request models, strict CLI parsing, MCP tool schemas, and structured output.</li><li>Added write controls that can block all mutations or restrict them to explicitly allowlisted calendar identifiers.</li><li>Built configuration guidance and app-generated MCP client settings so the security posture is visible and reproducible.</li></ul></div>
+      <div class="case-panel"><h3>Controls built into the system</h3><ul class="case-list"><li>Native macOS Calendar permission through EventKit</li><li>Environment-controlled read-only mode for blocking create, update, and delete</li><li>Optional exact calendar-ID allowlist for write operations</li><li>Unknown-field rejection and typed request validation</li><li>366-day maximum search range and timezone-aware date validation</li><li>HTTP or HTTPS restriction for event URL values</li></ul></div>
+    </div>
+  </section>
+
+  <section class="case-section" id="decisions">
+    <div class="case-section__head">
+      <span class="case-index">04 / DECISIONS</span>
+      <div><h2>Engineering choices that define the product</h2><p>The differentiating decisions are less about framework selection and more about authority, state, failure behavior, and operational truth.</p></div>
+    </div>
+    <div class="decision-grid">
+      <article class="decision-card">
+        <span class="decision-card__number">DECISION 01</span>
+        <h3>Local-first boundary</h3>
+        <p>Calendar access stays inside the macOS process and EventKit permission model; no hosted calendar proxy is required.</p>
+      </article>
+      <article class="decision-card">
+        <span class="decision-card__number">DECISION 02</span>
+        <h3>One service, three interfaces</h3>
+        <p>MCP, CLI, and app workflows share the same typed domain and authorization boundary instead of implementing divergent write paths.</p>
+      </article>
+      <article class="decision-card">
+        <span class="decision-card__number">DECISION 03</span>
+        <h3>Write scope is configuration</h3>
+        <p>Read-only mode and exact calendar-ID allowlisting turn mutation authority into an explicit operator decision.</p>
+      </article>
+      <article class="decision-card">
+        <span class="decision-card__number">DECISION 04</span>
+        <h3>Structured failure</h3>
+        <p>Permission, validation, calendar, event, and policy failures are modeled and returned instead of being flattened into ambiguous command errors.</p>
+      </article></div>
+  </section>
+
+  <section class="case-section" id="evidence">
+    <div class="case-section__head">
+      <span class="case-index">05 / EVIDENCE</span>
+      <div><h2>How the implementation is validated</h2><p>Evidence is layered across deterministic tests, integration boundaries, operational checks, and documented limitations.</p></div>
+    </div>
+    <div class="case-grid">
+      <div class="case-panel"><h3>Validation coverage</h3><ul class="case-list"><li>Swift package tests covering models, CLI parsing, MCP request handling, configuration, and calendar-service behavior</li><li>Read-only and write-allowlist policy tests around create, update, and delete operations</li><li>CLI output checks for human-readable tables and JSON automation output</li><li>Live permission-aware validation against Apple Calendar on macOS</li><li>Build and release checks for the executable and native app surfaces</li></ul></div>
+      <div class="case-panel case-result"><h3>Delivered outcomes</h3><ul class="case-list"><li>One local tool supports calendar listing, event search, creation, updates, and deletion over MCP and the command line.</li><li>Operators can inspect and change the write policy from the native app and copy a ready-to-use MCP configuration.</li><li>Automation can be constrained to read-only operation or a specific subset of writable calendars.</li><li>The design preserves the system macOS permission prompt and keeps calendar data out of a hosted middleware layer.</li></ul></div>
+    </div>
+  </section>
+
+  <section class="case-section" id="tradeoffs">
+    <div class="case-section__head">
+      <span class="case-index">06 / TRADEOFFS</span>
+      <div><h2>Honest boundaries and the next iteration</h2><p>The system is presented with its operating constraints intact. Those boundaries determine what should be strengthened next.</p></div>
+    </div>
+    <div class="case-grid">
+      <div class="case-panel case-limit"><h3>Limitations</h3><ul class="case-list"><li>The tool is macOS-specific because it relies on EventKit and Apple Calendar permissions.</li><li>The operating system permission grant is shared by the server and native app process boundary.</li><li>Calendar identifiers and provider behavior remain subject to EventKit and the configured accounts on the local Mac.</li><li>Safe writes still depend on the operator choosing an appropriate read-only or allowlist configuration.</li></ul></div>
+      <div class="case-panel"><h3>Next steps</h3><ul class="case-list"><li>Broaden live regression coverage across calendar account types and recurring-event operations.</li><li>Improve operator-facing diagnostics for permission and configuration mismatches.</li><li>Keep release packaging and client-configuration guidance aligned as MCP hosts evolve.</li></ul></div>
+    </div>
+  </section>
+
+  <aside class="case-next section-block" aria-label="Next case study">
+    <div><p class="eyebrow">Continue exploring</p><h2>AgentForge Merge Guard</h2><p>A GitHub-first change-control system that makes high-risk and agent-assisted pull requests deterministic, reviewable, and auditable.</p></div>
+    <div class="case-next__actions">
+      <a class="btn btn-primary" href="/case-study-agentforge.html">Next case study</a>
+      <a class="btn btn-ghost" href="/work.html">All projects</a>
+    </div>
+  </aside>
+</article>
+</main>
+
+<div class="container section-block">
+    <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+        <div class="col-md-6 d-flex align-items-center">
+            <span class="text-muted">© 2020 - 2026 Leonard Wong</span>
+        </div>
+        <div class="col-md-6 d-flex align-items-center justify-content-end">
+            <span class="text-muted">Based in Singapore</span>
+        </div>
+        <div class="col-12 mt-3">
+            <ul class="list-unstyled d-flex flex-wrap align-items-center social-links justify-content-end">
+                <li>
+                    <a class="social-icon social-icon--github" href="https://github.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="GitHub">
+                        <svg class="social-icon__graphic" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                            <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a class="social-icon social-icon--threads" href="https://threads.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Threads">
+                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+                            <path d="M8.2 10.6c.2-1.8 1.4-3 3.4-3 2.3 0 3.9 1.4 3.9 4.1 0 2.6-1.6 4.2-3.9 4.2-1.5 0-2.6-.6-3.2-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                            <path d="M8.2 10.6c0 1.8 1.4 2.3 3 2.3 1.4 0 2.4-.6 2.4-1.6 0-1.1-.8-1.6-2.1-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a class="social-icon social-icon--mastodon" href="https://mastodon.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Mastodon">
+                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 4.2c-4.4 0-6.8 1.6-6.8 5.5v4.2c0 4 2.4 5.3 4.8 5.6 1.7.2 3.4.2 5.1 0 2.4-.3 4.8-1.6 4.8-5.6V9.7c0-3.9-2.6-5.5-7-5.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                            <path d="M8.7 9.9v3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                            <path d="M15.3 9.9v3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                            <path d="M8.7 9.9c0-1.3.9-2.1 2.3-2.1 1 0 1.7.4 2.1 1.1.4-.7 1.1-1.1 2.1-1.1 1.4 0 2.3.8 2.3 2.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a class="social-icon social-icon--linkedin" href="https://linkedin.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn">
+                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
+                            <circle cx="8" cy="8.5" r="1.4" fill="currentColor"></circle>
+                            <rect x="6.6" y="10.5" width="2.8" height="7.1" rx="1.2" fill="currentColor"></rect>
+                            <path fill="currentColor" d="M12.6 10.5h2.1c1.7 0 2.9 1 2.9 2.8V18h-2.7v-4.6c0-.8-.4-1.3-1.1-1.3-.7 0-1.1.5-1.1 1.3V18h-2.8v-7.5h2.7Z"></path>
+                        </svg>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </footer>
+</div>
+
+</body>
+</html>

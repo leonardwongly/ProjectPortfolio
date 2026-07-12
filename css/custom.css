@@ -1339,6 +1339,16 @@ footer {
   gap: 0.35rem;
 }
 
+a.highlight-card {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.highlight-card:hover {
+  border-color: var(--accent-cool);
+  transform: translateY(-2px);
+}
+
 .highlight-label {
   font-size: 0.62rem;
   text-transform: uppercase;
@@ -1438,6 +1448,77 @@ footer {
 
 .featured-links a {
   color: var(--accent-cool);
+}
+
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.archive-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.archive-count {
+  display: grid;
+  flex: 0 0 auto;
+  margin: 0;
+  text-align: right;
+  color: var(--ink-quiet);
+}
+
+.archive-count strong {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  color: var(--syntax-green);
+}
+
+.project-status {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--syntax-green);
+  text-transform: capitalize;
+}
+
+.project-status span {
+  color: var(--ink-quiet);
+}
+
+.capability-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.capability-row span {
+  padding: 0.25rem 0.55rem;
+  border-left: 2px solid var(--syntax-green);
+  background: var(--paper-soft);
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 575.98px) {
+  .archive-header {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .archive-count {
+    grid-auto-flow: column;
+    align-items: baseline;
+    gap: 0.6rem;
+    text-align: left;
+  }
 }
 
 .article-card {

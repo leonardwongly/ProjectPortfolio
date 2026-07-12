@@ -13,6 +13,14 @@ function readGeneratedIndex() {
   return fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 }
 
+function readGeneratedWork() {
+  return fs.readFileSync(path.join(projectRoot, 'work.html'), 'utf8');
+}
+
+function readGeneratedCaseStudy(slug) {
+  return fs.readFileSync(path.join(projectRoot, slug), 'utf8');
+}
+
 function htmlIncludesText(html, value) {
   return html.includes(value) || html.includes(value.replace(/&/g, '&amp;').replace(/'/g, '&#39;'));
 }
@@ -99,4 +107,52 @@ test('generated index resolves profile tokens and exposes schema.org metadata', 
   assert.match(html, /"name": "Public Service Commission Singapore"/);
   assert.match(html, /"@type": "Article"/);
   assert.match(html, /"@type": "ScholarlyArticle"/);
+});
+
+test('home prioritizes exactly three flagship projects and archive retains every project', () => {
+  const projects = readJson('data/featured-projects.json');
+  const index = readGeneratedIndex();
+  const work = readGeneratedWork();
+  const homeCards = index.match(/<article class="featured-card"/g) || [];
+  const archiveCards = work.match(/<article class="featured-card"/g) || [];
+
+  assert.equal(homeCards.length, 3);
+  assert.equal(archiveCards.length, projects.length);
+  assert.match(index, /href="\/work\.html"/);
+  assert.match(work, /Project Archive/);
+
+  projects.forEach((project) => {
+    assert.ok(work.includes(project.title), `missing archived project: ${project.title}`);
+    assert.ok(work.includes(project.status), `missing project status: ${project.title}`);
+  });
+
+  const featured = projects
+    .filter((project) => project.featured)
+    .sort((a, b) => a.featured_order - b.featured_order);
+  const positions = featured.map((project) => index.indexOf(project.title));
+  assert.ok(positions.every((position) => position >= 0), 'missing flagship project on home page');
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions, 'flagship projects are not rendered in configured order');
+});
+
+test('generated flagship case studies preserve governed evidence and cross-links', () => {
+  const projects = readJson('data/featured-projects.json');
+  const studies = readJson('data/case-studies.json');
+  const work = readGeneratedWork();
+
+  assert.equal(studies.length, 3);
+  studies.forEach((study) => {
+    const project = projects.find((item) => item.id === study.project_id);
+    assert.ok(project?.featured, `case study is not tied to a featured project: ${study.id}`);
+    assert.equal(project.case_study, `/${study.slug}`);
+    assert.match(work, new RegExp(`href="/${study.slug.replace('.', '\\.')}"`));
+
+    const html = readGeneratedCaseStudy(study.slug);
+    assert.ok(html.includes(study.title), `missing case-study title: ${study.title}`);
+    assert.ok(htmlIncludesText(html, study.challenge), `missing challenge: ${study.title}`);
+    assert.equal((html.match(/<li><strong>/g) || []).length, study.architecture.length);
+    assert.equal((html.match(/class="decision-card"/g) || []).length, study.decisions.length);
+    assert.match(html, /id="tradeoffs"/);
+    assert.match(html, /aria-label="Next case study"/);
+    assert.doesNotMatch(html, /\{\{[A-Z_]+}}/);
+  });
 });

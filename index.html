@@ -396,7 +396,7 @@
                     <a class="nav-link" href="/index.html#home">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/index.html#work">Work</a>
+                    <a class="nav-link" href="/work.html">Work</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/index.html#site-engineering">Engineering</a>
@@ -441,7 +441,8 @@
                role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cmdkList"/>
         <ul class="cmdk__list" id="cmdkList" role="listbox" aria-label="Command results">
             <li role="presentation"><a class="cmdk__item" href="/index.html#home" role="option" aria-selected="false">home<span class="cmdk__hint">intro</span></a></li>
-            <li role="presentation"><a class="cmdk__item" href="/index.html#work" role="option" aria-selected="false">work<span class="cmdk__hint">selected projects</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#work" role="option" aria-selected="false">flagship work<span class="cmdk__hint">three selected systems</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/work.html" role="option" aria-selected="false">all projects<span class="cmdk__hint">project archive</span></a></li>
             <li role="presentation"><a class="cmdk__item" href="/index.html#site-engineering" role="option" aria-selected="false">engineering<span class="cmdk__hint">how this site is built</span></a></li>
             <li role="presentation"><a class="cmdk__item" href="/index.html#skills" role="option" aria-selected="false">skills<span class="cmdk__hint">stack</span></a></li>
             <li role="presentation"><a class="cmdk__item" href="/index.html#experience" role="option" aria-selected="false">experience<span class="cmdk__hint">timeline</span></a></li>
@@ -463,23 +464,23 @@
   <div class="hero-grid">
     <div class="hero-copy">
       <p class="eyebrow">AI Software Engineer · Agentic Development</p>
-      <h1>Building AI and agentic systems on secure, data-driven platforms.</h1>
-      <p class="lead">AI Software Engineer at NCS Group, serving Public Service Commission Singapore as an IT vendor. I build LLM-powered applications and agentic workflows, automate data-heavy processes, and integrate security from the start.</p>
-      <div class="hero-actions"><a class="btn btn-primary" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="view_resume" data-telemetry-destination="pdf">View Resume</a><a class="btn btn-ghost" href="#writing" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="writing" data-telemetry-destination="section">Writing</a><a class="btn btn-ghost" href="#contact" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="contact" data-telemetry-destination="section">Contact</a></div>
+      <h1>Building governed AI systems where deterministic controls manage risk.</h1>
+      <p class="lead">AI Software Engineer at NCS Group, serving Public Service Commission Singapore as an IT vendor. I build agentic workflows and data-heavy platforms that keep security, explainability, and human accountability inside the delivery loop.</p>
+      <div class="hero-actions"><a class="btn btn-primary" href="#work" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="view_flagship_work" data-telemetry-destination="section">View Flagship Work</a><a class="btn btn-ghost" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="download_resume" data-telemetry-destination="pdf">Download Resume</a><a class="btn btn-ghost" href="https://linkedin.leonardwong.tech/" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="connect_on_linkedin" data-telemetry-destination="external">Connect on LinkedIn</a></div>
       <div class="hero-highlights">
 
-        <div class="highlight-card">
-          <span class="highlight-label">Focus</span>
-          <span class="highlight-value">AI · Agentic · Security</span>
-        </div>
-        <div class="highlight-card">
-          <span class="highlight-label">Strength</span>
-          <span class="highlight-value">Data Automation</span>
-        </div>
-        <div class="highlight-card">
-          <span class="highlight-label">Now</span>
-          <span class="highlight-value">NCS · PSC Singapore</span>
-        </div>
+        <a class="highlight-card" href="#experience">
+          <span class="highlight-label">Scale</span>
+          <span class="highlight-value">150M+ rows automated</span>
+        </a>
+        <a class="highlight-card" href="#experience">
+          <span class="highlight-label">Security Research</span>
+          <span class="highlight-value">88 projects scanned</span>
+        </a>
+        <a class="highlight-card" href="#site-engineering">
+          <span class="highlight-label">Delivery Model</span>
+          <span class="highlight-value">AI explains · humans approve</span>
+        </a>
       </div>
     </div>
     <div class="hero-visual">
@@ -501,8 +502,8 @@
 <section class="section-block" id="work">
   <div class="section-header">
     <p class="eyebrow">Featured Work</p>
-    <h2>Selected projects that highlight impact</h2>
-    <p class="section-lede">A focused set of recent work across AI agent governance, platform tooling, and security.</p>
+    <h2>Three systems that show how I work</h2>
+    <p class="section-lede">Flagship work across governed AI, durable agent workflows, and safe local automation.</p>
   </div>
   <div class="featured-grid">
 
@@ -510,6 +511,7 @@
         <header>
           <p class="featured-kicker">2026</p>
           <h3>AgentForge Merge Guard</h3>
+
         </header>
         <div class="featured-block">
           <span class="block-label">Problem</span>
@@ -519,13 +521,15 @@
           <span class="block-label">Impact</span>
           <p>Built a GitHub-first PR governance service with policy-as-code rules, deterministic detectors, required evidence, reviewer routing, check runs, and durable Change Control Records — deterministic checks decide, AI explains, humans approve risk.</p>
         </div>
+
         <div class="chip-row"><span class="chip">TypeScript</span><span class="chip">GitHub Apps</span><span class="chip">Policy as Code</span><span class="chip">CI/CD Governance</span></div>
-        <div class="featured-links"><a href="https://github.com/leonardwongly/AgentForge" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+        <div class="featured-links"><a href="/case-study-agentforge.html">Read case study</a><a href="https://github.com/leonardwongly/AgentForge" target="_blank" rel="noopener noreferrer">GitHub</a></div>
       </article>
       <article class="featured-card" data-tags="TypeScript,Next.js,PostgreSQL,Background Workers">
         <header>
           <p class="featured-kicker">2026</p>
           <h3>Agentic Control Plane</h3>
+
         </header>
         <div class="featured-block">
           <span class="block-label">Problem</span>
@@ -535,13 +539,15 @@
           <span class="block-label">Impact</span>
           <p>Built a TypeScript control plane (Next.js dashboard/API plus a worker process) around a bounded execution loop with risk classification, durable worker jobs, and Postgres-backed state.</p>
         </div>
+
         <div class="chip-row"><span class="chip">TypeScript</span><span class="chip">Next.js</span><span class="chip">PostgreSQL</span><span class="chip">Background Workers</span></div>
-        <div class="featured-links"><a href="https://github.com/leonardwongly/agentic" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+        <div class="featured-links"><a href="/case-study-agentic.html">Read case study</a><a href="https://github.com/leonardwongly/agentic" target="_blank" rel="noopener noreferrer">GitHub</a></div>
       </article>
       <article class="featured-card" data-tags="Swift,EventKit,MCP,macOS">
         <header>
           <p class="featured-kicker">2026</p>
           <h3>Apple Calendar MCP Server</h3>
+
         </header>
         <div class="featured-block">
           <span class="block-label">Problem</span>
@@ -551,108 +557,13 @@
           <span class="block-label">Impact</span>
           <p>Built a Swift/EventKit tool exposing calendar list, search, create, update, and delete over the MCP protocol and a CLI with JSON and table output.</p>
         </div>
+
         <div class="chip-row"><span class="chip">Swift</span><span class="chip">EventKit</span><span class="chip">MCP</span><span class="chip">macOS</span></div>
-        <div class="featured-links"><a href="https://github.com/leonardwongly/AppleCalendarMCPServer" target="_blank" rel="noopener noreferrer">GitHub</a></div>
-      </article>
-      <article class="featured-card" data-tags="AI Agents,Codex,Responsible AI">
-        <header>
-          <p class="featured-kicker">2026</p>
-          <h3>Human Operating Model</h3>
-        </header>
-        <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>Autonomous agents struggle with ambiguous, real-world tasks that require judgment, prioritization, and end-to-end ownership.</p>
-        </div>
-        <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Authored a Codex skill providing a human-inspired operating model for autonomous task ownership, on-the-fly skill creation, validation, and transparent communication that it is an AI system.</p>
-        </div>
-        <div class="chip-row"><span class="chip">AI Agents</span><span class="chip">Codex</span><span class="chip">Responsible AI</span></div>
-        <div class="featured-links"><a href="https://github.com/leonardwongly/human-operating-model" target="_blank" rel="noopener noreferrer">GitHub</a></div>
-      </article>
-      <article class="featured-card" data-tags="C#,ASP.NET,ipsw.me API,JavaScript">
-        <header>
-          <p class="featured-kicker">2020–2026</p>
-          <h3>myIPSW</h3>
-        </header>
-        <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>Finding official Apple firmware (IPSW/OTA) downloads across devices was fragmented and manual.</p>
-        </div>
-        <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Built a site on the ipsw.me API surfacing iOS, iPadOS, tvOS, and watchOS firmware downloads with a custom design.</p>
-        </div>
-        <div class="chip-row"><span class="chip">C#</span><span class="chip">ASP.NET</span><span class="chip">ipsw.me API</span><span class="chip">JavaScript</span></div>
-        <div class="featured-links"><a href="https://github.com/leonardwongly/MyIPSW" target="_blank" rel="noopener noreferrer">GitHub</a></div>
-      </article>
-      <article class="featured-card" data-tags="HTML,JavaScript,Web App">
-        <header>
-          <p class="featured-kicker">2024</p>
-          <h3>PriceHikeSG</h3>
-        </header>
-        <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>Upcoming price increases across Singapore were hard to track in one place.</p>
-        </div>
-        <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Built a lightweight web app that aggregates and publishes updates on upcoming Singapore price hikes.</p>
-        </div>
-        <div class="chip-row"><span class="chip">HTML</span><span class="chip">JavaScript</span><span class="chip">Web App</span></div>
-        <div class="featured-links"><a href="https://github.com/leonardwongly/PriceHikeSG" target="_blank" rel="noopener noreferrer">GitHub</a></div>
-      </article>
-      <article class="featured-card" data-tags="Node.js,Static Site Generation,GitHub Actions,Content-Security-Policy,Policy as Code">
-        <header>
-          <p class="featured-kicker">2020–2026</p>
-          <h3>This Portfolio — Governed Static Delivery</h3>
-        </header>
-        <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>A personal site is the easiest place to cut corners: hand-edited HTML, unvetted scripts, no tests. I wanted the opposite — a portfolio that demonstrates the same secure-delivery and AI-governance practices I apply to client work, on a codebase anyone can inspect.</p>
-        </div>
-        <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Built a static site generated from validated JSON by a single Node build and guarded by a fourteen-step release gate spanning security, content-parity, performance, telemetry, link-health, dependency, vendor, and accessibility checks. Inline scripts are CSP-hashed, vendored libraries are manifest- and hash-pinned, and an AI assistant can draft changes but only a human-approved plan can execute — deterministic checks decide, humans own the risk.</p>
-        </div>
-        <div class="chip-row"><span class="chip">Node.js</span><span class="chip">Static Site Generation</span><span class="chip">GitHub Actions</span><span class="chip">Content-Security-Policy</span><span class="chip">Policy as Code</span></div>
-        <div class="featured-links"><a href="https://leonardwong.tech/" target="_blank" rel="noopener noreferrer">Live</a><a href="https://github.com/leonardwongly/ProjectPortfolio" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+        <div class="featured-links"><a href="/case-study-apple-calendar-mcp.html">Read case study</a><a href="https://github.com/leonardwongly/AppleCalendarMCPServer" target="_blank" rel="noopener noreferrer">GitHub</a></div>
       </article>
   </div>
-</section>
-
-<section class="section-block trust-section" id="site-engineering">
-  <div class="section-header">
-    <p class="eyebrow">Site Engineering</p>
-    <h2>This site is its own case study in secure, governed delivery.</h2>
-    <p class="section-lede">These pages are generated from validated JSON and shipped through the same controls I build for clients — a multi-stage release gate, supply-chain governance, and AI-assisted change control where deterministic checks decide and a human approves the risk.</p>
-  </div>
-  <div class="trust-grid">
-
-      <div class="trust-item">
-        <h3>Generated, never hand-edited</h3>
-        <p>Source templates and structured JSON compile to committed HTML through one Node build. A CI check fails the pipeline if the generated pages ever drift from their source.</p>
-      </div>
-      <div class="trust-item">
-        <h3>A fourteen-step release gate</h3>
-        <p>One command runs build, generated-drift, security and content tests, performance and telemetry budgets, link health, dependency audit, vendor governance, integration and accessibility checks.</p>
-      </div>
-      <div class="trust-item">
-        <h3>AI plans, a human approves</h3>
-        <p>An assistant workflow can read context and propose plans but cannot mint write tokens. Execution runs only after a reviewer approves a specific plan by id — deterministic checks decide, humans own the risk.</p>
-      </div>
-      <div class="trust-item">
-        <h3>Supply-chain governance</h3>
-        <p>Vendored browser scripts are pinned by manifest, verified against recorded hashes and upstream sources, and gated in CI by dependency review and automated update PRs.</p>
-      </div>
-      <div class="trust-item">
-        <h3>A narrow browser runtime</h3>
-        <p>A strict Content-Security-Policy with hashed inline scripts, self-hosted fonts and assets, blocked framing, and a tested service worker keep the client attack surface small.</p>
-      </div>
-      <div class="trust-item">
-        <h3>Content checked like code</h3>
-        <p>Every public claim is JSON validated for shape, length, URL scheme, and asset path before it renders, and CodeQL plus a custom Node test suite scan the code on every push.</p>
-      </div>
+  <div class="section-actions">
+    <a class="btn btn-ghost" href="/work.html" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="featured_work" data-telemetry-action="view_all_projects" data-telemetry-destination="internal">View all 7 projects</a>
   </div>
 </section>
 
@@ -752,6 +663,41 @@
       <div class="skill-card">
         <h3>Product &amp; Delivery</h3>
         <div class="chip-row"><span class="chip">UAT Planning</span><span class="chip">Incident Management</span><span class="chip">Training &amp; Enablement</span><span class="chip">Digital Product Strategy</span><span class="chip">Platform Product Thinking</span></div>
+      </div>
+  </div>
+</section>
+
+<section class="section-block trust-section" id="site-engineering">
+  <div class="section-header">
+    <p class="eyebrow">Site Engineering</p>
+    <h2>This site is its own case study in secure, governed delivery.</h2>
+    <p class="section-lede">These pages are generated from validated JSON and shipped through the same controls I build for clients — a multi-stage release gate, supply-chain governance, and AI-assisted change control where deterministic checks decide and a human approves the risk.</p>
+  </div>
+  <div class="trust-grid">
+
+      <div class="trust-item">
+        <h3>Generated, never hand-edited</h3>
+        <p>Source templates and structured JSON compile to committed HTML through one Node build. A CI check fails the pipeline if the generated pages ever drift from their source.</p>
+      </div>
+      <div class="trust-item">
+        <h3>A fourteen-step release gate</h3>
+        <p>One command runs build, generated-drift, security and content tests, performance and telemetry budgets, link health, dependency audit, vendor governance, integration and accessibility checks.</p>
+      </div>
+      <div class="trust-item">
+        <h3>AI plans, a human approves</h3>
+        <p>An assistant workflow can read context and propose plans but cannot mint write tokens. Execution runs only after a reviewer approves a specific plan by id — deterministic checks decide, humans own the risk.</p>
+      </div>
+      <div class="trust-item">
+        <h3>Supply-chain governance</h3>
+        <p>Vendored browser scripts are pinned by manifest, verified against recorded hashes and upstream sources, and gated in CI by dependency review and automated update PRs.</p>
+      </div>
+      <div class="trust-item">
+        <h3>A narrow browser runtime</h3>
+        <p>A strict Content-Security-Policy with hashed inline scripts, self-hosted fonts and assets, blocked framing, and a tested service worker keep the client attack surface small.</p>
+      </div>
+      <div class="trust-item">
+        <h3>Content checked like code</h3>
+        <p>Every public claim is JSON validated for shape, length, URL scheme, and asset path before it renders, and CodeQL plus a custom Node test suite scan the code on every push.</p>
       </div>
   </div>
 </section>

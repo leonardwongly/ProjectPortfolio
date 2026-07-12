@@ -331,11 +331,59 @@ function safeAssetPath(rawValue, fieldPath) {
 
 function validateFeaturedData(items) {
   const list = ensureArray(items, 'featured-projects', { min: 1, max: 50 });
+  const seenIds = new Set();
+  const featuredOrders = new Set();
+  let featuredCount = 0;
   list.forEach((project, index) => {
     const fieldPath = `featured-projects[${index}]`;
     ensureObject(project, fieldPath);
-    ensureAllowedKeys(project, fieldPath, ['id', 'title', 'timeframe', 'problem', 'impact', 'tech', 'links']);
+    ensureAllowedKeys(project, fieldPath, [
+      'id',
+      'featured',
+      'featured_order',
+      'status',
+      'capabilities',
+      'case_study',
+      'title',
+      'timeframe',
+      'problem',
+      'impact',
+      'tech',
+      'links'
+    ]);
     ensureString(project.id, `${fieldPath}.id`, { maxLength: 80 });
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(project.id)) {
+      failValidation(`${fieldPath}.id`, 'expected a lowercase kebab-case identifier');
+    }
+    if (seenIds.has(project.id)) {
+      failValidation(`${fieldPath}.id`, `duplicate project id: ${project.id}`);
+    }
+    seenIds.add(project.id);
+    if (typeof project.featured !== 'boolean') {
+      failValidation(`${fieldPath}.featured`, 'expected a boolean');
+    }
+    const status = ensureString(project.status, `${fieldPath}.status`, { maxLength: 20 });
+    if (!['active', 'maintained', 'completed', 'archived', 'experimental'].includes(status)) {
+      failValidation(`${fieldPath}.status`, 'expected active, maintained, completed, archived, or experimental');
+    }
+    ensureArray(project.capabilities, `${fieldPath}.capabilities`, { min: 1, max: 8 }).forEach((item, itemIndex) => {
+      ensureString(item, `${fieldPath}.capabilities[${itemIndex}]`, { maxLength: 80 });
+    });
+    if (project.featured) {
+      featuredCount += 1;
+      if (!Number.isInteger(project.featured_order) || project.featured_order < 1) {
+        failValidation(`${fieldPath}.featured_order`, 'expected a positive integer for featured projects');
+      }
+      if (featuredOrders.has(project.featured_order)) {
+        failValidation(`${fieldPath}.featured_order`, `duplicate featured order: ${project.featured_order}`);
+      }
+      featuredOrders.add(project.featured_order);
+      sanitizeRelativeLink(project.case_study, `${fieldPath}.case_study`);
+    } else if (project.featured_order !== undefined) {
+      failValidation(`${fieldPath}.featured_order`, 'expected no order for non-featured projects');
+    } else if (project.case_study !== undefined) {
+      failValidation(`${fieldPath}.case_study`, 'expected no case study for non-featured projects');
+    }
     ensureString(project.title, `${fieldPath}.title`, { maxLength: 200 });
     ensureString(project.timeframe, `${fieldPath}.timeframe`, { maxLength: 120 });
     ensureString(project.problem, `${fieldPath}.problem`, { maxLength: 900 });
@@ -350,6 +398,83 @@ function validateFeaturedData(items) {
       ensureString(link.label, `${linkPath}.label`, { maxLength: 80 });
       sanitizeHref(link.url, `${linkPath}.url`);
     });
+  });
+  if (featuredCount !== 3) {
+    failValidation('featured-projects', `expected exactly 3 featured projects, received ${featuredCount}`);
+  }
+}
+
+function validateCaseStudyData(items, projects) {
+  const list = ensureArray(items, 'case-studies', { min: 1, max: 12 });
+  const featuredProjects = projects.filter((project) => project.featured);
+  const featuredIds = new Set(featuredProjects.map((project) => project.id));
+  const projectIds = new Set(projects.map((project) => project.id));
+  const seenIds = new Set();
+  const seenSlugs = new Set();
+
+  const validateStringList = (values, fieldPath, options = {}) => {
+    ensureArray(values, fieldPath, { min: options.min || 1, max: options.max || 20 })
+      .forEach((value, index) => ensureString(value, `${fieldPath}[${index}]`, { maxLength: options.maxLength || 700 }));
+  };
+
+  list.forEach((study, index) => {
+    const fieldPath = `case-studies[${index}]`;
+    ensureObject(study, fieldPath);
+    ensureAllowedKeys(study, fieldPath, [
+      'id', 'project_id', 'slug', 'eyebrow', 'title', 'summary', 'role', 'timeframe',
+      'repository_url', 'challenge', 'architecture_intro', 'architecture', 'ownership',
+      'decisions', 'controls', 'validation', 'outcomes', 'limitations', 'next_steps'
+    ]);
+    const id = ensureString(study.id, `${fieldPath}.id`, { maxLength: 80 });
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) {
+      failValidation(`${fieldPath}.id`, 'expected a lowercase kebab-case identifier');
+    }
+    if (seenIds.has(id)) failValidation(`${fieldPath}.id`, `duplicate case-study id: ${id}`);
+    seenIds.add(id);
+    const projectId = ensureString(study.project_id, `${fieldPath}.project_id`, { maxLength: 80 });
+    if (!projectIds.has(projectId)) failValidation(`${fieldPath}.project_id`, `unknown project id: ${projectId}`);
+    if (!featuredIds.has(projectId)) failValidation(`${fieldPath}.project_id`, 'case studies are restricted to featured projects');
+    const slug = ensureString(study.slug, `${fieldPath}.slug`, { maxLength: 120 });
+    if (!/^case-study-[a-z0-9]+(?:-[a-z0-9]+)*\.html$/.test(slug)) {
+      failValidation(`${fieldPath}.slug`, 'expected case-study-<name>.html');
+    }
+    if (seenSlugs.has(slug)) failValidation(`${fieldPath}.slug`, `duplicate case-study slug: ${slug}`);
+    seenSlugs.add(slug);
+    ['eyebrow', 'title', 'summary', 'role', 'timeframe', 'challenge', 'architecture_intro'].forEach((key) => {
+      ensureString(study[key], `${fieldPath}.${key}`, { maxLength: key === 'challenge' || key === 'architecture_intro' ? 1200 : 500 });
+    });
+    sanitizeHref(study.repository_url, `${fieldPath}.repository_url`);
+    ensureArray(study.architecture, `${fieldPath}.architecture`, { min: 3, max: 7 }).forEach((stage, stageIndex) => {
+      const stagePath = `${fieldPath}.architecture[${stageIndex}]`;
+      ensureObject(stage, stagePath);
+      ensureAllowedKeys(stage, stagePath, ['label', 'detail']);
+      ensureString(stage.label, `${stagePath}.label`, { maxLength: 80 });
+      ensureString(stage.detail, `${stagePath}.detail`, { maxLength: 500 });
+    });
+    validateStringList(study.ownership, `${fieldPath}.ownership`, { min: 3, max: 10 });
+    ensureArray(study.decisions, `${fieldPath}.decisions`, { min: 3, max: 10 }).forEach((decision, decisionIndex) => {
+      const decisionPath = `${fieldPath}.decisions[${decisionIndex}]`;
+      ensureObject(decision, decisionPath);
+      ensureAllowedKeys(decision, decisionPath, ['title', 'detail']);
+      ensureString(decision.title, `${decisionPath}.title`, { maxLength: 140 });
+      ensureString(decision.detail, `${decisionPath}.detail`, { maxLength: 700 });
+    });
+    validateStringList(study.controls, `${fieldPath}.controls`, { min: 4, max: 12 });
+    validateStringList(study.validation, `${fieldPath}.validation`, { min: 3, max: 12 });
+    validateStringList(study.outcomes, `${fieldPath}.outcomes`, { min: 3, max: 10 });
+    validateStringList(study.limitations, `${fieldPath}.limitations`, { min: 2, max: 10 });
+    validateStringList(study.next_steps, `${fieldPath}.next_steps`, { min: 2, max: 10 });
+  });
+
+  if (list.length !== featuredProjects.length) {
+    failValidation('case-studies', `expected one case study for each featured project (${featuredProjects.length}), received ${list.length}`);
+  }
+  featuredProjects.forEach((project) => {
+    const study = list.find((item) => item.project_id === project.id);
+    if (!study) failValidation('case-studies', `missing case study for featured project: ${project.id}`);
+    if (project.case_study !== `/${study.slug}`) {
+      failValidation(`featured-projects.${project.id}.case_study`, `expected /${study.slug}`);
+    }
   });
 }
 
@@ -422,9 +547,12 @@ function validateAction(action, fieldPath) {
 
 function validateLabelValue(item, fieldPath) {
   ensureObject(item, fieldPath);
-  ensureAllowedKeys(item, fieldPath, ['label', 'value']);
+  ensureAllowedKeys(item, fieldPath, ['label', 'value', 'href']);
   ensureString(item.label, `${fieldPath}.label`, { maxLength: 80 });
   ensureString(item.value, `${fieldPath}.value`, { maxLength: 120 });
+  if (item.href !== undefined) {
+    sanitizeHref(item.href, `${fieldPath}.href`);
+  }
 }
 
 function validateLanguageEntry(item, fieldPath) {
@@ -679,6 +807,7 @@ function validateDataCollections(allData) {
   ensureObject(allData, 'data');
   validateProfileData(allData.profile);
   validateFeaturedData(allData.featured);
+  validateCaseStudyData(allData.caseStudies, allData.featured);
   validateSkillsData(allData.skills);
   validateExperienceData(allData.experience);
   validateCertificationData(allData.certifications);
@@ -809,11 +938,16 @@ function renderHero(profile) {
     ? '<source type="image/webp" srcset="images/leo-220.webp 1x, images/leo-440.webp 2x" />'
     : '';
   const highlights = hero.highlights
-    .map((item) => `
-        <div class="highlight-card">
+    .map((item, index) => {
+      const href = item.href ? safeHref(item.href, `profile.hero.highlights[${index}].href`) : '';
+      const tag = href ? 'a' : 'div';
+      const hrefAttribute = href ? ` href="${escapeHtml(href)}"` : '';
+      return `
+        <${tag} class="highlight-card"${hrefAttribute}>
           <span class="highlight-label">${escapeHtml(item.label)}</span>
           <span class="highlight-value">${escapeHtml(item.value)}</span>
-        </div>`)
+        </${tag}>`;
+    })
     .join('');
   return `
 <section class="hero-section section-block" id="home">
@@ -874,7 +1008,7 @@ function renderProfileCredentials(profile) {
         </div>`;
 }
 
-function renderFeaturedWork(items) {
+function renderProjectCards(items, { includeStatus = false } = {}) {
   const cards = items
     .map((project, projectIndex) => {
       const tech = project.tech || [];
@@ -884,17 +1018,29 @@ function renderFeaturedWork(items) {
       const links = (project.links || [])
         .map((link, linkIndex) => {
           const label = escapeHtml(link.label || 'Link');
-          const url = escapeHtml(safeHref(link.url || '#', `featured-projects[${projectIndex}].links[${linkIndex}].url`));
-          return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+          const href = safeHref(link.url || '#', `featured-projects[${projectIndex}].links[${linkIndex}].url`);
+          const target = linkShouldOpenInNewTab(href) ? ' target="_blank" rel="noopener noreferrer"' : '';
+          return `<a href="${escapeHtml(href)}"${target}>${label}</a>`;
         })
         .join('');
-      const linkBlock = links ? `<div class="featured-links">${links}</div>` : '';
+      const caseStudyLink = project.case_study
+        ? `<a href="${escapeHtml(safeHref(project.case_study, `featured-projects[${projectIndex}].case_study`))}">Read case study</a>`
+        : '';
+      const allLinks = `${caseStudyLink}${links}`;
+      const linkBlock = allLinks ? `<div class="featured-links">${allLinks}</div>` : '';
+      const status = includeStatus
+        ? `<p class="project-status"><span>Status</span>${escapeHtml(project.status)}</p>`
+        : '';
+      const capabilities = includeStatus
+        ? `<div class="capability-row" aria-label="Capabilities">${project.capabilities.map((item) => `<span>${escapeHtml(item)}</span>`).join('')}</div>`
+        : '';
 
       return `
       <article class="featured-card" data-tags="${escapeHtml(tech.join(','))}">
         <header>
           <p class="featured-kicker">${escapeHtml(project.timeframe || '')}</p>
           <h3>${escapeHtml(project.title)}</h3>
+          ${status}
         </header>
         <div class="featured-block">
           <span class="block-label">Problem</span>
@@ -904,23 +1050,165 @@ function renderFeaturedWork(items) {
           <span class="block-label">Impact</span>
           <p>${escapeHtml(project.impact)}</p>
         </div>
+        ${capabilities}
         <div class="chip-row">${techChips}</div>
         ${linkBlock}
       </article>`;
     })
     .join('');
 
+  return cards;
+}
+
+function renderFeaturedWork(items) {
+  const featured = items
+    .filter((project) => project.featured)
+    .sort((a, b) => a.featured_order - b.featured_order);
+  const cards = renderProjectCards(featured);
+
   return `
 <section class="section-block" id="work">
   <div class="section-header">
     <p class="eyebrow">Featured Work</p>
-    <h2>Selected projects that highlight impact</h2>
-    <p class="section-lede">A focused set of recent work across AI agent governance, platform tooling, and security.</p>
+    <h2>Three systems that show how I work</h2>
+    <p class="section-lede">Flagship work across governed AI, durable agent workflows, and safe local automation.</p>
   </div>
   <div class="featured-grid">
     ${cards}
   </div>
+  <div class="section-actions">
+    <a class="btn btn-ghost" href="/work.html" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="featured_work" data-telemetry-action="view_all_projects" data-telemetry-destination="internal">View all 7 projects</a>
+  </div>
 </section>`;
+}
+
+function renderProjectArchive(items) {
+  return `
+<section class="section-block work-archive" id="projects">
+  <div class="section-header archive-header">
+    <div>
+      <p class="eyebrow">Project Archive</p>
+      <h2>Systems, tools, and public-interest products</h2>
+      <p class="section-lede">Seven projects spanning agentic governance, developer tooling, data products, and secure delivery.</p>
+    </div>
+    <p class="archive-count"><strong>${items.length}</strong><span>projects documented</span></p>
+  </div>
+  <div class="featured-grid archive-grid">
+    ${renderProjectCards(items, { includeStatus: true })}
+  </div>
+  <div class="section-actions">
+    <a class="btn btn-primary" href="/index.html#contact" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="project_archive" data-telemetry-action="discuss_work" data-telemetry-destination="section">Discuss the work</a>
+    <a class="btn btn-ghost" href="/index.html" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="project_archive" data-telemetry-action="back_home" data-telemetry-destination="internal">Back to portfolio</a>
+  </div>
+</section>`;
+}
+
+function renderCaseStudyList(items, className = '') {
+  return `<ul class="case-list${className ? ` ${escapeHtml(className)}` : ''}">${items
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join('')}</ul>`;
+}
+
+function renderCaseStudy(study, allStudies) {
+  const repositoryUrl = safeHref(study.repository_url, `case-studies.${study.id}.repository_url`);
+  const currentIndex = allStudies.findIndex((item) => item.id === study.id);
+  const nextStudy = allStudies[(currentIndex + 1) % allStudies.length];
+  const architecture = study.architecture
+    .map((stage) => `<li><strong>${escapeHtml(stage.label)}</strong><p>${escapeHtml(stage.detail)}</p></li>`)
+    .join('');
+  const decisions = study.decisions
+    .map((decision, index) => `
+      <article class="decision-card">
+        <span class="decision-card__number">DECISION ${String(index + 1).padStart(2, '0')}</span>
+        <h3>${escapeHtml(decision.title)}</h3>
+        <p>${escapeHtml(decision.detail)}</p>
+      </article>`)
+    .join('');
+
+  return `
+<article class="case-study" data-case-study="${escapeHtml(study.id)}">
+  <header class="case-hero section-block">
+    <nav class="case-breadcrumb" aria-label="Breadcrumb">
+      <a href="/work.html">Project archive</a><span aria-hidden="true">/</span><span>${escapeHtml(study.title)}</span>
+    </nav>
+    <div class="case-hero__grid">
+      <div>
+        <p class="eyebrow">${escapeHtml(study.eyebrow)}</p>
+        <h1>${escapeHtml(study.title)}</h1>
+        <p class="case-summary">${escapeHtml(study.summary)}</p>
+      </div>
+      <dl class="case-facts">
+        <div><dt>Role</dt><dd>${escapeHtml(study.role)}</dd></div>
+        <div><dt>Timeframe</dt><dd>${escapeHtml(study.timeframe)}</dd></div>
+        <div><dt>Source</dt><dd><a href="${escapeHtml(repositoryUrl)}" target="_blank" rel="noopener noreferrer">View repository</a></dd></div>
+      </dl>
+    </div>
+  </header>
+
+  <section class="case-section" id="challenge">
+    <div class="case-section__head">
+      <span class="case-index">01 / CHALLENGE</span>
+      <div><h2>Designing for accountable autonomy</h2><p>${escapeHtml(study.challenge)}</p></div>
+    </div>
+  </section>
+
+  <section class="case-section" id="architecture">
+    <div class="case-section__head">
+      <span class="case-index">02 / ARCHITECTURE</span>
+      <div><h2>A bounded path from intent to evidence</h2><p>${escapeHtml(study.architecture_intro)}</p></div>
+    </div>
+    <ol class="architecture-flow" aria-label="Architecture flow">${architecture}</ol>
+  </section>
+
+  <section class="case-section" id="ownership">
+    <div class="case-section__head">
+      <span class="case-index">03 / OWNERSHIP</span>
+      <div><h2>What I owned and shaped</h2><p>Product boundaries, system structure, delivery controls, and the evidence needed to operate the system responsibly.</p></div>
+    </div>
+    <div class="case-grid">
+      <div class="case-panel"><h3>Scope and execution</h3>${renderCaseStudyList(study.ownership)}</div>
+      <div class="case-panel"><h3>Controls built into the system</h3>${renderCaseStudyList(study.controls)}</div>
+    </div>
+  </section>
+
+  <section class="case-section" id="decisions">
+    <div class="case-section__head">
+      <span class="case-index">04 / DECISIONS</span>
+      <div><h2>Engineering choices that define the product</h2><p>The differentiating decisions are less about framework selection and more about authority, state, failure behavior, and operational truth.</p></div>
+    </div>
+    <div class="decision-grid">${decisions}</div>
+  </section>
+
+  <section class="case-section" id="evidence">
+    <div class="case-section__head">
+      <span class="case-index">05 / EVIDENCE</span>
+      <div><h2>How the implementation is validated</h2><p>Evidence is layered across deterministic tests, integration boundaries, operational checks, and documented limitations.</p></div>
+    </div>
+    <div class="case-grid">
+      <div class="case-panel"><h3>Validation coverage</h3>${renderCaseStudyList(study.validation)}</div>
+      <div class="case-panel case-result"><h3>Delivered outcomes</h3>${renderCaseStudyList(study.outcomes)}</div>
+    </div>
+  </section>
+
+  <section class="case-section" id="tradeoffs">
+    <div class="case-section__head">
+      <span class="case-index">06 / TRADEOFFS</span>
+      <div><h2>Honest boundaries and the next iteration</h2><p>The system is presented with its operating constraints intact. Those boundaries determine what should be strengthened next.</p></div>
+    </div>
+    <div class="case-grid">
+      <div class="case-panel case-limit"><h3>Limitations</h3>${renderCaseStudyList(study.limitations)}</div>
+      <div class="case-panel"><h3>Next steps</h3>${renderCaseStudyList(study.next_steps)}</div>
+    </div>
+  </section>
+
+  <aside class="case-next section-block" aria-label="Next case study">
+    <div><p class="eyebrow">Continue exploring</p><h2>${escapeHtml(nextStudy.title)}</h2><p>${escapeHtml(nextStudy.summary)}</p></div>
+    <div class="case-next__actions">
+      <a class="btn btn-primary" href="/${escapeHtml(nextStudy.slug)}">Next case study</a>
+      <a class="btn btn-ghost" href="/work.html">All projects</a>
+    </div>
+  </aside>
+</article>`;
 }
 
 function renderSkills(skills) {
@@ -1403,6 +1691,7 @@ function buildSite() {
   const data = {
     profile: readJson('profile.json'),
     featured: readJson('featured-projects.json'),
+    caseStudies: readJson('case-studies.json'),
     skills: readJson('skills.json'),
     experience: readJson('experience.json'),
     certifications: readJson('certifications.json'),
@@ -1417,6 +1706,7 @@ function buildSite() {
     PROFILE_SCHEMA: renderProfileSchema(data.profile, data.certifications),
     HERO: renderHero(data.profile),
     FEATURED_WORK: renderFeaturedWork(data.featured),
+    PROJECT_ARCHIVE: renderProjectArchive(data.featured),
     SKILLS: renderSkills(data.skills),
     EXPERIENCE: renderExperience(data.experience),
     WRITING: renderWriting(data.profile),
@@ -1429,7 +1719,7 @@ function buildSite() {
     CONTACT: renderContact(data.profile)
   };
 
-  const pages = ['index.html', 'reading.html', 'offline.html'];
+  const pages = ['index.html', 'work.html', 'reading.html', 'offline.html'];
   const renderedPages = new Map();
 
   pages.forEach((page) => {
@@ -1452,6 +1742,32 @@ function buildSite() {
     }
 
     renderedPages.set(page, stripTrailingWhitespace(content));
+  });
+
+  const caseStudyTemplatePath = path.join(srcDir, 'case-study.html');
+  if (!fs.existsSync(caseStudyTemplatePath)) {
+    throw new Error(`Missing case study source page: ${caseStudyTemplatePath}`);
+  }
+  const caseStudyTemplate = fs.readFileSync(caseStudyTemplatePath, 'utf8');
+  data.caseStudies.forEach((study) => {
+    const canonical = `https://leonardwong.tech/${study.slug}`;
+    const caseTokens = {
+      ...partials,
+      CASE_STUDY_TITLE: escapeHtml(study.title),
+      CASE_STUDY_DESCRIPTION: escapeHtml(study.summary),
+      CASE_STUDY_CANONICAL: escapeHtml(canonical),
+      CASE_STUDY: renderCaseStudy(study, data.caseStudies)
+    };
+    let content = caseStudyTemplate;
+    Object.entries(caseTokens).forEach(([key, value]) => {
+      content = content.replaceAll(`{{${key}}}`, value);
+    });
+    const leftover = content.match(/\{\{[A-Z_]+}}/g);
+    if (leftover && leftover.length > 0) {
+      throw new Error(`Unresolved tokens in ${study.slug}: ${leftover.join(', ')}`);
+    }
+    renderedPages.set(study.slug, stripTrailingWhitespace(content));
+    pages.push(study.slug);
   });
 
   const indexPage = renderedPages.get('index.html');
