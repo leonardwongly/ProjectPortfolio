@@ -1,0 +1,194 @@
+[
+  {
+    "id": "agentforge",
+    "project_id": "agentforge",
+    "slug": "case-study-agentforge.html",
+    "eyebrow": "Case Study 01 · Governed AI",
+    "title": "AgentForge Merge Guard",
+    "summary": "A GitHub-first change-control system that makes high-risk and agent-assisted pull requests deterministic, reviewable, and auditable.",
+    "role": "Product architect and principal engineer",
+    "timeframe": "2026 · Active",
+    "repository_url": "https://github.com/leonardwongly/AgentForge",
+    "challenge": "Teams adopting AI-assisted development need stronger evidence and decision trails around risky changes. Detection alone is insufficient: governance must identify the applicable policy, required evidence, accountable reviewer, decision state, and policy version without delegating blocking authority to a probabilistic model.",
+    "architecture_intro": "A signed GitHub event enters a queue-backed evaluation pipeline. Deterministic packages derive facts, apply versioned policy, persist the decision record, and publish the result back to the pull request.",
+    "architecture": [
+      { "label": "Ingest", "detail": "Fastify verifies GitHub webhook signatures and records deliveries before evaluation." },
+      { "label": "Queue", "detail": "BullMQ separates webhook acknowledgement from asynchronous pull-request evaluation." },
+      { "label": "Evaluate", "detail": "Detectors extract verified facts; policy-as-code resolves evidence and reviewer requirements." },
+      { "label": "Record", "detail": "PostgreSQL stores policy versions, evaluations, audit events, and Change Control Records." },
+      { "label": "Decide", "detail": "GitHub checks expose pass, warning, block, or authorized override outcomes to humans." }
+    ],
+    "ownership": [
+      "Defined the product boundary: deterministic governance rather than autonomous code approval.",
+      "Designed the TypeScript monorepo across API, dashboard, worker, policy, detector, evidence, reviewer, record, and security packages.",
+      "Established gradual adoption modes—observe, warn, enforce, and optimize—so policy can mature without an abrupt rollout.",
+      "Documented deployment, self-hosting, policy tuning, testing, security handling, and operational recovery paths."
+    ],
+    "decisions": [
+      { "title": "Deterministic authority", "detail": "Blocking outcomes come from explicit rules and verified facts. Optional AI output is disabled by default and advisory only." },
+      { "title": "Durable change records", "detail": "Each governed pull request produces an authoritative Change Control Record tied to the policy version, evidence, reviewers, checks, and overrides." },
+      { "title": "Metadata-first storage", "detail": "The system excludes source-code storage by default, redacts secrets, and keeps exported records focused on governance evidence." },
+      { "title": "Fail-closed production", "detail": "Signed webhooks, trusted actor identity, session controls, and storage policy are explicit readiness requirements rather than permissive fallbacks." }
+    ],
+    "controls": [
+      "Signed GitHub webhook verification and duplicate-delivery handling",
+      "Policy schema validation, applicability scoping, and versioned policy packs",
+      "Role-constrained overrides with required reason, visibility, and audit trail",
+      "Secret redaction and source-excluding exports",
+      "Production readiness checks for database, queue, authentication, and proxy trust",
+      "Human approval retained for risk acceptance"
+    ],
+    "validation": [
+      "Unit coverage for policy parsing, detectors, evidence, reviewer routing, redaction, overrides, and records",
+      "Integration coverage for webhook ingestion, policy preview, evidence updates, overrides, and exports",
+      "Fixture scenarios covering sensitive paths, CI changes, test weakening, dependencies, migrations, secrets, and overrides",
+      "Playwright end-to-end coverage for dashboard rendering and primary workflows",
+      "Performance sanity checks for large changed-file lists and repeated synchronize events"
+    ],
+    "outcomes": [
+      "A working self-hosted V1 spanning API, dashboard, asynchronous worker, PostgreSQL persistence, and GitHub check publication.",
+      "An explainable decision trail that answers what triggered, what is missing, who must review, and which policy version applied.",
+      "A controlled adoption path from visibility-only observation to enforceable merge protection.",
+      "A reusable governance model: deterministic checks decide, AI explains, and humans approve risk."
+    ],
+    "limitations": [
+      "Merge Guard reports whether configured requirements are satisfied; it does not certify that code is secure, correct, or compliant.",
+      "The current release is self-hosted rather than a managed SaaS offering.",
+      "AI-based blocking decisions and autonomous merge approval are intentionally outside the product boundary.",
+      "Production object-storage export adapters remain outside the current V1 scope."
+    ],
+    "next_steps": [
+      "Validate positioning and policy scope with external platform and security teams.",
+      "Expand deployment evidence and operational telemetry for enforce-mode adoption.",
+      "Evolve enterprise packaging only after user evidence supports retention, SSO, and audit-export needs."
+    ]
+  },
+  {
+    "id": "agentic",
+    "project_id": "agentic",
+    "slug": "case-study-agentic.html",
+    "eyebrow": "Case Study 02 · Agent Control Plane",
+    "title": "Agentic Control Plane",
+    "summary": "A bounded execution platform for goals, commitments, approvals, automations, memories, documents, and integrations.",
+    "role": "Product architect and principal engineer",
+    "timeframe": "2026 · Active",
+    "repository_url": "https://github.com/leonardwongly/agentic",
+    "challenge": "Long-running agent work crosses authentication, integrations, background execution, approvals, recovery, and auditability. A useful control plane must keep these concerns connected while preventing an autonomous workflow from silently escalating into a high-risk external action.",
+    "architecture_intro": "Requests and integration signals enter a governed API boundary, are classified for readiness and risk, and become durable jobs. The worker executes bounded work while the dashboard exposes commitments, approvals, evidence, recovery state, and learned context.",
+    "architecture": [
+      { "label": "Capture", "detail": "The Next.js API accepts goals, commitments, watcher events, and integration signals with actor context." },
+      { "label": "Govern", "detail": "Policy and connector readiness classify risk, permissions, preconditions, and approval requirements." },
+      { "label": "Enqueue", "detail": "Long-running activity becomes a durable worker job instead of remaining inside a request lifecycle." },
+      { "label": "Execute", "detail": "A separate worker processes bounded tasks with concurrency controls, idempotency, and recovery paths." },
+      { "label": "Evidence", "detail": "PostgreSQL-backed state records artifacts, audit events, approvals, provenance, and learned context." }
+    ],
+    "ownership": [
+      "Designed the commitment-first product model and the bounded execution loop connecting dashboard, APIs, worker, and persistence.",
+      "Implemented governance boundaries for actor context, workspace roles, approvals, mutation preconditions, rate limits, and external side effects.",
+      "Structured integrations and preview capabilities around explicit readiness signals instead of presenting incomplete surfaces as production-ready.",
+      "Created operational runbooks for worker durability, recovery, observability, connector reconciliation, security response, and deployment."
+    ],
+    "decisions": [
+      { "title": "Separate request from execution", "detail": "Long-running work is queued for a dedicated worker, keeping API lifecycles bounded and making retries and recovery explicit." },
+      { "title": "Approval before consequence", "detail": "Higher-risk external actions require an approval boundary; connectors do not gain implicit authority from an agent request." },
+      { "title": "Capability honesty", "detail": "Feature readiness is tracked in code so preview integrations and incomplete workflows are not represented as fully operational." },
+      { "title": "Durable operating context", "detail": "Goals, commitments, artifacts, audit state, and memories are persisted as product state rather than hidden inside a transient model conversation." }
+    ],
+    "controls": [
+      "Authenticated API routes with actor and workspace context",
+      "Role permissions, mutation preconditions, request identity, and abuse-rate controls",
+      "Approval gates for higher-risk external side effects",
+      "Idempotency and durable job execution for retry-safe workflows",
+      "Security headers, CSP, public-origin validation, and controlled sharing",
+      "Operational readiness, recovery, and connector reconciliation surfaces"
+    ],
+    "validation": [
+      "Repository-level type, lint, unit, integration, and smoke gates across the monorepo",
+      "Security regression coverage for APIs, authentication, side effects, sharing, and connector boundaries",
+      "Capability smoke checks that fail when production claims lack required readiness evidence",
+      "Runbook-backed validation for worker durability, connector recovery, observability, and deployment",
+      "Audit matrices connecting controls to implementation and executable evidence"
+    ],
+    "outcomes": [
+      "A modular TypeScript control plane with a Next.js dashboard/API, separate worker, and PostgreSQL production state.",
+      "A coherent execution model connecting commitments, approvals, automations, documents, memories, integrations, and recovery.",
+      "Explicit product readiness boundaries that separate operational core workflows from preview capabilities.",
+      "A reusable governance approach for keeping human accountability inside autonomous and human-in-the-loop work."
+    ],
+    "limitations": [
+      "Several integration, watcher, memory, workflow-template, and autopilot surfaces remain preview capabilities until their readiness gates are satisfied.",
+      "Production operation depends on correctly configured shared state, authentication, workers, and connector credentials.",
+      "The control plane coordinates work; it cannot remove the underlying reliability and authorization constraints of external providers.",
+      "Higher autonomy remains intentionally bounded by governance and approval requirements."
+    ],
+    "next_steps": [
+      "Close capability blockers before promoting preview surfaces to operational status.",
+      "Strengthen end-to-end recovery evidence for connector and worker failure modes.",
+      "Continue reducing operator load through calibrated batching, recommendations, and traceability."
+    ]
+  },
+  {
+    "id": "apple-calendar-mcp",
+    "project_id": "apple-calendar-mcp",
+    "slug": "case-study-apple-calendar-mcp.html",
+    "eyebrow": "Case Study 03 · Local Automation",
+    "title": "Apple Calendar MCP Server",
+    "summary": "A native Swift bridge that gives AI assistants and command-line workflows controlled access to Apple Calendar without sending calendar data to a hosted intermediary.",
+    "role": "Designer and principal engineer",
+    "timeframe": "2026 · Active",
+    "repository_url": "https://github.com/leonardwongly/AppleCalendarMCPServer",
+    "challenge": "Calendar automation is useful but sensitive: the system must cross macOS privacy permissions, support both human and agent workflows, and prevent a convenient write API from becoming unrestricted authority over every calendar.",
+    "architecture_intro": "A single Swift executable supports MCP, CLI, and native app modes. Each mode shares typed command models and one calendar-service boundary, which applies macOS permission, read-only policy, and calendar allowlist checks before EventKit writes.",
+    "architecture": [
+      { "label": "Interface", "detail": "MCP JSON-RPC, CLI commands, and the native app translate user intent into typed requests." },
+      { "label": "Validate", "detail": "Strict argument parsing rejects unknown fields, invalid dates, unsupported URLs, and excessive search ranges." },
+      { "label": "Authorize", "detail": "Server configuration enforces read-only mode and an optional exact calendar-ID write allowlist." },
+      { "label": "Execute", "detail": "A shared EventKit service lists calendars, searches events, and performs allowed create, update, or delete operations." },
+      { "label": "Return", "detail": "Structured MCP responses and JSON or table CLI output make results useful to both programs and people." }
+    ],
+    "ownership": [
+      "Designed one Swift package to serve MCP clients, shell users, and a native macOS operator interface.",
+      "Implemented EventKit access, permission handling, typed request models, strict CLI parsing, MCP tool schemas, and structured output.",
+      "Added write controls that can block all mutations or restrict them to explicitly allowlisted calendar identifiers.",
+      "Built configuration guidance and app-generated MCP client settings so the security posture is visible and reproducible."
+    ],
+    "decisions": [
+      { "title": "Local-first boundary", "detail": "Calendar access stays inside the macOS process and EventKit permission model; no hosted calendar proxy is required." },
+      { "title": "One service, three interfaces", "detail": "MCP, CLI, and app workflows share the same typed domain and authorization boundary instead of implementing divergent write paths." },
+      { "title": "Write scope is configuration", "detail": "Read-only mode and exact calendar-ID allowlisting turn mutation authority into an explicit operator decision." },
+      { "title": "Structured failure", "detail": "Permission, validation, calendar, event, and policy failures are modeled and returned instead of being flattened into ambiguous command errors." }
+    ],
+    "controls": [
+      "Native macOS Calendar permission through EventKit",
+      "Environment-controlled read-only mode for blocking create, update, and delete",
+      "Optional exact calendar-ID allowlist for write operations",
+      "Unknown-field rejection and typed request validation",
+      "366-day maximum search range and timezone-aware date validation",
+      "HTTP or HTTPS restriction for event URL values"
+    ],
+    "validation": [
+      "Swift package tests covering models, CLI parsing, MCP request handling, configuration, and calendar-service behavior",
+      "Read-only and write-allowlist policy tests around create, update, and delete operations",
+      "CLI output checks for human-readable tables and JSON automation output",
+      "Live permission-aware validation against Apple Calendar on macOS",
+      "Build and release checks for the executable and native app surfaces"
+    ],
+    "outcomes": [
+      "One local tool supports calendar listing, event search, creation, updates, and deletion over MCP and the command line.",
+      "Operators can inspect and change the write policy from the native app and copy a ready-to-use MCP configuration.",
+      "Automation can be constrained to read-only operation or a specific subset of writable calendars.",
+      "The design preserves the system macOS permission prompt and keeps calendar data out of a hosted middleware layer."
+    ],
+    "limitations": [
+      "The tool is macOS-specific because it relies on EventKit and Apple Calendar permissions.",
+      "The operating system permission grant is shared by the server and native app process boundary.",
+      "Calendar identifiers and provider behavior remain subject to EventKit and the configured accounts on the local Mac.",
+      "Safe writes still depend on the operator choosing an appropriate read-only or allowlist configuration."
+    ],
+    "next_steps": [
+      "Broaden live regression coverage across calendar account types and recurring-event operations.",
+      "Improve operator-facing diagnostics for permission and configuration mismatches.",
+      "Keep release packaging and client-configuration guidance aligned as MCP hosts evolve."
+    ]
+  }
+]

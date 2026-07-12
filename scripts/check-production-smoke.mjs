@@ -16,6 +16,22 @@ const PAGE_CHECKS = [
     ]
   },
   {
+    path: '/work.html',
+    marker: /Project Archive/i,
+    headers: [
+      'content-security-policy',
+      'x-content-type-options'
+    ]
+  },
+  {
+    path: '/case-study-agentforge.html',
+    marker: /AgentForge Merge Guard/i,
+    headers: [
+      'content-security-policy',
+      'x-content-type-options'
+    ]
+  },
+  {
     path: '/reading',
     marker: /Reading/i,
     headers: [

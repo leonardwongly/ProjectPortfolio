@@ -3,6 +3,10 @@ import { expect, test } from '@playwright/test';
 
 const PAGE_PATHS = [
   '/index.html',
+  '/work.html',
+  '/case-study-agentforge.html',
+  '/case-study-agentic.html',
+  '/case-study-apple-calendar-mcp.html',
   '/reading.html',
   '/offline.html'
 ];

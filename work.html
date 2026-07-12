@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; block-all-mixed-content">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link rel="manifest" href="manifest.json"/>
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/custom.css"/>
+    <link rel="preload" href="fonts/SF-Pro-Display-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/SF-Pro-Display-Semibold.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png"/>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png"/>
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+    <script src="js/main.js" defer></script>
+    <script src="js/site.js" defer></script>
+    <noscript>Your browser does not support JavaScript!</noscript>
+    <meta name="description" content="Projects by Leonard Wong across governed AI, developer tooling, data products, and secure software delivery."/>
+    <link rel="canonical" href="https://leonardwong.tech/work.html"/>
+    <meta property="og:title" content="Leonard Wong | Project Archive"/>
+    <meta property="og:description" content="Systems, tools, and public-interest products built by Leonard Wong."/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="https://leonardwong.tech/work.html"/>
+    <meta property="og:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
+    <meta property="og:image:alt" content="Portrait of Leonard Wong"/>
+    <meta property="og:site_name" content="Leonard Wong"/>
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:title" content="Leonard Wong | Project Archive"/>
+    <meta name="twitter:description" content="Systems, tools, and public-interest products built by Leonard Wong."/>
+    <meta name="twitter:image" content="https://leonardwong.tech/images/leo-440.jpeg"/>
+    <title>Leonard Wong | Project Archive</title>
+</head>
+<body class="page-bg">
+<a class="skip-link" href="#content">Skip to content</a>
+<nav class="navbar navbar-expand-lg fixed-top navbar-dark glass-nav" aria-label="Main navigation">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/index.html">Leonard Wong</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="navbar-collapse collapse" id="navbarCollapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#home">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/work.html">Work</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#site-engineering">Engineering</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#skills">Skills</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#experience">Experience</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#writing">Writing</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/reading.html">Reading</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html#contact">Contact</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer">Resume</a>
+                </li>
+            </ul>
+            <div class="navbar-actions d-flex align-items-center gap-2 mt-3 mt-lg-0 ms-lg-auto">
+                <button class="cmdk-trigger" type="button" data-cmdk-open aria-haspopup="dialog" aria-controls="commandPalette">
+                    <span>Jump to</span>
+                    <kbd>&#8984;K</kbd>
+                </button>
+                <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+                    <span class="theme-toggle__label">Theme</span>
+                    <span class="theme-toggle__state" data-theme-label>Light</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="cmdk" id="commandPalette" hidden role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="cmdk__panel">
+        <input class="cmdk__input" id="cmdkInput" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Jump to a section, page, or action…" aria-label="Filter commands"
+               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cmdkList"/>
+        <ul class="cmdk__list" id="cmdkList" role="listbox" aria-label="Command results">
+            <li role="presentation"><a class="cmdk__item" href="/index.html#home" role="option" aria-selected="false">home<span class="cmdk__hint">intro</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#work" role="option" aria-selected="false">flagship work<span class="cmdk__hint">three selected systems</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/work.html" role="option" aria-selected="false">all projects<span class="cmdk__hint">project archive</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#site-engineering" role="option" aria-selected="false">engineering<span class="cmdk__hint">how this site is built</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#skills" role="option" aria-selected="false">skills<span class="cmdk__hint">stack</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#experience" role="option" aria-selected="false">experience<span class="cmdk__hint">timeline</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#writing" role="option" aria-selected="false">writing<span class="cmdk__hint">publications</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#credentials" role="option" aria-selected="false">credentials<span class="cmdk__hint">education + certs</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/index.html#contact" role="option" aria-selected="false">contact<span class="cmdk__hint">get in touch</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="/reading.html" role="option" aria-selected="false">reading<span class="cmdk__hint">bookshelf</span></a></li>
+            <li role="presentation"><a class="cmdk__item" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" role="option" aria-selected="false">resume.pdf<span class="cmdk__hint">open</span></a></li>
+            <li role="presentation"><button class="cmdk__item" type="button" data-cmdk-action="theme" role="option" aria-selected="false">toggle theme<span class="cmdk__hint">dark / light</span></button></li>
+        </ul>
+        <p class="cmdk__empty" id="cmdkEmpty" hidden role="status" aria-live="polite" aria-atomic="true">no matches</p>
+    </div>
+</div>
+
+
+<main id="content" class="container-xxl">
+    <h1 class="visually-hidden">Leonard Wong Project Archive</h1>
+
+<section class="section-block work-archive" id="projects">
+  <div class="section-header archive-header">
+    <div>
+      <p class="eyebrow">Project Archive</p>
+      <h2>Systems, tools, and public-interest products</h2>
+      <p class="section-lede">Seven projects spanning agentic governance, developer tooling, data products, and secure delivery.</p>
+    </div>
+    <p class="archive-count"><strong>7</strong><span>projects documented</span></p>
+  </div>
+  <div class="featured-grid archive-grid">
+
+      <article class="featured-card" data-tags="TypeScript,GitHub Apps,Policy as Code,CI/CD Governance">
+        <header>
+          <p class="featured-kicker">2026</p>
+          <h3>AgentForge Merge Guard</h3>
+          <p class="project-status"><span>Status</span>active</p>
+        </header>
+        <div class="featured-block">
+          <span class="block-label">Problem</span>
+          <p>High-risk and agent-assisted pull requests need change control that is deterministic and auditable, not dependent on manual review alone.</p>
+        </div>
+        <div class="featured-block">
+          <span class="block-label">Impact</span>
+          <p>Built a GitHub-first PR governance service with policy-as-code rules, deterministic detectors, required evidence, reviewer routing, check runs, and durable Change Control Records — deterministic checks decide, AI explains, humans approve risk.</p>
+        </div>
+        <div class="capability-row" aria-label="Capabilities"><span>Agentic AI</span><span>Security Governance</span><span>Platform Engineering</span></div>
+        <div class="chip-row"><span class="chip">TypeScript</span><span class="chip">GitHub Apps</span><span class="chip">Policy as Code</span><span class="chip">CI/CD Governance</span></div>
+        <div class="featured-links"><a href="/case-study-agentforge.html">Read case study</a><a href="https://github.com/leonardwongly/AgentForge" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+      </article>
+      <article class="featured-card" data-tags="TypeScript,Next.js,PostgreSQL,Background Workers">
+        <header>
+          <p class="featured-kicker">2026</p>
+          <h3>Agentic Control Plane</h3>
+          <p class="project-status"><span>Status</span>active</p>
+        </header>
+        <div class="featured-block">
+          <span class="block-label">Problem</span>
+          <p>Autonomous and human-in-the-loop work needs a governed control plane for goals, commitments, approvals, and long-running automations.</p>
+        </div>
+        <div class="featured-block">
+          <span class="block-label">Impact</span>
+          <p>Built a TypeScript control plane (Next.js dashboard/API plus a worker process) around a bounded execution loop with risk classification, durable worker jobs, and Postgres-backed state.</p>
+        </div>
+        <div class="capability-row" aria-label="Capabilities"><span>Agentic AI</span><span>Platform Engineering</span><span>Data Systems</span></div>
+        <div class="chip-row"><span class="chip">TypeScript</span><span class="chip">Next.js</span><span class="chip">PostgreSQL</span><span class="chip">Background Workers</span></div>
+        <div class="featured-links"><a href="/case-study-agentic.html">Read case study</a><a href="https://github.com/leonardwongly/agentic" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+      </article>
+      <article class="featured-card" data-tags="Swift,EventKit,MCP,macOS">
+        <header>
+          <p class="featured-kicker">2026</p>
+          <h3>Apple Calendar MCP Server</h3>
+          <p class="project-status"><span>Status</span>active</p>
+        </header>
+        <div class="featured-block">
+          <span class="block-label">Problem</span>
+          <p>AI assistants and command-line workflows lacked a safe, local way to read and manage Apple Calendar on macOS.</p>
+        </div>
+        <div class="featured-block">
+          <span class="block-label">Impact</span>
+          <p>Built a Swift/EventKit tool exposing calendar list, search, create, update, and delete over the MCP protocol and a CLI with JSON and table output.</p>
+        </div>
+        <div class="capability-row" aria-label="Capabilities"><span>Developer Tooling</span><span>Local-First Software</span><span>Safe Automation</span></div>
+        <div class="chip-row"><span class="chip">Swift</span><span class="chip">EventKit</span><span class="chip">MCP</span><span class="chip">macOS</span></div>
+        <div class="featured-links"><a href="/case-study-apple-calendar-mcp.html">Read case study</a><a href="https://github.com/leonardwongly/AppleCalendarMCPServer" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+      </article>
+      <article class="featured-card" data-tags="AI Agents,Codex,Responsible AI">
+        <header>
+          <p class="featured-kicker">2026</p>
+          <h3>Human Operating Model</h3>
+          <p class="project-status"><span>Status</span>active</p>
+        </header>
+        <div class="featured-block">
+          <span class="block-label">Problem</span>
+          <p>Autonomous agents struggle with ambiguous, real-world tasks that require judgment, prioritization, and end-to-end ownership.</p>
+        </div>
+        <div class="featured-block">
+          <span class="block-label">Impact</span>
+          <p>Authored a Codex skill providing a human-inspired operating model for autonomous task ownership, on-the-fly skill creation, validation, and transparent communication that it is an AI system.</p>
+        </div>
+        <div class="capability-row" aria-label="Capabilities"><span>Agentic AI</span><span>Responsible AI</span><span>Developer Tooling</span></div>
+        <div class="chip-row"><span class="chip">AI Agents</span><span class="chip">Codex</span><span class="chip">Responsible AI</span></div>
+        <div class="featured-links"><a href="https://github.com/leonardwongly/human-operating-model" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+      </article>
+      <article class="featured-card" data-tags="C#,ASP.NET,ipsw.me API,JavaScript">
+        <header>
+          <p class="featured-kicker">2020–2026</p>
+          <h3>myIPSW</h3>
+          <p class="project-status"><span>Status</span>maintained</p>
+        </header>
+        <div class="featured-block">
+          <span class="block-label">Problem</span>
+          <p>Finding official Apple firmware (IPSW/OTA) downloads across devices was fragmented and manual.</p>
+        </div>
+        <div class="featured-block">
+          <span class="block-label">Impact</span>
+          <p>Built a site on the ipsw.me API surfacing iOS, iPadOS, tvOS, and watchOS firmware downloads with a custom design.</p>
+        </div>
+        <div class="capability-row" aria-label="Capabilities"><span>Platform Engineering</span><span>API Integration</span><span>Public Web Product</span></div>
+        <div class="chip-row"><span class="chip">C#</span><span class="chip">ASP.NET</span><span class="chip">ipsw.me API</span><span class="chip">JavaScript</span></div>
+        <div class="featured-links"><a href="https://github.com/leonardwongly/MyIPSW" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+      </article>
+      <article class="featured-card" data-tags="HTML,JavaScript,Web App">
+        <header>
+          <p class="featured-kicker">2024</p>
+          <h3>PriceHikeSG</h3>
+          <p class="project-status"><span>Status</span>completed</p>
+        </header>
+        <div class="featured-block">
+          <span class="block-label">Problem</span>
+          <p>Upcoming price increases across Singapore were hard to track in one place.</p>
+        </div>
+        <div class="featured-block">
+          <span class="block-label">Impact</span>
+          <p>Built a lightweight web app that aggregates and publishes updates on upcoming Singapore price hikes.</p>
+        </div>
+        <div class="capability-row" aria-label="Capabilities"><span>Data Aggregation</span><span>Public Web Product</span><span>JavaScript</span></div>
+        <div class="chip-row"><span class="chip">HTML</span><span class="chip">JavaScript</span><span class="chip">Web App</span></div>
+        <div class="featured-links"><a href="https://github.com/leonardwongly/PriceHikeSG" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+      </article>
+      <article class="featured-card" data-tags="Node.js,Static Site Generation,GitHub Actions,Content-Security-Policy,Policy as Code">
+        <header>
+          <p class="featured-kicker">2020–2026</p>
+          <h3>This Portfolio — Governed Static Delivery</h3>
+          <p class="project-status"><span>Status</span>active</p>
+        </header>
+        <div class="featured-block">
+          <span class="block-label">Problem</span>
+          <p>A personal site is the easiest place to cut corners: hand-edited HTML, unvetted scripts, no tests. I wanted the opposite — a portfolio that demonstrates the same secure-delivery and AI-governance practices I apply to client work, on a codebase anyone can inspect.</p>
+        </div>
+        <div class="featured-block">
+          <span class="block-label">Impact</span>
+          <p>Built a static site generated from validated JSON by a single Node build and guarded by a fourteen-step release gate spanning security, content-parity, performance, telemetry, link-health, dependency, vendor, and accessibility checks. Inline scripts are CSP-hashed, vendored libraries are manifest- and hash-pinned, and an AI assistant can draft changes but only a human-approved plan can execute — deterministic checks decide, humans own the risk.</p>
+        </div>
+        <div class="capability-row" aria-label="Capabilities"><span>Secure Delivery</span><span>Policy as Code</span><span>Static Site Generation</span></div>
+        <div class="chip-row"><span class="chip">Node.js</span><span class="chip">Static Site Generation</span><span class="chip">GitHub Actions</span><span class="chip">Content-Security-Policy</span><span class="chip">Policy as Code</span></div>
+        <div class="featured-links"><a href="https://leonardwong.tech/" target="_blank" rel="noopener noreferrer">Live</a><a href="https://github.com/leonardwongly/ProjectPortfolio" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+      </article>
+  </div>
+  <div class="section-actions">
+    <a class="btn btn-primary" href="/index.html#contact" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="project_archive" data-telemetry-action="discuss_work" data-telemetry-destination="section">Discuss the work</a>
+    <a class="btn btn-ghost" href="/index.html" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="project_archive" data-telemetry-action="back_home" data-telemetry-destination="internal">Back to portfolio</a>
+  </div>
+</section>
+</main>
+
+<div class="container section-block">
+    <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+        <div class="col-md-6 d-flex align-items-center">
+            <span class="text-muted">© 2020 - 2026 Leonard Wong</span>
+        </div>
+        <div class="col-md-6 d-flex align-items-center justify-content-end">
+            <span class="text-muted">Based in Singapore</span>
+        </div>
+        <div class="col-12 mt-3">
+            <ul class="list-unstyled d-flex flex-wrap align-items-center social-links justify-content-end">
+                <li>
+                    <a class="social-icon social-icon--github" href="https://github.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="GitHub">
+                        <svg class="social-icon__graphic" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                            <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a class="social-icon social-icon--threads" href="https://threads.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Threads">
+                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+                            <path d="M8.2 10.6c.2-1.8 1.4-3 3.4-3 2.3 0 3.9 1.4 3.9 4.1 0 2.6-1.6 4.2-3.9 4.2-1.5 0-2.6-.6-3.2-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                            <path d="M8.2 10.6c0 1.8 1.4 2.3 3 2.3 1.4 0 2.4-.6 2.4-1.6 0-1.1-.8-1.6-2.1-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a class="social-icon social-icon--mastodon" href="https://mastodon.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="Mastodon">
+                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 4.2c-4.4 0-6.8 1.6-6.8 5.5v4.2c0 4 2.4 5.3 4.8 5.6 1.7.2 3.4.2 5.1 0 2.4-.3 4.8-1.6 4.8-5.6V9.7c0-3.9-2.6-5.5-7-5.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                            <path d="M8.7 9.9v3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                            <path d="M15.3 9.9v3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                            <path d="M8.7 9.9c0-1.3.9-2.1 2.3-2.1 1 0 1.7.4 2.1 1.1.4-.7 1.1-1.1 2.1-1.1 1.4 0 2.3.8 2.3 2.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a class="social-icon social-icon--linkedin" href="https://linkedin.leonardwong.tech" target="_blank" rel="noreferrer noopener" aria-label="LinkedIn">
+                        <svg class="social-icon__graphic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
+                            <circle cx="8" cy="8.5" r="1.4" fill="currentColor"></circle>
+                            <rect x="6.6" y="10.5" width="2.8" height="7.1" rx="1.2" fill="currentColor"></rect>
+                            <path fill="currentColor" d="M12.6 10.5h2.1c1.7 0 2.9 1 2.9 2.8V18h-2.7v-4.6c0-.8-.4-1.3-1.1-1.3-.7 0-1.1.5-1.1 1.3V18h-2.8v-7.5h2.7Z"></path>
+                        </svg>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </footer>
+</div>
+
+</body>
+</html>

@@ -25,17 +25,17 @@
   },
   "hero": {
     "eyebrow": "AI Software Engineer · Agentic Development",
-    "headline": "Building AI and agentic systems on secure, data-driven platforms.",
-    "lead": "AI Software Engineer at NCS Group, serving Public Service Commission Singapore as an IT vendor. I build LLM-powered applications and agentic workflows, automate data-heavy processes, and integrate security from the start.",
+    "headline": "Building governed AI systems where deterministic controls manage risk.",
+    "lead": "AI Software Engineer at NCS Group, serving Public Service Commission Singapore as an IT vendor. I build agentic workflows and data-heavy platforms that keep security, explainability, and human accountability inside the delivery loop.",
     "actions": [
-      { "label": "View Resume", "href": "docs/resume.pdf", "variant": "primary" },
-      { "label": "Writing", "href": "#writing", "variant": "ghost" },
-      { "label": "Contact", "href": "#contact", "variant": "ghost" }
+      { "label": "View Flagship Work", "href": "#work", "variant": "primary" },
+      { "label": "Download Resume", "href": "docs/resume.pdf", "variant": "ghost" },
+      { "label": "Connect on LinkedIn", "href": "https://linkedin.leonardwong.tech", "variant": "ghost" }
     ],
     "highlights": [
-      { "label": "Focus", "value": "AI · Agentic · Security" },
-      { "label": "Strength", "value": "Data Automation" },
-      { "label": "Now", "value": "NCS · PSC Singapore" }
+      { "label": "Scale", "value": "150M+ rows automated", "href": "#experience" },
+      { "label": "Security Research", "value": "88 projects scanned", "href": "#experience" },
+      { "label": "Delivery Model", "value": "AI explains · humans approve", "href": "#site-engineering" }
     ],
     "current": {
       "label": "Currently",

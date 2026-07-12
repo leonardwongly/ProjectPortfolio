@@ -18,9 +18,14 @@ function writeFile(rootDir, relativePath, content = '') {
 function writePerformanceFixture(rootDir, overrides = {}) {
   [
     'index.html',
+    'work.html',
+    'case-study-agentforge.html',
+    'case-study-agentic.html',
+    'case-study-apple-calendar-mcp.html',
     'reading.html',
     'offline.html',
     'css/custom.css',
+    'css/case-study.css',
     'js/main.js',
     'js/site.js',
     'pwabuilder-sw.js',

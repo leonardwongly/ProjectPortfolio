@@ -15,7 +15,7 @@
     "pretest:integration": "npx --no-install playwright install chromium",
     "test:integration": "npx --no-install playwright test tests/integration/mobile-nav-and-accordion.spec.mjs --config=playwright.config.mjs",
     "audit:high": "npm audit --audit-level=high",
-    "check:generated": "git diff --exit-code -- index.html reading.html offline.html _headers",
+    "check:generated": "git diff --exit-code -- index.html work.html case-study-agentforge.html case-study-agentic.html case-study-apple-calendar-mcp.html reading.html offline.html _headers",
     "check:hygiene": "node scripts/check-repository-hygiene.mjs",
     "check:assets": "node scripts/check-performance-budget.mjs",
     "precheck:accessibility": "npx --no-install playwright install chromium",

@@ -263,9 +263,10 @@ function initNavActive() {
     const targetPath = url.pathname.replace(/\/$/, '');
     const targetHash = url.hash;
     const isHome = targetPath.endsWith('/index.html');
-    const pathMatches = isHome
+    const isWorkCollection = targetPath.endsWith('/work.html') && /\/case-study-[a-z0-9-]+\.html$/.test(currentPath);
+    const pathMatches = isWorkCollection || (isHome
       ? currentPath === '' || currentPath === '/' || currentPath.endsWith('/index.html')
-      : currentPath.endsWith(targetPath);
+      : currentPath.endsWith(targetPath));
 
     let isCurrent = false;
     if (pathMatches) {

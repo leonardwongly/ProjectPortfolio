@@ -39,7 +39,7 @@ function makeValidProfile() {
         { label: 'Resume', href: 'docs/resume.pdf', variant: 'primary' },
         { label: 'Contact', href: '#contact', variant: 'ghost' }
       ],
-      highlights: [{ label: 'Focus', value: 'Security' }],
+      highlights: [{ label: 'Focus', value: 'Security', href: '#experience' }],
       current: {
         label: 'Currently',
         value: 'Software Engineer @ Example Org',
@@ -121,19 +121,53 @@ function makeValidProfile() {
 }
 
 function makeValidData() {
-  return {
+  const data = {
     profile: makeValidProfile(),
     featured: [
       {
         id: 'project-alpha',
+        featured: true,
+        featured_order: 1,
+        status: 'active',
+        capabilities: ['Security Governance'],
+        case_study: '/case-study-project-alpha.html',
         title: 'Project Alpha',
         timeframe: '2025',
         problem: 'Problem statement.',
         impact: 'Impact statement.',
         tech: ['Node.js', 'Security'],
         links: [{ label: 'GitHub', url: 'https://github.com/example/repo' }]
+      },
+      {
+        id: 'project-beta',
+        featured: true,
+        featured_order: 2,
+        status: 'maintained',
+        capabilities: ['Platform Engineering'],
+        case_study: '/case-study-project-beta.html',
+        title: 'Project Beta',
+        timeframe: '2025',
+        problem: 'Second problem statement.',
+        impact: 'Second impact statement.',
+        tech: ['JavaScript'],
+        links: []
+      },
+      {
+        id: 'project-gamma',
+        featured: true,
+        featured_order: 3,
+        status: 'completed',
+        capabilities: ['Data Systems'],
+        case_study: '/case-study-project-gamma.html',
+        title: 'Project Gamma',
+        timeframe: '2024',
+        problem: 'Third problem statement.',
+        impact: 'Third impact statement.',
+        tech: ['SQL'],
+        links: []
       }
     ],
+    caseStudies: [],
     skills: [
       {
         category: 'Languages',
@@ -171,6 +205,36 @@ function makeValidData() {
       }
     ]
   };
+  data.caseStudies = data.featured.map((project) => ({
+    id: project.id,
+    project_id: project.id,
+    slug: project.case_study.slice(1),
+    eyebrow: 'Case Study · Secure Systems',
+    title: project.title,
+    summary: 'A governed system with explicit controls and evidence.',
+    role: 'Principal engineer',
+    timeframe: '2025 · Active',
+    repository_url: 'https://github.com/example/repo',
+    challenge: 'Create a useful system without weakening authorization, accountability, or operational evidence.',
+    architecture_intro: 'Requests move through validation, policy, execution, and durable evidence boundaries.',
+    architecture: [
+      { label: 'Capture', detail: 'Accept a typed request.' },
+      { label: 'Govern', detail: 'Apply deterministic policy.' },
+      { label: 'Record', detail: 'Persist the outcome and evidence.' }
+    ],
+    ownership: ['Defined the boundary.', 'Designed the system.', 'Documented operations.'],
+    decisions: [
+      { title: 'Explicit authority', detail: 'Keep authorization visible.' },
+      { title: 'Durable state', detail: 'Persist operating truth.' },
+      { title: 'Fail closed', detail: 'Reject incomplete production configuration.' }
+    ],
+    controls: ['Authentication', 'Authorization', 'Validation', 'Audit trail'],
+    validation: ['Unit coverage', 'Integration coverage', 'Operational smoke checks'],
+    outcomes: ['Working implementation', 'Reviewable evidence', 'Documented limitations'],
+    limitations: ['Depends on correct configuration.', 'Does not remove provider constraints.'],
+    next_steps: ['Expand live validation.', 'Improve operator diagnostics.']
+  }));
+  return data;
 }
 
 test('sanitizeHref allows https and safe relative links', () => {
@@ -244,6 +308,50 @@ test('validateDataCollections rejects malformed payloads', () => {
   const badCommunityId = makeValidData();
   badCommunityId.profile.community[0].id = 'bad id';
   assert.throws(() => validateDataCollections(badCommunityId), /expected an identifier/);
+
+  const duplicateFeaturedOrder = makeValidData();
+  duplicateFeaturedOrder.featured[1].featured_order = 1;
+  assert.throws(() => validateDataCollections(duplicateFeaturedOrder), /duplicate featured order/);
+
+  const invalidProjectStatus = makeValidData();
+  invalidProjectStatus.featured[0].status = 'unknown';
+  assert.throws(() => validateDataCollections(invalidProjectStatus), /expected active, maintained/);
+
+  const tooFewFeatured = makeValidData();
+  tooFewFeatured.featured[2].featured = false;
+  delete tooFewFeatured.featured[2].featured_order;
+  delete tooFewFeatured.featured[2].case_study;
+  assert.throws(() => validateDataCollections(tooFewFeatured), /expected exactly 3 featured projects/);
+});
+
+test('validateDataCollections rejects incomplete or mismatched case studies', () => {
+  const missingStudy = makeValidData();
+  missingStudy.caseStudies.pop();
+  assert.throws(() => validateDataCollections(missingStudy), /one case study for each featured project/);
+
+  const badSlug = makeValidData();
+  badSlug.caseStudies[0].slug = '../case-study-project-alpha.html';
+  assert.throws(() => validateDataCollections(badSlug), /expected case-study-<name>\.html/);
+
+  const mismatchedProjectLink = makeValidData();
+  mismatchedProjectLink.featured[0].case_study = '/case-study-wrong.html';
+  assert.throws(() => validateDataCollections(mismatchedProjectLink), /expected \/case-study-project-alpha\.html/);
+
+  const nonFeaturedStudy = makeValidData();
+  nonFeaturedStudy.featured.push({
+    id: 'project-delta',
+    featured: false,
+    status: 'active',
+    capabilities: ['Tooling'],
+    title: 'Project Delta',
+    timeframe: '2025',
+    problem: 'A problem.',
+    impact: 'An outcome.',
+    tech: [],
+    links: []
+  });
+  nonFeaturedStudy.caseStudies[0].project_id = 'project-delta';
+  assert.throws(() => validateDataCollections(nonFeaturedStudy), /restricted to featured projects/);
 });
 
 test('renderReadingGrid escapes data attribute filter values', () => {
