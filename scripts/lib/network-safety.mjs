@@ -209,12 +209,29 @@ async function assertPublicDnsResolution(parsedUrl, {
   if (blockedRecord) {
     fail(`Invalid ${fieldPath}: host ${hostname} resolved to blocked address ${blockedRecord.address}`);
   }
+
+  return records;
 }
 
 async function assertPublicHttpsUrl(rawUrl, options = {}) {
   const parsed = normalizePublicHttpsUrl(rawUrl, options);
   await assertPublicDnsResolution(parsed, options);
   return parsed.toString();
+}
+
+async function resolvePublicHttpsUrl(rawUrl, options = {}) {
+  const parsed = normalizePublicHttpsUrl(rawUrl, options);
+  const hostname = canonicalHostname(parsed.hostname);
+  const ipVersion = net.isIP(hostname);
+  const records = ipVersion
+    ? [{ address: hostname, family: ipVersion }]
+    : await assertPublicDnsResolution(parsed, options);
+
+  return {
+    url: parsed.toString(),
+    hostname,
+    records
+  };
 }
 
 export {
@@ -224,5 +241,6 @@ export {
   isBlockedHostname,
   isBlockedIpAddress,
   normalizePublicHttpsUrl,
-  parseIpv6Bytes
+  parseIpv6Bytes,
+  resolvePublicHttpsUrl
 };

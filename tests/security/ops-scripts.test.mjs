@@ -198,6 +198,55 @@ test('link health preflight mode validates DNS without fetching URLs', async () 
   assert.ok(results.some((result) => result.category === 'preflight-ok'));
 });
 
+test('link health binds the approved DNS address to the TLS request', async () => {
+  const { createPinnedLookup, requestWithTimeout } = await import('../../scripts/check-link-health.mjs');
+  const lookup = createPinnedLookup([{ address: '93.184.216.34', family: 4 }]);
+
+  const selected = await new Promise((resolve, reject) => {
+    lookup('public.example', { family: 4 }, (error, address, family) => {
+      if (error) reject(error);
+      else resolve({ address, family });
+    });
+  });
+  assert.deepEqual(selected, { address: '93.184.216.34', family: 4 });
+
+  const all = await new Promise((resolve, reject) => {
+    lookup('public.example', { all: true }, (error, records) => {
+      if (error) reject(error);
+      else resolve(records);
+    });
+  });
+  assert.deepEqual(all, [{ address: '93.184.216.34', family: 4 }]);
+
+  let requestOptions;
+  const response = await requestWithTimeout({
+    url: 'https://public.example/status',
+    hostname: 'public.example',
+    records: [{ address: '93.184.216.34', family: 4 }]
+  }, {
+    method: 'HEAD',
+    timeoutMs: 1000,
+    requestImpl: (_url, options, onResponse) => {
+      requestOptions = options;
+      return {
+        setTimeout() {},
+        once() {},
+        destroy() {},
+        end() {
+          onResponse({
+            statusCode: 204,
+            statusMessage: 'No Content',
+            resume() {}
+          });
+        }
+      };
+    }
+  });
+  assert.deepEqual(response, { status: 204, statusText: 'No Content' });
+  assert.equal(requestOptions.servername, 'public.example');
+  assert.equal(typeof requestOptions.lookup, 'function');
+});
+
 test('repository hygiene detects junk files in git-visible paths', async () => {
   const { isJunkPath } = await import('../../scripts/check-repository-hygiene.mjs');
 
