@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const {
@@ -90,6 +91,36 @@ function ensureCwebpAvailable() {
   }
 }
 
+function pathEntryExists(filePath) {
+  try {
+    fs.lstatSync(filePath);
+    return true;
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
+function writeGeneratedFileNoFollow(sourcePath, targetPath, rootPath = projectRoot) {
+  const realRoot = fs.realpathSync(rootPath);
+  const realParent = fs.realpathSync(path.dirname(targetPath));
+  const rootPrefix = `${realRoot}${path.sep}`;
+  if (realParent !== realRoot && !realParent.startsWith(rootPrefix)) {
+    throw new AssetPathValidationError(targetPath, 'target parent resolves outside project root');
+  }
+
+  const flags = fs.constants.O_WRONLY |
+    fs.constants.O_CREAT |
+    fs.constants.O_EXCL |
+    (fs.constants.O_NOFOLLOW || 0);
+  const descriptor = fs.openSync(targetPath, flags, 0o644);
+  try {
+    fs.writeFileSync(descriptor, fs.readFileSync(sourcePath));
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
 function run() {
   if (!fs.existsSync(dataPath)) {
     console.error(`Missing reading data: ${dataPath}`);
@@ -140,13 +171,20 @@ function run() {
       return;
     }
 
-    if (fs.existsSync(targetPath)) {
+    if (pathEntryExists(targetPath)) {
       skipped.push(targetRelative);
       return;
     }
 
     fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-    execFileSync('cwebp', ['-q', '80', '-mt', sourcePath, '-o', targetPath], { stdio: 'inherit' });
+    const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-'));
+    const temporaryPath = path.join(temporaryDirectory, 'output.webp');
+    try {
+      execFileSync('cwebp', ['-q', '80', '-mt', sourcePath, '-o', temporaryPath], { stdio: 'inherit' });
+      writeGeneratedFileNoFollow(temporaryPath, targetPath, projectRoot);
+    } finally {
+      fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+    }
     converted.push(targetRelative);
   });
 
@@ -165,6 +203,7 @@ module.exports = {
   run,
   sanitizeCoverRelativePath,
   resolveProjectPath,
+  writeGeneratedFileNoFollow,
   derive2xPath,
   toWebpPath
 };

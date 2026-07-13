@@ -87,7 +87,7 @@ test('scan workflow enforces dependency audit and vendor governance gates', () =
   assert.doesNotMatch(content, /npm run validate:vendor(?:\s|$)/);
 });
 
-test('Gemini workflow separates planning from write-capable execution', () => {
+test('Gemini workflow keeps model sessions separate from GitHub and Git authority', () => {
   const content = fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8');
   const planJobStart = content.indexOf('  gemini-cli-plan:');
   const executeJobStart = content.indexOf('  gemini-cli-execute:');
@@ -99,9 +99,13 @@ test('Gemini workflow separates planning from write-capable execution', () => {
   const executeJob = content.slice(executeJobStart);
 
   assert.doesNotMatch(planJob, /actions\/create-github-app-token/);
-  assert.doesNotMatch(planJob, /run_shell_command\(git add\)/);
-  assert.doesNotMatch(planJob, /run_shell_command\(git commit\)/);
-  assert.doesNotMatch(planJob, /run_shell_command\(git push\)/);
+  assert.doesNotMatch(planJob, /run_shell_command\(/);
+  assert.match(planJob, /"coreTools": \["write_file"\]/);
+  assert.match(planJob, /Post validated planning response/);
+  const planningActionStart = planJob.indexOf("- name: 'Run Gemini planning'");
+  const planningPostStart = planJob.indexOf("- name: 'Post validated planning response'");
+  const planningAction = planJob.slice(planningActionStart, planningPostStart);
+  assert.doesNotMatch(planningAction, /GITHUB_TOKEN:/);
   assert.match(planJob, /Write Safety.*planning job MUST NOT run `git add`, `git commit`, `git push`/s);
   assert.ok(
     planJob.includes("!(contains(github.event.issue.body, 'plan#') && contains(github.event.issue.body, 'approved'))"),
@@ -117,14 +121,20 @@ test('Gemini workflow separates planning from write-capable execution', () => {
     'Planning job must not accept approved plan reviews'
   );
 
-  assert.match(executeJob, /actions\/create-github-app-token@[0-9a-f]{40}/);
+  assert.doesNotMatch(executeJob, /actions\/create-github-app-token/);
   assert.match(executeJob, /request_type=plan_execution/);
   assert.match(executeJob, /plan#\$\{PLAN_ID\}/);
   assert.match(executeJob, /github-actions\[bot\]/);
-  assert.match(executeJob, /run_shell_command\(git add\)/);
-  assert.match(executeJob, /run_shell_command\(git commit\)/);
-  assert.match(executeJob, /run_shell_command\(git push\)/);
-  assert.match(executeJob, /Plan execution requires vars\.APP_ID and secrets\.APP_PRIVATE_KEY/);
+  assert.doesNotMatch(executeJob, /run_shell_command\(/);
+  assert.match(executeJob, /"coreTools": \["write_file"\]/);
+  assert.match(executeJob, /Validate and publish implementation guidance/);
+  assert.match(executeJob, /no file-read, shell, GitHub, Git, comment, or token-backed tools/);
+  assert.match(executeJob, /Never attempt to commit, push, create branches, create pull requests, or post comments/);
+  const executionActionStart = executeJob.indexOf("- name: 'Run Gemini execution'");
+  const executionPostStart = executeJob.indexOf("- name: 'Validate and publish implementation guidance'");
+  const executionAction = executeJob.slice(executionActionStart, executionPostStart);
+  assert.doesNotMatch(executionAction, /GITHUB_TOKEN:/);
+  assert.doesNotMatch(executeJob, /git (?:add|commit|push)\b/);
 });
 
 test('CSP is declared in source pages and appears before script tags when present', () => {

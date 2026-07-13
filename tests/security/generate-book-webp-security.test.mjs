@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
 import test from 'node:test';
 import { createRequire } from 'node:module';
 
@@ -7,6 +9,7 @@ const require = createRequire(import.meta.url);
 const {
   sanitizeCoverRelativePath,
   resolveProjectPath,
+  writeGeneratedFileNoFollow,
   toWebpPath
 } = require('../../scripts/generate-book-webp.js');
 
@@ -72,4 +75,44 @@ test('resolveProjectPath enforces root containment', () => {
 test('toWebpPath preserves location and swaps extension', () => {
   assert.equal(toWebpPath('book/2025/cover-300.jpg'), 'book/2025/cover-300.webp');
   assert.equal(toWebpPath('book/2025/cover.jpeg'), 'book/2025/cover.webp');
+});
+
+test('writeGeneratedFileNoFollow rejects dangling output symlinks', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-test-'));
+  const outputDirectory = path.join(root, 'book');
+  const externalDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-external-'));
+  const source = path.join(root, 'generated.webp');
+  const target = path.join(outputDirectory, 'cover.webp');
+  const escaped = path.join(externalDirectory, 'escaped.webp');
+  fs.mkdirSync(outputDirectory);
+  fs.writeFileSync(source, 'valid-generated-bytes');
+  fs.symlinkSync(escaped, target);
+
+  try {
+    assert.throws(
+      () => writeGeneratedFileNoFollow(source, target, root),
+      (error) => error?.code === 'EEXIST' || error?.code === 'ELOOP'
+    );
+    assert.equal(fs.existsSync(escaped), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(externalDirectory, { recursive: true, force: true });
+  }
+});
+
+test('writeGeneratedFileNoFollow creates a regular file inside the project root', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-test-'));
+  const outputDirectory = path.join(root, 'book');
+  const source = path.join(root, 'generated.webp');
+  const target = path.join(outputDirectory, 'cover.webp');
+  fs.mkdirSync(outputDirectory);
+  fs.writeFileSync(source, 'valid-generated-bytes');
+
+  try {
+    writeGeneratedFileNoFollow(source, target, root);
+    assert.equal(fs.readFileSync(target, 'utf8'), 'valid-generated-bytes');
+    assert.equal(fs.lstatSync(target).isFile(), true);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
