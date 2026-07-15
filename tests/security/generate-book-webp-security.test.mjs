@@ -12,6 +12,7 @@ const {
   writeGeneratedFileNoFollow,
   toWebpPath
 } = require('../../scripts/generate-book-webp.js');
+const { AssetPathValidationError } = require('../../scripts/lib/asset-paths.cjs');
 
 test('sanitizeCoverRelativePath accepts safe relative JPEG paths', () => {
   assert.equal(
@@ -112,6 +113,78 @@ test('writeGeneratedFileNoFollow creates a regular file inside the project root'
     writeGeneratedFileNoFollow(source, target, root);
     assert.equal(fs.readFileSync(target, 'utf8'), 'valid-generated-bytes');
     assert.equal(fs.lstatSync(target).isFile(), true);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+test('writeGeneratedFileNoFollow allows targets located directly in the project root', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-test-'));
+  const source = path.join(root, 'generated.webp');
+  const target = path.join(root, 'cover.webp');
+  fs.writeFileSync(source, 'root-level-bytes');
+
+  try {
+    writeGeneratedFileNoFollow(source, target, root);
+    assert.equal(fs.readFileSync(target, 'utf8'), 'root-level-bytes');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('writeGeneratedFileNoFollow refuses to overwrite an existing regular file', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-test-'));
+  const outputDirectory = path.join(root, 'book');
+  const source = path.join(root, 'generated.webp');
+  const target = path.join(outputDirectory, 'cover.webp');
+  fs.mkdirSync(outputDirectory);
+  fs.writeFileSync(source, 'new-bytes');
+  fs.writeFileSync(target, 'existing-bytes');
+
+  try {
+    assert.throws(
+      () => writeGeneratedFileNoFollow(source, target, root),
+      (error) => error?.code === 'EEXIST'
+    );
+    assert.equal(fs.readFileSync(target, 'utf8'), 'existing-bytes');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('writeGeneratedFileNoFollow rejects target directories that resolve outside the project root', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-test-'));
+  const externalDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-external-'));
+  const source = path.join(root, 'generated.webp');
+  const linkedDirectory = path.join(root, 'book');
+  const target = path.join(linkedDirectory, 'cover.webp');
+  fs.writeFileSync(source, 'valid-generated-bytes');
+  fs.symlinkSync(externalDirectory, linkedDirectory);
+
+  try {
+    assert.throws(
+      () => writeGeneratedFileNoFollow(source, target, root),
+      (error) => error instanceof AssetPathValidationError &&
+        /target parent resolves outside project root/.test(error.message)
+    );
+    assert.equal(fs.existsSync(path.join(externalDirectory, 'cover.webp')), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(externalDirectory, { recursive: true, force: true });
+  }
+});
+
+test('writeGeneratedFileNoFollow preserves binary content exactly', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-test-'));
+  const outputDirectory = path.join(root, 'book');
+  const source = path.join(root, 'generated.webp');
+  const target = path.join(outputDirectory, 'cover.webp');
+  fs.mkdirSync(outputDirectory);
+  const binaryBytes = Buffer.from([0x52, 0x49, 0x46, 0x46, 0x00, 0xff, 0x80, 0x01]);
+  fs.writeFileSync(source, binaryBytes);
+
+  try {
+    writeGeneratedFileNoFollow(source, target, root);
+    assert.deepEqual(fs.readFileSync(target), binaryBytes);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
