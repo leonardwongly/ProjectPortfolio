@@ -117,7 +117,6 @@ test('writeGeneratedFileNoFollow creates a regular file inside the project root'
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
-
 test('writeGeneratedFileNoFollow allows targets located directly in the project root', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-test-'));
   const source = path.join(root, 'generated.webp');

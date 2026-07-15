@@ -1,8 +1,10 @@
 import fs from 'node:fs';
+import https from 'node:https';
+import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { assertPublicHttpsUrl, normalizePublicHttpsUrl } from './lib/network-safety.mjs';
+import { normalizePublicHttpsUrl, resolvePublicHttpsUrl } from './lib/network-safety.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -129,29 +131,62 @@ function collectExternalUrls() {
     });
 }
 
-async function fetchWithTimeout(url, { method, timeoutMs, fetchImpl = fetch }) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetchImpl(url, {
+function createPinnedLookup(records) {
+  const approved = records.map(({ address, family }) => ({ address, family }));
+  return (_hostname, options, callback) => {
+    const wantsAll = typeof options === 'object' && options.all;
+    if (wantsAll) {
+      callback(null, approved.map((record) => ({ ...record })));
+      return;
+    }
+
+    const requestedFamily = typeof options === 'number' ? options : options?.family;
+    const record = approved.find((candidate) => !requestedFamily || candidate.family === requestedFamily);
+    if (!record) {
+      callback(new Error(`No approved DNS address matches family ${requestedFamily}`));
+      return;
+    }
+    callback(null, record.address, record.family);
+  };
+}
+
+async function requestWithTimeout(target, {
+  method,
+  timeoutMs,
+  requestImpl = https.request
+}) {
+  return await new Promise((resolve, reject) => {
+    const request = requestImpl(target.url, {
       method,
-      redirect: 'manual',
-      signal: controller.signal,
+      lookup: createPinnedLookup(target.records),
+      servername: net.isIP(target.hostname) ? undefined : target.hostname,
       headers: {
         'user-agent': 'ProjectPortfolio-link-health/1.0',
         connection: 'close'
       }
+    }, (response) => {
+      response.resume();
+      resolve({
+        status: response.statusCode || 0,
+        statusText: response.statusMessage || ''
+      });
     });
-  } finally {
-    clearTimeout(timer);
-  }
+
+    request.setTimeout(timeoutMs, () => {
+      const error = new Error(`Request timed out after ${timeoutMs}ms`);
+      error.name = 'AbortError';
+      request.destroy(error);
+    });
+    request.once('error', reject);
+    request.end();
+  });
 }
 
 async function checkUrl(entry, options) {
   if (!entry.ok) return entry;
 
   try {
-    const url = await assertPublicHttpsUrl(entry.url, {
+    const target = await resolvePublicHttpsUrl(entry.url, {
       fieldPath: entry.source,
       lookupImpl: options.lookupImpl
     });
@@ -163,16 +198,16 @@ async function checkUrl(entry, options) {
         detail: 'URL shape and DNS preflight passed'
       };
     }
-    let response = await fetchWithTimeout(url, {
+    let response = await requestWithTimeout(target, {
       method: 'HEAD',
       timeoutMs: options.timeoutMs,
-      fetchImpl: options.fetchImpl
+      requestImpl: options.requestImpl
     });
     if (response.status === 405 || response.status === 501) {
-      response = await fetchWithTimeout(url, {
+      response = await requestWithTimeout(target, {
         method: 'GET',
         timeoutMs: options.timeoutMs,
-        fetchImpl: options.fetchImpl
+        requestImpl: options.requestImpl
       });
     }
 
@@ -226,6 +261,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 
 export {
   collectExternalUrls,
+  createPinnedLookup,
+  requestWithTimeout,
   runLinkHealth,
   validateExternalUrl
 };
