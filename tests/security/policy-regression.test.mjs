@@ -137,6 +137,38 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   assert.doesNotMatch(executeJob, /git (?:add|commit|push)\b/);
 });
 
+test('Gemini workflow removes GitHub App bootstrap and branch automation in favor of deterministic response validation', () => {
+  const content = fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8');
+  const planJobStart = content.indexOf('  gemini-cli-plan:');
+  const executeJobStart = content.indexOf('  gemini-cli-execute:');
+  const planJob = content.slice(planJobStart, executeJobStart);
+  const executeJob = content.slice(executeJobStart);
+  const executeJobPermissions = executeJob.slice(0, executeJob.indexOf('steps:'));
+
+  assert.doesNotMatch(content, /actions\/create-github-app-token/);
+  assert.doesNotMatch(content, /generate_token/);
+  assert.doesNotMatch(content, /BRANCH_NAME/);
+  assert.doesNotMatch(content, /Create new branch for issue/);
+  assert.doesNotMatch(content, /Set up git user for commits/);
+  assert.doesNotMatch(content, /Validate token for plan execution/);
+  assert.doesNotMatch(content, /Please respond to me by commenting your response/);
+
+  assert.doesNotMatch(executeJobPermissions, /id-token/);
+  assert.match(planJob, /id-token: 'write'/);
+
+  [planJob, executeJob].forEach((job) => {
+    assert.match(job, /if \[\[ ! -f response\.md \|\| -L response\.md \]\]; then/);
+    assert.match(job, /if \(\( \$\(wc -c < response\.md\) > 60000 \)\); then/);
+    assert.match(job, /GH_CONFIG_DIR: '\$\{\{ runner\.temp \}\}/);
+  });
+
+  const checkoutTokens = [...content.matchAll(/token: '(\$\{\{[^}]+\}\})'/g)].map((match) => match[1].trim());
+  assert.ok(checkoutTokens.length > 0, 'Expected checkout steps to reference a token');
+  checkoutTokens.forEach((token) => {
+    assert.match(token, /secrets\.GITHUB_TOKEN/);
+  });
+});
+
 test('CSP is declared in source pages and appears before script tags when present', () => {
   for (const file of SOURCE_HTML_FILES) {
     const lines = fs.readFileSync(file, 'utf8').split('\n');
