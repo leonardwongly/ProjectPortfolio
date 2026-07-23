@@ -47,7 +47,7 @@ The performance budget check caps generated page sizes, key static assets, asset
 
 ## CI
 
-The build workflow uses Node 20, regenerates static pages, checks that generated outputs are committed, and runs the security/content test suite. Branch protection currently requires these contexts before merging to `main`:
+The build workflow uses Node 24 LTS, regenerates static pages, checks that generated outputs are committed, and runs the security/content test suite. Branch protection currently requires these contexts before merging to `main`:
 
 - `Build`
 - `Scan`
