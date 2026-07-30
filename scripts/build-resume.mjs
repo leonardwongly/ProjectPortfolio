@@ -40,6 +40,7 @@ const { writeFileNoFollow } = require('./lib/safe-output.cjs');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
+const RESUME_MANIFEST_DESCRIPTION = 'Freshness manifest for docs/resume.pdf and docs/resume.docx. It records the deterministic rendered HTML hash and exact generated binary hashes. Run `npm run build:resume` after editing the sources below, then commit docs/resume.pdf, docs/resume.docx, and this manifest.';
 const artifactsDir = path.join(projectRoot, 'artifacts');
 const htmlOutPath = path.join(artifactsDir, 'resume.html');
 const pdfOutPath = path.join(projectRoot, 'docs', 'resume.pdf');
@@ -578,7 +579,7 @@ async function main() {
 
   const manifest = {
     $generatedBy: 'scripts/build-resume.mjs',
-    description: 'Freshness manifest for docs/resume.pdf and docs/resume.docx. It records the deterministic rendered HTML hash and exact generated binary hashes. Run `npm run build:resume` after editing the sources below, then commit docs/resume.pdf, docs/resume.docx, and this manifest.',
+    description: RESUME_MANIFEST_DESCRIPTION,
     htmlSha256: computeResumeHtmlHash(html),
     pdfSha256: computeFileSha256(pdfOutPath),
     docxSha256: computeFileSha256(docxOutPath),
@@ -603,5 +604,6 @@ export {
   validateResumeData,
   computeResumeHtmlHash,
   computeFileSha256,
+  RESUME_MANIFEST_DESCRIPTION,
   RESUME_SOURCE_FILES
 };

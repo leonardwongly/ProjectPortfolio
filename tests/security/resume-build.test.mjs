@@ -7,7 +7,8 @@ import test from 'node:test';
 import {
   renderResumeHtml,
   validateResumeData,
-  computeResumeHtmlHash
+  computeResumeHtmlHash,
+  RESUME_MANIFEST_DESCRIPTION
 } from '../../scripts/build-resume.mjs';
 import { checkResumeFreshness } from '../../scripts/check-resume-freshness.mjs';
 
@@ -106,6 +107,13 @@ test('computeResumeHtmlHash is deterministic and content-sensitive', () => {
 test('committed resume PDF is in sync with its sources', () => {
   const { ok, failures } = checkResumeFreshness();
   assert.ok(ok, failures.join('\n'));
+});
+
+test('committed manifest description matches the generator', () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(projectRoot, 'docs/resume.manifest.json'), 'utf8')
+  );
+  assert.equal(manifest.description, RESUME_MANIFEST_DESCRIPTION);
 });
 
 test('freshness check fails when a source changes without regenerating', () => {
