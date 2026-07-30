@@ -106,6 +106,8 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   const planningPostStart = planJob.indexOf("- name: 'Post validated planning response'");
   const planningAction = planJob.slice(planningActionStart, planningPostStart);
   assert.doesNotMatch(planningAction, /GITHUB_TOKEN:/);
+  assert.match(planningAction, /gemini_cli_version: '0\.52\.0'/);
+  assert.doesNotMatch(planJob, /actions\/checkout@/);
   assert.match(planJob, /Write Safety.*planning job MUST NOT run `git add`, `git commit`, `git push`/s);
   assert.ok(
     planJob.includes("!(contains(github.event.issue.body, 'plan#') && contains(github.event.issue.body, 'approved'))"),
@@ -134,6 +136,8 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   const executionPostStart = executeJob.indexOf("- name: 'Validate and publish implementation guidance'");
   const executionAction = executeJob.slice(executionActionStart, executionPostStart);
   assert.doesNotMatch(executionAction, /GITHUB_TOKEN:/);
+  assert.match(executionAction, /gemini_cli_version: '0\.52\.0'/);
+  assert.doesNotMatch(executeJob, /actions\/checkout@/);
   assert.doesNotMatch(executeJob, /git (?:add|commit|push)\b/);
 });
 
@@ -162,11 +166,15 @@ test('Gemini workflow removes GitHub App bootstrap and branch automation in favo
     assert.match(job, /GH_CONFIG_DIR: '\$\{\{ runner\.temp \}\}/);
   });
 
-  const checkoutTokens = [...content.matchAll(/token: '(\$\{\{[^}]+\}\})'/g)].map((match) => match[1].trim());
-  assert.ok(checkoutTokens.length > 0, 'Expected checkout steps to reference a token');
-  checkoutTokens.forEach((token) => {
-    assert.match(token, /secrets\.GITHUB_TOKEN/);
-  });
+  assert.doesNotMatch(content, /actions\/checkout@/);
+});
+
+test('required CI workflows use the authoritative generated-file inventory', () => {
+  for (const file of ['.github/workflows/build.yml', '.github/workflows/scan.yml']) {
+    const content = fs.readFileSync(file, 'utf8');
+    assert.match(content, /run: npm run check:generated/);
+    assert.doesNotMatch(content, /git diff --exit-code -- index\.html reading\.html offline\.html _headers/);
+  }
 });
 
 test('CSP is declared in source pages and appears before script tags when present', () => {

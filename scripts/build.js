@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { writeFileNoFollow } = require('./lib/safe-output.cjs');
 const {
   escapeHtml,
   escapeJsonLd,
@@ -1716,7 +1717,8 @@ function buildSite() {
     COMMUNITY: renderCommunity(data.profile),
     SITE_ENGINEERING: renderSiteEngineering(data.profile),
     READING_GRID: renderReadingGrid(data.reading),
-    CONTACT: renderContact(data.profile)
+    CONTACT: renderContact(data.profile),
+    WORK_NAV_CURRENT: ''
   };
 
   const pages = ['index.html', 'work.html', 'reading.html', 'offline.html'];
@@ -1728,8 +1730,12 @@ function buildSite() {
       throw new Error(`Missing source page: ${srcPath}`);
     }
 
+    const pageTokens = {
+      ...tokens,
+      WORK_NAV_CURRENT: page === 'work.html' ? ' aria-current="page"' : ''
+    };
     let content = fs.readFileSync(srcPath, 'utf8');
-    Object.entries(tokens).forEach(([key, value]) => {
+    Object.entries(pageTokens).forEach(([key, value]) => {
       const token = `{{${key}}}`;
       if (content.includes(token)) {
         content = content.replaceAll(token, value);
@@ -1753,6 +1759,7 @@ function buildSite() {
     const canonical = `https://leonardwong.tech/${study.slug}`;
     const caseTokens = {
       ...partials,
+      WORK_NAV_CURRENT: ' aria-current="page"',
       CASE_STUDY_TITLE: escapeHtml(study.title),
       CASE_STUDY_DESCRIPTION: escapeHtml(study.summary),
       CASE_STUDY_CANONICAL: escapeHtml(canonical),
@@ -1779,7 +1786,7 @@ function buildSite() {
     const finalContent = page === 'index.html'
       ? injectCspScriptHashes(content, content)
       : content;
-    fs.writeFileSync(path.join(projectRoot, page), finalContent);
+    writeFileNoFollow(projectRoot, path.join(projectRoot, page), finalContent, `generated ${page}`);
   });
 
   if (!fs.existsSync(headersTemplatePath)) {
@@ -1788,7 +1795,7 @@ function buildSite() {
 
   const headersTemplate = fs.readFileSync(headersTemplatePath, 'utf8');
   const headersContent = injectCspScriptHashes(headersTemplate, indexPage);
-  fs.writeFileSync(path.join(projectRoot, '_headers'), headersContent);
+  writeFileNoFollow(projectRoot, path.join(projectRoot, '_headers'), headersContent, 'generated _headers');
 
   console.log('Build complete: generated', pages.join(', '));
 }

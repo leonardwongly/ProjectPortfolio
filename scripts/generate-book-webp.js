@@ -121,6 +121,22 @@ function writeGeneratedFileNoFollow(sourcePath, targetPath, rootPath = projectRo
   }
 }
 
+function assertSafeSourceFile(sourcePath, rootPath = projectRoot) {
+  const sourceStats = fs.lstatSync(sourcePath);
+  if (!sourceStats.isFile() || sourceStats.isSymbolicLink()) {
+    throw new AssetPathValidationError(sourcePath, 'source must be a regular, non-symlink file');
+  }
+
+  const realRoot = fs.realpathSync(rootPath);
+  const realSource = fs.realpathSync(sourcePath);
+  const rootPrefix = `${realRoot}${path.sep}`;
+  if (realSource !== realRoot && !realSource.startsWith(rootPrefix)) {
+    throw new AssetPathValidationError(sourcePath, 'source resolves outside project root');
+  }
+
+  return realSource;
+}
+
 function run() {
   if (!fs.existsSync(dataPath)) {
     console.error(`Missing reading data: ${dataPath}`);
@@ -171,6 +187,13 @@ function run() {
       return;
     }
 
+    try {
+      sourcePath = assertSafeSourceFile(sourcePath, projectRoot);
+    } catch (error) {
+      console.warn(`[generate-book-webp] ${error.message}. Skipping path.`);
+      return;
+    }
+
     if (pathEntryExists(targetPath)) {
       skipped.push(targetRelative);
       return;
@@ -204,6 +227,7 @@ module.exports = {
   sanitizeCoverRelativePath,
   resolveProjectPath,
   writeGeneratedFileNoFollow,
+  assertSafeSourceFile,
   derive2xPath,
   toWebpPath
 };

@@ -26,7 +26,7 @@ const REVEAL_DELAY_CLASS_PREFIX = 'reveal-delay-';
 const MAX_REVEAL_DELAY_CLASS = 8;
 const SW_UPDATE_EVENT_TYPE = 'SKIP_WAITING';
 
-document.addEventListener('DOMContentLoaded', () => {
+function initializeSite() {
   initNavActive();
   initNavCollapse();
   initAccordionState();
@@ -37,7 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initReadingFilters();
   initServiceWorker();
   window.addEventListener('hashchange', initNavActive);
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeSite, { once: true });
+} else {
+  initializeSite();
+}
 
 function initCommandPalette() {
   const palette = document.getElementById('commandPalette');
@@ -286,7 +292,7 @@ function initNavActive() {
 
 function initNavCollapse() {
   const toggle = document.querySelector('.navbar-toggler');
-  if (!toggle) {
+  if (!toggle || toggle.dataset.interactiveReady === 'true') {
     return;
   }
 
@@ -330,6 +336,7 @@ function initNavCollapse() {
   });
 
   panel.addEventListener('keydown', closeOnEscape);
+  toggle.dataset.interactiveReady = 'true';
 }
 
 function initAccordionState() {
