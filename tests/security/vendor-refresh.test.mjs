@@ -70,6 +70,27 @@ test('ensureVendorPath rejects traversal and non-vendor paths', () => {
   assert.equal(ensureVendorPath('js/vendor/workbox/test-file.js', 'file.path'), 'js/vendor/workbox/test-file.js');
   assert.throws(() => ensureVendorPath('../pwned.txt', 'file.path'), /path must stay under js\/vendor\//);
   assert.throws(() => ensureVendorPath('scripts/build.js', 'file.path'), /path must stay under js\/vendor\//);
+  assert.throws(() => ensureVendorPath('js\\vendor\\workbox\\test-file.js', 'file.path'), /backslashes/);
+  assert.throws(() => ensureVendorPath('C:\\temp\\test-file.js', 'file.path'), /expected relative path/);
+});
+
+test('fetchVendorFiles rejects an empty required-signature set before fetching', async () => {
+  const manifest = makeManifest();
+  manifest.dependencies[0].files[0].signatures = [];
+  let fetched = false;
+
+  await assert.rejects(
+    () => fetchVendorFiles(manifest, {
+      fetchImpl: async () => {
+        fetched = true;
+        return new Response('unexpected', { status: 200 });
+      },
+      lookupImpl: publicLookup,
+      timeoutMs: 5000
+    }),
+    /signatures: expected non-empty array/
+  );
+  assert.equal(fetched, false);
 });
 test('fetchVendorFiles downloads upstream content and verifies signatures', async () => {
   const manifest = makeManifest();
@@ -174,4 +195,37 @@ test('updateManifestHashes and runVendorRefresh write deterministic outputs', as
     }
   ], '2026-04-09');
   assert.equal(updatedManifest.last_reviewed, '2026-04-09');
+});
+
+test('runVendorRefresh rejects a symlinked vendor parent without external writes', async () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'vendor-symlink-'));
+  const externalRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'vendor-external-'));
+  const manifestPath = path.join(tempRoot, 'docs', 'security', 'vendor-dependencies.json');
+  const linkedParent = path.join(tempRoot, 'js', 'vendor', 'workbox');
+  const externalFile = path.join(externalRoot, 'test-file.js');
+  const manifest = makeManifest();
+  try {
+    fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+    fs.mkdirSync(path.dirname(linkedParent), { recursive: true });
+    fs.symlinkSync(externalRoot, linkedParent);
+    fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    fs.writeFileSync(externalFile, 'original external bytes');
+
+    await assert.rejects(
+      () => runVendorRefresh(
+        { write: true, timeoutMs: 5000, today: '2026-04-09' },
+        {
+          rootDir: tempRoot,
+          manifestPath,
+          fetchImpl: async () => new Response('/* workbox:test:9.9.9 */\nconsole.log("test-file.js");\n', { status: 200 }),
+          lookupImpl: publicLookup
+        }
+      ),
+      /symlink not allowed/
+    );
+    assert.equal(fs.readFileSync(externalFile, 'utf8'), 'original external bytes');
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+    fs.rmSync(externalRoot, { recursive: true, force: true });
+  }
 });

@@ -27,14 +27,20 @@
  */
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const require = createRequire(import.meta.url);
+const { writeFileNoFollow } = require('./lib/safe-output.cjs');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
+const RESUME_MANIFEST_DESCRIPTION = 'Freshness manifest for docs/resume.pdf and docs/resume.docx. It records the deterministic rendered HTML hash and exact generated binary hashes. Run `npm run build:resume` after editing the sources below, then commit docs/resume.pdf, docs/resume.docx, and this manifest.';
 const artifactsDir = path.join(projectRoot, 'artifacts');
 const htmlOutPath = path.join(artifactsDir, 'resume.html');
 const pdfOutPath = path.join(projectRoot, 'docs', 'resume.pdf');
@@ -164,6 +170,10 @@ function validateResumeData(resume) {
 /** Stable hash of the deterministic rendered HTML (NOT the non-deterministic PDF bytes). */
 function computeResumeHtmlHash(html) {
   return `sha256-${crypto.createHash('sha256').update(html, 'utf8').digest('hex')}`;
+}
+
+function computeFileSha256(filePath) {
+  return `sha256-${crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex')}`;
 }
 
 function escapeHtml(value) {
@@ -472,7 +482,7 @@ function renderResumeHtml(data) {
 </html>`;
 }
 
-async function exportPdf(html) {
+async function exportPdf(html, outputPath) {
   let chromium;
   try {
     ({ chromium } = await import('playwright'));
@@ -499,7 +509,7 @@ async function exportPdf(html) {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle' });
     await page.pdf({
-      path: pdfOutPath,
+      path: outputPath,
       format: 'A4',
       printBackground: true,
       margin: { top: '13mm', bottom: '13mm', left: '14mm', right: '14mm' }
@@ -509,7 +519,7 @@ async function exportPdf(html) {
   }
 }
 
-function exportDocx() {
+function exportDocx(outputPath) {
   try {
     execFileSync(
       'pandoc',
@@ -518,7 +528,7 @@ function exportDocx() {
         '--from=html',
         '--to=docx',
         '--output',
-        docxOutPath,
+        outputPath,
         '--metadata',
         'title=Leonard Wong Resume'
       ],
@@ -541,7 +551,7 @@ async function main() {
   const html = renderResumeHtml(data);
 
   fs.mkdirSync(artifactsDir, { recursive: true });
-  fs.writeFileSync(htmlOutPath, html);
+  writeFileNoFollow(projectRoot, htmlOutPath, html, 'resume HTML');
   console.log(`Resume HTML written: ${path.relative(projectRoot, htmlOutPath)}`);
 
   if (htmlOnly) {
@@ -550,21 +560,32 @@ async function main() {
   }
 
   fs.mkdirSync(path.dirname(pdfOutPath), { recursive: true });
-  await exportPdf(html);
+  const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-resume-'));
+  const temporaryPdfPath = path.join(temporaryDirectory, 'resume.pdf');
+  const temporaryDocxPath = path.join(temporaryDirectory, 'resume.docx');
+  try {
+    await exportPdf(html, temporaryPdfPath);
+    exportDocx(temporaryDocxPath);
+    writeFileNoFollow(projectRoot, pdfOutPath, fs.readFileSync(temporaryPdfPath), 'resume PDF');
+    writeFileNoFollow(projectRoot, docxOutPath, fs.readFileSync(temporaryDocxPath), 'resume DOCX');
+  } finally {
+    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
   const { size: pdfSize } = fs.statSync(pdfOutPath);
   console.log(`Resume PDF written: ${path.relative(projectRoot, pdfOutPath)} (${(pdfSize / 1024).toFixed(1)} KiB)`);
 
-  exportDocx();
   const { size: docxSize } = fs.statSync(docxOutPath);
   console.log(`Resume DOCX written: ${path.relative(projectRoot, docxOutPath)} (${(docxSize / 1024).toFixed(1)} KiB)`);
 
   const manifest = {
     $generatedBy: 'scripts/build-resume.mjs',
-    description: 'Freshness manifest for docs/resume.pdf and docs/resume.docx. htmlSha256 is the hash of the deterministic rendered resume HTML. Run `npm run build:resume` after editing the sources below, then commit docs/resume.pdf, docs/resume.docx, and this manifest.',
+    description: RESUME_MANIFEST_DESCRIPTION,
     htmlSha256: computeResumeHtmlHash(html),
+    pdfSha256: computeFileSha256(pdfOutPath),
+    docxSha256: computeFileSha256(docxOutPath),
     sources: RESUME_SOURCE_FILES.map((name) => `data/${name}`)
   };
-  fs.writeFileSync(manifestOutPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  writeFileNoFollow(projectRoot, manifestOutPath, `${JSON.stringify(manifest, null, 2)}\n`, 'resume manifest');
   console.log(`Resume manifest written: ${path.relative(projectRoot, manifestOutPath)}`);
 }
 
@@ -582,5 +603,7 @@ export {
   loadResumeData,
   validateResumeData,
   computeResumeHtmlHash,
+  computeFileSha256,
+  RESUME_MANIFEST_DESCRIPTION,
   RESUME_SOURCE_FILES
 };

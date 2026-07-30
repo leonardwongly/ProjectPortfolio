@@ -18,6 +18,7 @@ test.describe('mobile navigation', () => {
     const homeLink = page.locator('#navbarCollapse .nav-link[href$="#home"]');
 
     await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAttribute('data-interactive-ready', 'true');
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await expect(collapsePanel).not.toHaveClass(/\bshow\b/);
 
@@ -40,6 +41,7 @@ test.describe('mobile navigation', () => {
     const collapsePanel = page.locator('#navbarCollapse');
     const firstNavLink = page.locator('#navbarCollapse .nav-link').first();
 
+    await expect(toggle).toHaveAttribute('data-interactive-ready', 'true');
     await toggle.click();
     await expect(collapsePanel).toHaveClass(/\bshow\b/);
     await firstNavLink.focus();
@@ -57,6 +59,7 @@ test.describe('mobile navigation', () => {
     const toggle = page.locator('.navbar-toggler');
     const collapsePanel = page.locator('#navbarCollapse');
 
+    await expect(toggle).toHaveAttribute('data-interactive-ready', 'true');
     await toggle.focus();
     await toggle.press('Enter');
 

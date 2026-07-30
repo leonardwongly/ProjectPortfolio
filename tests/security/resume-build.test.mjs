@@ -7,7 +7,8 @@ import test from 'node:test';
 import {
   renderResumeHtml,
   validateResumeData,
-  computeResumeHtmlHash
+  computeResumeHtmlHash,
+  RESUME_MANIFEST_DESCRIPTION
 } from '../../scripts/build-resume.mjs';
 import { checkResumeFreshness } from '../../scripts/check-resume-freshness.mjs';
 
@@ -108,6 +109,13 @@ test('committed resume PDF is in sync with its sources', () => {
   assert.ok(ok, failures.join('\n'));
 });
 
+test('committed manifest description matches the generator', () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(projectRoot, 'docs/resume.manifest.json'), 'utf8')
+  );
+  assert.equal(manifest.description, RESUME_MANIFEST_DESCRIPTION);
+});
+
 test('freshness check fails when a source changes without regenerating', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-freshness-'));
   try {
@@ -117,8 +125,8 @@ test('freshness check fails when a source changes without regenerating', () => {
       path.join(projectRoot, 'docs/resume.manifest.json'),
       path.join(tempRoot, 'docs/resume.manifest.json')
     );
-    fs.writeFileSync(path.join(tempRoot, 'docs/resume.pdf'), 'placeholder'); // presence only
-    fs.writeFileSync(path.join(tempRoot, 'docs/resume.docx'), 'placeholder'); // presence only
+    fs.copyFileSync(path.join(projectRoot, 'docs/resume.pdf'), path.join(tempRoot, 'docs/resume.pdf'));
+    fs.copyFileSync(path.join(projectRoot, 'docs/resume.docx'), path.join(tempRoot, 'docs/resume.docx'));
 
     // In sync before mutation.
     assert.ok(checkResumeFreshness({ rootDir: tempRoot }).ok);
@@ -132,6 +140,27 @@ test('freshness check fails when a source changes without regenerating', () => {
     const result = checkResumeFreshness({ rootDir: tempRoot });
     assert.equal(result.ok, false);
     assert.match(result.failures.join('\n'), /were not regenerated/);
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('freshness check rejects replaced PDF and DOCX artifacts', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-integrity-'));
+  try {
+    fs.cpSync(path.join(projectRoot, 'data'), path.join(tempRoot, 'data'), { recursive: true });
+    fs.mkdirSync(path.join(tempRoot, 'docs'), { recursive: true });
+    for (const file of ['resume.manifest.json', 'resume.pdf', 'resume.docx']) {
+      fs.copyFileSync(path.join(projectRoot, 'docs', file), path.join(tempRoot, 'docs', file));
+    }
+
+    fs.writeFileSync(path.join(tempRoot, 'docs/resume.pdf'), 'replaced pdf bytes');
+    fs.writeFileSync(path.join(tempRoot, 'docs/resume.docx'), 'replaced docx bytes');
+
+    const result = checkResumeFreshness({ rootDir: tempRoot });
+    assert.equal(result.ok, false);
+    assert.match(result.failures.join('\n'), /PDF bytes do not match/);
+    assert.match(result.failures.join('\n'), /DOCX bytes do not match/);
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }

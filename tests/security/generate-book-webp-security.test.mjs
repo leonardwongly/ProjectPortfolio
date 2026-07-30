@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url);
 const {
   sanitizeCoverRelativePath,
   resolveProjectPath,
+  assertSafeSourceFile,
   writeGeneratedFileNoFollow,
   toWebpPath
 } = require('../../scripts/generate-book-webp.js');
@@ -71,6 +72,22 @@ test('resolveProjectPath enforces root containment', () => {
     () => resolveProjectPath(rootPath, '../../etc/passwd', 'source'),
     /escapes project root/i
   );
+});
+
+test('assertSafeSourceFile rejects a source symlink that resolves outside the project', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-source-test-'));
+  const externalRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-source-external-'));
+  const source = path.join(root, 'book', 'cover.jpg');
+  const external = path.join(externalRoot, 'private.jpg');
+  try {
+    fs.mkdirSync(path.dirname(source), { recursive: true });
+    fs.writeFileSync(external, 'external image');
+    fs.symlinkSync(external, source);
+    assert.throws(() => assertSafeSourceFile(source, root), /non-symlink|symlink/i);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(externalRoot, { recursive: true, force: true });
+  }
 });
 
 test('toWebpPath preserves location and swaps extension', () => {

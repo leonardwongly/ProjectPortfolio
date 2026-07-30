@@ -21,6 +21,7 @@ import {
   validateResumeData,
   computeResumeHtmlHash
 } from './build-resume.mjs';
+import crypto from 'node:crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
@@ -28,6 +29,10 @@ const projectRoot = path.resolve(__dirname, '..');
 const PDF_REL = 'docs/resume.pdf';
 const DOCX_REL = 'docs/resume.docx';
 const MANIFEST_REL = 'docs/resume.manifest.json';
+
+function computeFileSha256(filePath) {
+  return `sha256-${crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex')}`;
+}
 
 function checkResumeFreshness({ rootDir = projectRoot } = {}) {
   const failures = [];
@@ -69,6 +74,19 @@ function checkResumeFreshness({ rootDir = projectRoot } = {}) {
     );
   }
 
+  for (const [label, relativePath, manifestKey] of [
+    ['PDF', PDF_REL, 'pdfSha256'],
+    ['DOCX', DOCX_REL, 'docxSha256']
+  ]) {
+    if (typeof manifest[manifestKey] !== 'string' || !/^sha256-[0-9a-f]{64}$/.test(manifest[manifestKey])) {
+      failures.push(`Resume manifest is missing a valid ${manifestKey}. Run \`npm run build:resume\`.`);
+      continue;
+    }
+    if (fs.existsSync(path.join(rootDir, relativePath)) && computeFileSha256(path.join(rootDir, relativePath)) !== manifest[manifestKey]) {
+      failures.push(`Resume ${label} bytes do not match ${MANIFEST_REL}. Run \`npm run build:resume\`.`);
+    }
+  }
+
   return { ok: failures.length === 0, failures, currentHash };
 }
 
@@ -83,4 +101,4 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   }
 }
 
-export { checkResumeFreshness };
+export { checkResumeFreshness, computeFileSha256 };

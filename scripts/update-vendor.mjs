@@ -1,6 +1,8 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { loadManifest, validateVendorGovernance } from './check-vendor-governance.mjs';
@@ -14,6 +16,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const DEFAULT_TIMEOUT_MS = 15000;
+const require = createRequire(import.meta.url);
+const { assertSafeOutputPath, writeFileNoFollow } = require('./lib/safe-output.cjs');
 
 function fail(message) {
   throw new Error(message);
@@ -40,8 +44,11 @@ function ensureString(value, fieldPath) {
 
 function ensureVendorPath(rawPath, fieldPath) {
   const relativePath = ensureString(rawPath, fieldPath);
-  if (path.isAbsolute(relativePath)) {
+  if (path.isAbsolute(relativePath) || path.win32.isAbsolute(relativePath)) {
     fail(`Invalid manifest at ${fieldPath}: expected relative path`);
+  }
+  if (relativePath.includes('\\')) {
+    fail(`Invalid manifest at ${fieldPath}: path must not contain backslashes`);
   }
 
   const normalized = path.posix.normalize(relativePath);
@@ -132,9 +139,12 @@ function listManifestFiles(manifest) {
         `${fieldPath}.upstream_url`
       );
       const relativePath = ensureVendorPath(fileObject.path, `${fieldPath}.path`);
-      const signatures = Array.isArray(fileObject.signatures) ? fileObject.signatures.map((signature, signatureIndex) =>
+      if (!Array.isArray(fileObject.signatures) || fileObject.signatures.length === 0) {
+        fail(`Invalid manifest at ${fieldPath}.signatures: expected non-empty array`);
+      }
+      const signatures = fileObject.signatures.map((signature, signatureIndex) =>
         ensureString(signature, `${fieldPath}.signatures[${signatureIndex}]`)
-      ) : fail(`Invalid manifest at ${fieldPath}.signatures: expected non-empty array`);
+      );
 
       return {
         dependencyIndex,
@@ -228,13 +238,38 @@ function updateManifestHashes(manifest, fetchedFiles, today) {
   return nextManifest;
 }
 
-function writeFileAtomically(filePath, bytes) {
+function ensureSafeDirectory(rootDir, directory, fieldPath) {
+  const lexicalRoot = path.resolve(rootDir);
+  const resolvedRoot = fs.realpathSync(lexicalRoot);
+  const resolvedDirectory = path.resolve(directory);
+  const lexicalRootPrefix = `${lexicalRoot}${path.sep}`;
+  if (resolvedDirectory !== lexicalRoot && !resolvedDirectory.startsWith(lexicalRootPrefix)) {
+    fail(`Unsafe ${fieldPath}: directory escapes allowed root`);
+  }
+
+  let current = resolvedRoot;
+  const relative = path.relative(lexicalRoot, resolvedDirectory);
+  for (const segment of relative ? relative.split(path.sep) : []) {
+    current = path.join(current, segment);
+    if (fs.existsSync(current)) {
+      const stats = fs.lstatSync(current);
+      if (!stats.isDirectory() || stats.isSymbolicLink()) {
+        fail(`Unsafe ${fieldPath}: parent contains a non-directory or symlink`);
+      }
+    } else {
+      fs.mkdirSync(current);
+    }
+  }
+}
+
+function writeFileAtomically(rootDir, filePath, bytes, fieldPath) {
   const directory = path.dirname(filePath);
-  fs.mkdirSync(directory, { recursive: true });
+  ensureSafeDirectory(rootDir, directory, fieldPath);
+  assertSafeOutputPath(rootDir, filePath, fieldPath);
   const tempFilePath = path.join(directory, `.tmp-${path.basename(filePath)}-${process.pid}-${Date.now()}-${crypto.randomUUID()}`);
 
   try {
-    fs.writeFileSync(tempFilePath, bytes);
+    writeFileNoFollow(rootDir, tempFilePath, bytes, `${fieldPath} temporary file`);
     fs.renameSync(tempFilePath, filePath);
   } catch (error) {
     if (fs.existsSync(tempFilePath)) {
@@ -244,12 +279,60 @@ function writeFileAtomically(filePath, bytes) {
   }
 }
 
-function persistVendorRefresh(manifestPath, manifest, fetchedFiles, rootDir = projectRoot) {
-  fetchedFiles.forEach((fileEntry) => {
-    writeFileAtomically(path.join(rootDir, fileEntry.path), fileEntry.bytes);
-  });
+function assertVendorTreeHasNoSymlinks(rootDir) {
+  const vendorDir = path.join(rootDir, 'js', 'vendor');
+  if (!fs.existsSync(vendorDir)) return;
 
-  writeFileAtomically(manifestPath, Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, 'utf8'));
+  const queue = [vendorDir];
+  while (queue.length > 0) {
+    const current = queue.pop();
+    const stats = fs.lstatSync(current);
+    if (stats.isSymbolicLink()) {
+      fail(`Unsafe vendor tree: symlink not allowed at ${path.relative(rootDir, current)}`);
+    }
+    if (stats.isDirectory()) {
+      fs.readdirSync(current).forEach((entry) => queue.push(path.join(current, entry)));
+    }
+  }
+}
+
+function persistVendorRefresh(manifestPath, manifest, fetchedFiles, rootDir = projectRoot) {
+  const updates = [
+    ...fetchedFiles.map((fileEntry) => ({ path: path.join(rootDir, fileEntry.path), bytes: fileEntry.bytes, label: fileEntry.path })),
+    { path: manifestPath, bytes: Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, 'utf8'), label: 'vendor manifest' }
+  ];
+  const backups = updates.map((update) => ({
+    ...update,
+    existed: fs.existsSync(update.path),
+    bytesBefore: fs.existsSync(update.path) ? fs.readFileSync(update.path) : null
+  }));
+
+  try {
+    updates.forEach((update) => writeFileAtomically(rootDir, update.path, update.bytes, update.label));
+  } catch (error) {
+    backups.reverse().forEach((backup) => {
+      if (backup.existed) writeFileAtomically(rootDir, backup.path, backup.bytesBefore, `${backup.label} rollback`);
+      else if (fs.existsSync(backup.path)) fs.unlinkSync(backup.path);
+    });
+    throw error;
+  }
+}
+
+function stageAndValidateRefresh(manifest, fetchedFiles, rootDir, today) {
+  const stageRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-vendor-stage-'));
+  try {
+    fs.cpSync(path.join(rootDir, 'js', 'vendor'), path.join(stageRoot, 'js', 'vendor'), { recursive: true, dereference: false });
+    const nextManifest = updateManifestHashes(manifest, fetchedFiles, today);
+    fetchedFiles.forEach((fileEntry) => {
+      writeFileAtomically(stageRoot, path.join(stageRoot, fileEntry.path), fileEntry.bytes, `staged ${fileEntry.path}`);
+    });
+    const stagedManifestPath = path.join(stageRoot, 'docs', 'security', 'vendor-dependencies.json');
+    writeFileAtomically(stageRoot, stagedManifestPath, Buffer.from(`${JSON.stringify(nextManifest, null, 2)}\n`, 'utf8'), 'staged vendor manifest');
+    validateVendorGovernance(nextManifest, { rootDir: stageRoot, today });
+    return nextManifest;
+  } finally {
+    fs.rmSync(stageRoot, { recursive: true, force: true });
+  }
 }
 
 async function runVendorRefresh(options = {}, dependencies = {}) {
@@ -258,6 +341,7 @@ async function runVendorRefresh(options = {}, dependencies = {}) {
   const manifest = loadManifest(manifestPath);
 
   listManifestFiles(manifest);
+  assertVendorTreeHasNoSymlinks(rootDir);
 
   const fetchedFiles = await fetchVendorFiles(manifest, {
     fetchImpl: dependencies.fetchImpl || fetch,
@@ -266,7 +350,7 @@ async function runVendorRefresh(options = {}, dependencies = {}) {
   });
 
   const summary = summarizeFetchedFiles(fetchedFiles, rootDir);
-  const nextManifest = updateManifestHashes(manifest, fetchedFiles, options.today);
+  const nextManifest = stageAndValidateRefresh(manifest, fetchedFiles, rootDir, options.today);
 
   if (options.write) {
     persistVendorRefresh(manifestPath, nextManifest, fetchedFiles, rootDir);
@@ -314,5 +398,6 @@ export {
   parseArgs,
   runVendorRefresh,
   summarizeFetchedFiles,
-  updateManifestHashes
+  updateManifestHashes,
+  assertVendorTreeHasNoSymlinks
 };
