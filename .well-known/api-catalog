@@ -1,0 +1,25 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://leonardwong.tech/",
+      "service-desc": [
+        {
+          "href": "https://leonardwong.tech/.well-known/openapi.json",
+          "type": "application/vnd.oai.openapi+json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://leonardwong.tech/.well-known/service-doc.html",
+          "type": "text/html"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://leonardwong.tech/.well-known/status",
+          "type": "application/json"
+        }
+      ]
+    }
+  ]
+}

@@ -25,4 +25,4 @@ jobs:
       - name: Ensure generated files are committed
         run: npm run check:generated
       - name: Run security and content tests
-        run: npm run test:security
+        run: npm run test:security:coverage

@@ -1,0 +1,14 @@
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Leonard Wong — Portfolio",
+  "url": "https://leonardwong.tech/",
+  "description": "Personal portfolio and professional profile of Leonard Wong, an AI Software Engineer building governed agentic AI systems.",
+  "inLanguage": "en",
+  "author": {
+    "@type": "Person",
+    "name": "Leonard Wong",
+    "jobTitle": "AI Software Engineer",
+    "url": "https://leonardwong.tech/"
+  }
+}

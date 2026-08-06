@@ -32,31 +32,57 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { TextDecoder } from 'node:util';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const { writeFileNoFollow } = require('./lib/safe-output.cjs');
+const { assertSafeOutputPath, writeFileNoFollow } = require('./lib/safe-output.cjs');
+const {
+  StableFileReadError,
+  readStableFileNoFollow,
+  sameFileIdentity
+} = require('./lib/safe-input.cjs');
+const {
+  validateProfileData,
+  validateSkillsData,
+  validateExperienceData,
+  validateCertificationData
+} = require('./build.js');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const RESUME_MANIFEST_DESCRIPTION = 'Freshness manifest for docs/resume.pdf and docs/resume.docx. It records the deterministic rendered HTML hash and exact generated binary hashes. Run `npm run build:resume` after editing the sources below, then commit docs/resume.pdf, docs/resume.docx, and this manifest.';
-const artifactsDir = path.join(projectRoot, 'artifacts');
-const htmlOutPath = path.join(artifactsDir, 'resume.html');
-const pdfOutPath = path.join(projectRoot, 'docs', 'resume.pdf');
-const docxOutPath = path.join(projectRoot, 'docs', 'resume.docx');
-const manifestOutPath = path.join(projectRoot, 'docs', 'resume.manifest.json');
 
 const RESUME_SOURCE_FILES = ['resume.json', 'profile.json', 'experience.json', 'skills.json', 'certifications.json'];
+const MAX_RESUME_SOURCE_BYTES = 512 * 1024;
+const MAX_RESUME_HTML_BYTES = 2 * 1024 * 1024;
+const MAX_RESUME_ARTIFACT_BYTES = 32 * 1024 * 1024;
+const MAX_RESUME_MANIFEST_BYTES = 64 * 1024;
+const RESUME_EXPORT_TIMEOUT_MS = 60 * 1000;
+const MAX_RESUME_EXPORT_TIMEOUT_MS = 5 * 60 * 1000;
+const MAX_PANDOC_DIAGNOSTIC_BYTES = 1024 * 1024;
 
 const AI_PATTERN = /\b(AI|LLM|agent|agentic|responsible|explainable|cybersecurity|machine learning)\b/i;
 
 function readJson(name, { rootDir = projectRoot } = {}) {
   const file = path.join(rootDir, 'data', name);
-  if (!fs.existsSync(file)) {
-    throw new Error(`Missing data file: ${file}`);
+  const label = `data/${name}`;
+  let bytes;
+  try {
+    bytes = readStableFileNoFollow(file, {
+      rootDir,
+      label,
+      maxBytes: MAX_RESUME_SOURCE_BYTES
+    });
+  } catch (error) {
+    throw new Error(`Could not read resume source ${label}: ${error.message}`, { cause: error });
   }
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
+  try {
+    return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  } catch (error) {
+    throw new Error(`Invalid JSON in resume source ${label}: ${error.message}`, { cause: error });
+  }
 }
 
 function loadResumeData({ rootDir = projectRoot } = {}) {
@@ -69,10 +95,7 @@ function loadResumeData({ rootDir = projectRoot } = {}) {
   };
 }
 
-// --- Validation: fail fast on a malformed resume.json --------------------
-// The shared data files (profile/experience/skills/certifications) are already
-// validated by scripts/build.js during `npm run build`; here we only validate
-// the resume-only file that build.js does not know about.
+// --- Validation: fail fast on malformed resume and shared website data ----
 
 const RESUME_TEXT_MAX = 1000;
 const SECTION_KEYS = ['summary', 'ai_highlights', 'skills', 'experience', 'education', 'publication', 'certifications'];
@@ -156,15 +179,30 @@ function validateResumeData(resume) {
   }
 
   if (resume.section_order !== undefined) {
+    const seenSections = new Set();
     assertArray(resume.section_order, 'resume.section_order', { min: 1, max: 12 }).forEach((key, i) => {
       const value = assertString(key, `resume.section_order[${i}]`, { max: 40 });
       if (!SECTION_KEYS.includes(value)) {
         fail(`resume.section_order[${i}]`, `unknown section "${value}" (allowed: ${SECTION_KEYS.join(', ')})`);
       }
+      if (seenSections.has(value)) {
+        fail(`resume.section_order[${i}]`, `duplicate section "${value}"`);
+      }
+      seenSections.add(value);
     });
   }
 
   return resume;
+}
+
+function validateResumeSources(data) {
+  assertObject(data, 'resume sources');
+  validateResumeData(data.resume);
+  validateProfileData(data.profile);
+  validateSkillsData(data.skills);
+  validateExperienceData(data.experience);
+  validateCertificationData(data.certifications);
+  return data;
 }
 
 /** Stable hash of the deterministic rendered HTML (NOT the non-deterministic PDF bytes). */
@@ -172,8 +210,8 @@ function computeResumeHtmlHash(html) {
   return `sha256-${crypto.createHash('sha256').update(html, 'utf8').digest('hex')}`;
 }
 
-function computeFileSha256(filePath) {
-  return `sha256-${crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex')}`;
+function computeBytesSha256(bytes) {
+  return `sha256-${crypto.createHash('sha256').update(bytes).digest('hex')}`;
 }
 
 function escapeHtml(value) {
@@ -250,7 +288,7 @@ function renderAiHighlights(resume) {
     .join('');
   return `
   <section class="block ai-callout" aria-label="${escapeHtml(block.heading || 'AI & Agentic')}">
-    <h2 class="ai-callout__head">${escapeHtml(block.heading || 'AI &amp; Agentic Highlights')}</h2>
+    <h2 class="ai-callout__head">${escapeHtml(block.heading || 'AI & Agentic Highlights')}</h2>
     <ul class="ai-callout__list">${items}</ul>
   </section>`;
 }
@@ -482,7 +520,74 @@ function renderResumeHtml(data) {
 </html>`;
 }
 
-async function exportPdf(html, outputPath) {
+class ResumeExportTimeoutError extends Error {
+  constructor(label, timeoutMs, options) {
+    super(`${label} timed out after ${timeoutMs}ms`, options);
+    this.name = 'ResumeExportTimeoutError';
+    this.code = 'ERR_RESUME_EXPORT_TIMEOUT';
+    this.timeoutMs = timeoutMs;
+  }
+}
+
+function assertResumeExportTimeout(timeoutMs) {
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > MAX_RESUME_EXPORT_TIMEOUT_MS) {
+    throw new TypeError(
+      `Resume export timeout must be a positive safe integer no greater than ${MAX_RESUME_EXPORT_TIMEOUT_MS}.`
+    );
+  }
+  return timeoutMs;
+}
+
+function withExporterDeadline(operation, {
+  label,
+  timeoutMs,
+  onTimeout,
+  setTimeoutImpl = setTimeout,
+  clearTimeoutImpl = clearTimeout
+}) {
+  assertResumeExportTimeout(timeoutMs);
+  if (typeof operation !== 'function') throw new TypeError('Exporter operation must be a function.');
+  if (typeof label !== 'string' || label.length === 0) {
+    throw new TypeError('Exporter deadline label must be a non-empty string.');
+  }
+  if (onTimeout !== undefined && typeof onTimeout !== 'function') {
+    throw new TypeError('Exporter timeout cleanup must be a function when provided.');
+  }
+  if (typeof setTimeoutImpl !== 'function' || typeof clearTimeoutImpl !== 'function') {
+    throw new TypeError('Exporter deadline timers must be functions.');
+  }
+
+  let timeoutHandle;
+  let expired = false;
+  let timeoutError;
+  const deadline = Object.freeze({
+    get expired() {
+      return expired;
+    },
+    throwIfExpired() {
+      if (expired) throw timeoutError;
+    }
+  });
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutHandle = setTimeoutImpl(() => {
+      expired = true;
+      timeoutError = new ResumeExportTimeoutError(label, timeoutMs);
+      try {
+        Promise.resolve(onTimeout?.(timeoutError)).catch(() => {});
+      } catch {
+        // The deadline must still reject even if best-effort cleanup itself fails.
+      }
+      reject(timeoutError);
+    }, timeoutMs);
+  });
+  const operationPromise = Promise.resolve().then(() => operation(deadline));
+
+  return Promise.race([operationPromise, timeoutPromise]).finally(() => {
+    if (timeoutHandle !== undefined) clearTimeoutImpl(timeoutHandle);
+  });
+}
+
+async function loadPlaywrightChromium() {
   let chromium;
   try {
     ({ chromium } = await import('playwright'));
@@ -495,36 +600,141 @@ async function exportPdf(html, outputPath) {
       );
     }
   }
-
-  let browser;
-  try {
-    browser = await chromium.launch({ headless: true });
-  } catch (error) {
-    throw new Error(
-      `Could not launch Chromium for PDF export. Run \`npx playwright install chromium\`.\nOriginal error: ${error.message}`
-    );
-  }
-
-  try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle' });
-    await page.pdf({
-      path: outputPath,
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '13mm', bottom: '13mm', left: '14mm', right: '14mm' }
-    });
-  } finally {
-    await browser.close();
-  }
+  return chromium;
 }
 
-function exportDocx(outputPath) {
+async function exportPdf(html, outputPath, {
+  timeoutMs = RESUME_EXPORT_TIMEOUT_MS,
+  loadChromiumImpl = loadPlaywrightChromium,
+  setTimeoutImpl = setTimeout,
+  clearTimeoutImpl = clearTimeout
+} = {}) {
+  assertResumeExportTimeout(timeoutMs);
+  if (typeof loadChromiumImpl !== 'function') {
+    throw new TypeError('PDF exporter requires a Playwright Chromium loader.');
+  }
+
+  let browser;
+  let page;
+  let pageClosePromise;
+  let browserClosePromise;
+
+  function startPageClose() {
+    if (!page || pageClosePromise) return pageClosePromise;
+    const currentPage = page;
+    try {
+      pageClosePromise = Promise.resolve(currentPage.close({ runBeforeUnload: false }));
+    } catch (error) {
+      pageClosePromise = Promise.reject(error);
+    }
+    return pageClosePromise;
+  }
+
+  function startBrowserClose() {
+    if (!browser || browserClosePromise) return browserClosePromise;
+    const currentBrowser = browser;
+    try {
+      browserClosePromise = Promise.resolve(currentBrowser.close());
+    } catch (error) {
+      browserClosePromise = Promise.reject(error);
+    }
+    return browserClosePromise;
+  }
+
+  function forceClosePlaywrightResources() {
+    const closeAttempts = [startPageClose(), startBrowserClose()].filter(Boolean);
+    return Promise.allSettled(closeAttempts);
+  }
+
+  async function closePlaywrightResources() {
+    const failures = [];
+    const pageClose = startPageClose();
+    if (pageClose) {
+      try {
+        await pageClose;
+      } catch (error) {
+        failures.push(error);
+      }
+    }
+    const browserClose = startBrowserClose();
+    if (browserClose) {
+      try {
+        await browserClose;
+      } catch (error) {
+        failures.push(error);
+      }
+    }
+    page = undefined;
+    browser = undefined;
+    if (failures.length > 0) {
+      throw new AggregateError(failures, 'Could not completely close Playwright PDF export resources.');
+    }
+  }
+
+  return withExporterDeadline(async (deadline) => {
+    let exportError;
+    try {
+      const chromium = await loadChromiumImpl();
+      deadline.throwIfExpired();
+      try {
+        browser = await chromium.launch({ headless: true, timeout: timeoutMs });
+      } catch (error) {
+        throw new Error(
+          'Could not launch Chromium for PDF export. Run `npx playwright install chromium`.\n' +
+          `Original error: ${error.message}`,
+          { cause: error }
+        );
+      }
+      deadline.throwIfExpired();
+      page = await browser.newPage();
+      deadline.throwIfExpired();
+      await page.setContent(html, { waitUntil: 'networkidle', timeout: timeoutMs });
+      deadline.throwIfExpired();
+      await page.pdf({
+        path: outputPath,
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '13mm', bottom: '13mm', left: '14mm', right: '14mm' }
+      });
+      deadline.throwIfExpired();
+    } catch (error) {
+      exportError = error;
+      throw error;
+    } finally {
+      try {
+        await closePlaywrightResources();
+      } catch (cleanupError) {
+        if (exportError) {
+          throw new AggregateError(
+            [exportError, cleanupError],
+            'PDF export failed and Playwright resource cleanup also failed.'
+          );
+        }
+        throw cleanupError;
+      }
+    }
+  }, {
+    label: 'PDF export',
+    timeoutMs,
+    onTimeout: forceClosePlaywrightResources,
+    setTimeoutImpl,
+    clearTimeoutImpl
+  });
+}
+
+function exportDocx(htmlPath, outputPath, {
+  timeoutMs = RESUME_EXPORT_TIMEOUT_MS,
+  execFileSyncImpl = execFileSync
+} = {}) {
+  assertResumeExportTimeout(timeoutMs);
+  if (typeof execFileSyncImpl !== 'function') {
+    throw new TypeError('DOCX exporter requires an execFileSync implementation.');
+  }
   try {
-    execFileSync(
+    execFileSyncImpl(
       'pandoc',
       [
-        htmlOutPath,
+        htmlPath,
         '--from=html',
         '--to=docx',
         '--output',
@@ -532,61 +742,353 @@ function exportDocx(outputPath) {
         '--metadata',
         'title=Leonard Wong Resume'
       ],
-      { stdio: 'pipe' }
+      {
+        stdio: 'pipe',
+        timeout: timeoutMs,
+        killSignal: 'SIGKILL',
+        maxBuffer: MAX_PANDOC_DIAGNOSTIC_BYTES
+      }
     );
   } catch (error) {
     const details = error.stderr?.toString().trim() || error.message;
+    if (error.code === 'ETIMEDOUT') {
+      throw new ResumeExportTimeoutError('DOCX export', timeoutMs, { cause: error });
+    }
     throw new Error(
-      `Could not export DOCX with pandoc. Install pandoc or ensure it is on PATH.\nOriginal error: ${details}`
+      `Could not export DOCX with pandoc. Install pandoc or ensure it is on PATH.\nOriginal error: ${details}`,
+      { cause: error }
     );
   }
 }
 
-async function main() {
-  const htmlOnly = process.argv.includes('--html-only');
-
-  const data = loadResumeData();
-  validateResumeData(data.resume);
-
-  const html = renderResumeHtml(data);
-
-  fs.mkdirSync(artifactsDir, { recursive: true });
-  writeFileNoFollow(projectRoot, htmlOutPath, html, 'resume HTML');
-  console.log(`Resume HTML written: ${path.relative(projectRoot, htmlOutPath)}`);
-
-  if (htmlOnly) {
-    console.log('Skipping PDF export and manifest update (--html-only).');
-    return;
-  }
-
-  fs.mkdirSync(path.dirname(pdfOutPath), { recursive: true });
-  const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-resume-'));
-  const temporaryPdfPath = path.join(temporaryDirectory, 'resume.pdf');
-  const temporaryDocxPath = path.join(temporaryDirectory, 'resume.docx');
-  try {
-    await exportPdf(html, temporaryPdfPath);
-    exportDocx(temporaryDocxPath);
-    writeFileNoFollow(projectRoot, pdfOutPath, fs.readFileSync(temporaryPdfPath), 'resume PDF');
-    writeFileNoFollow(projectRoot, docxOutPath, fs.readFileSync(temporaryDocxPath), 'resume DOCX');
-  } finally {
-    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
-  }
-  const { size: pdfSize } = fs.statSync(pdfOutPath);
-  console.log(`Resume PDF written: ${path.relative(projectRoot, pdfOutPath)} (${(pdfSize / 1024).toFixed(1)} KiB)`);
-
-  const { size: docxSize } = fs.statSync(docxOutPath);
-  console.log(`Resume DOCX written: ${path.relative(projectRoot, docxOutPath)} (${(docxSize / 1024).toFixed(1)} KiB)`);
-
-  const manifest = {
-    $generatedBy: 'scripts/build-resume.mjs',
-    description: RESUME_MANIFEST_DESCRIPTION,
-    htmlSha256: computeResumeHtmlHash(html),
-    pdfSha256: computeFileSha256(pdfOutPath),
-    docxSha256: computeFileSha256(docxOutPath),
-    sources: RESUME_SOURCE_FILES.map((name) => `data/${name}`)
+function getResumePaths(rootDir = projectRoot) {
+  const resolvedRoot = path.resolve(rootDir);
+  const resolvedArtifactsDir = path.join(resolvedRoot, 'artifacts');
+  return {
+    rootDir: resolvedRoot,
+    artifactsDir: resolvedArtifactsDir,
+    htmlOutPath: path.join(resolvedArtifactsDir, 'resume.html'),
+    pdfOutPath: path.join(resolvedRoot, 'docs', 'resume.pdf'),
+    docxOutPath: path.join(resolvedRoot, 'docs', 'resume.docx'),
+    manifestOutPath: path.join(resolvedRoot, 'docs', 'resume.manifest.json'),
+    buildLockPath: path.join(resolvedArtifactsDir, '.resume-build.lock')
   };
-  writeFileNoFollow(projectRoot, manifestOutPath, `${JSON.stringify(manifest, null, 2)}\n`, 'resume manifest');
-  console.log(`Resume manifest written: ${path.relative(projectRoot, manifestOutPath)}`);
+}
+
+function publicationByteLength(bytes) {
+  if (Buffer.isBuffer(bytes) || ArrayBuffer.isView(bytes)) return bytes.byteLength;
+  return Buffer.byteLength(String(bytes), 'utf8');
+}
+
+function publishResumeBundle({ rootDir, entries, writeFileImpl = writeFileNoFollow }) {
+  if (!Array.isArray(entries) || entries.length === 0) {
+    throw new TypeError('Resume publication entries must be a non-empty array.');
+  }
+
+  const seenPaths = new Set();
+  const snapshots = entries.map((entry) => {
+    if (!entry || typeof entry !== 'object' || typeof entry.path !== 'string' ||
+        typeof entry.label !== 'string' || !Object.hasOwn(entry, 'bytes') ||
+        !Number.isSafeInteger(entry.maxBytes) || entry.maxBytes < 1) {
+      throw new TypeError('Each resume publication entry requires a path, bytes, label, and positive maxBytes.');
+    }
+    const resolvedPath = assertSafeOutputPath(rootDir, entry.path, entry.label);
+    if (seenPaths.has(resolvedPath)) {
+      throw new Error(`Duplicate resume publication path: ${resolvedPath}`);
+    }
+    seenPaths.add(resolvedPath);
+    const byteLength = publicationByteLength(entry.bytes);
+    if (byteLength < 1 || byteLength > entry.maxBytes) {
+      throw new Error(`Generated ${entry.label} is outside the allowed 1-${entry.maxBytes} byte range.`);
+    }
+    try {
+      return {
+        existed: true,
+        bytes: readStableFileNoFollow(entry.path, {
+          rootDir,
+          label: entry.label,
+          maxBytes: entry.maxBytes
+        })
+      };
+    } catch (error) {
+      if (error instanceof StableFileReadError && error.reason === 'missing') {
+        return { existed: false, bytes: null };
+      }
+      throw error;
+    }
+  });
+
+  const published = [];
+  try {
+    entries.forEach((entry, index) => {
+      writeFileImpl(rootDir, entry.path, entry.bytes, entry.label);
+      const stats = fs.lstatSync(entry.path, { bigint: true });
+      if (!stats.isFile() || stats.isSymbolicLink()) {
+        throw new Error(`Published ${entry.label} is not a regular file.`);
+      }
+      published.push({ index, stats });
+    });
+  } catch (publicationError) {
+    const rollbackErrors = [];
+    for (let cursor = published.length - 1; cursor >= 0; cursor -= 1) {
+      const { index, stats: publishedStats } = published[cursor];
+      const entry = entries[index];
+      const snapshot = snapshots[index];
+      try {
+        if (snapshot.existed) {
+          writeFileNoFollow(rootDir, entry.path, snapshot.bytes, `rollback ${entry.label}`);
+        } else {
+          const currentStats = fs.lstatSync(entry.path, { bigint: true });
+          if (!currentStats.isFile() || !sameFileIdentity(publishedStats, currentStats)) {
+            throw new Error(`Published ${entry.label} changed before rollback; refusing to remove it.`);
+          }
+          fs.unlinkSync(entry.path);
+        }
+      } catch (error) {
+        rollbackErrors.push(error);
+      }
+    }
+    if (rollbackErrors.length > 0) {
+      throw new AggregateError(
+        [publicationError, ...rollbackErrors],
+        `Resume publication failed and ${rollbackErrors.length} rollback operation(s) also failed.`
+      );
+    }
+    throw publicationError;
+  }
+}
+
+function acquireResumeBuildLock({ rootDir = projectRoot } = {}) {
+  const paths = getResumePaths(rootDir);
+  fs.mkdirSync(paths.artifactsDir, { recursive: true });
+  const lockPath = assertSafeOutputPath(paths.rootDir, paths.buildLockPath, 'resume build lock');
+  const flags = fs.constants.O_WRONLY |
+    fs.constants.O_CREAT |
+    fs.constants.O_EXCL |
+    (fs.constants.O_NOFOLLOW || 0) |
+    (fs.constants.O_CLOEXEC || 0);
+  let descriptor;
+
+  try {
+    descriptor = fs.openSync(lockPath, flags, 0o600);
+  } catch (error) {
+    if (error.code === 'EEXIST' || error.code === 'ELOOP') {
+      throw new Error(
+        `Resume build lock is already held or unsafe: ${path.relative(paths.rootDir, lockPath)}. ` +
+        'Wait for the active build to finish; remove a stale lock only after verifying no build is running.'
+      );
+    }
+    throw error;
+  }
+
+  let lockStats;
+  try {
+    lockStats = fs.fstatSync(descriptor, { bigint: true });
+    if (!lockStats.isFile() || lockStats.nlink !== 1n) {
+      throw new Error('Resume build lock is not an owned single-link regular file.');
+    }
+    fs.writeFileSync(
+      descriptor,
+      `${JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() })}\n`,
+      'utf8'
+    );
+    fs.fsyncSync(descriptor);
+    const writtenStats = fs.fstatSync(descriptor, { bigint: true });
+    const currentStats = fs.lstatSync(lockPath, { bigint: true });
+    if (!writtenStats.isFile() || writtenStats.nlink !== 1n ||
+        !currentStats.isFile() || currentStats.nlink !== 1n ||
+        !sameFileIdentity(writtenStats, currentStats)) {
+      throw new Error('Resume build lock changed ownership during acquisition.');
+    }
+    lockStats = writtenStats;
+  } catch (error) {
+    let ownedStats = lockStats;
+    try {
+      if (!ownedStats) ownedStats = fs.fstatSync(descriptor, { bigint: true });
+      const currentStats = fs.lstatSync(lockPath, { bigint: true });
+      if (ownedStats.isFile() && ownedStats.nlink === 1n &&
+          currentStats.isFile() && currentStats.nlink === 1n &&
+          sameFileIdentity(ownedStats, currentStats)) {
+        fs.unlinkSync(lockPath);
+      }
+    } catch (cleanupError) {
+      if (cleanupError.code !== 'ENOENT') error.lockCleanupError = cleanupError;
+    } finally {
+      try {
+        fs.closeSync(descriptor);
+      } catch (closeError) {
+        error.lockCloseError = closeError;
+      }
+    }
+    throw error;
+  }
+
+  let released = false;
+  return {
+    path: lockPath,
+    release() {
+      if (released) return;
+      released = true;
+      let releaseError;
+      try {
+        const currentStats = fs.lstatSync(lockPath, { bigint: true });
+        if (!currentStats.isFile() || currentStats.nlink !== 1n ||
+            !sameFileIdentity(lockStats, currentStats)) {
+          throw new Error('Resume build lock changed ownership before release; refusing to remove it.');
+        }
+        fs.unlinkSync(lockPath);
+      } catch (error) {
+        releaseError = error;
+      } finally {
+        fs.closeSync(descriptor);
+      }
+      if (releaseError) throw releaseError;
+    }
+  };
+}
+
+async function withResumeBuildLock(options, operation) {
+  const lock = acquireResumeBuildLock(options);
+  let operationError;
+  try {
+    return await operation();
+  } catch (error) {
+    operationError = error;
+    throw error;
+  } finally {
+    try {
+      lock.release();
+    } catch (releaseError) {
+      if (operationError) {
+        throw new AggregateError(
+          [operationError, releaseError],
+          'Resume build operation failed and the build lock could not be safely released.'
+        );
+      }
+      throw releaseError;
+    }
+  }
+}
+
+async function buildResume({
+  rootDir = projectRoot,
+  htmlOnly = false,
+  exportTimeoutMs = RESUME_EXPORT_TIMEOUT_MS,
+  exportPdfImpl = exportPdf,
+  exportDocxImpl = exportDocx,
+  publishFileImpl = writeFileNoFollow,
+  temporaryRoot = os.tmpdir(),
+  log = console.log
+} = {}) {
+  assertResumeExportTimeout(exportTimeoutMs);
+  const paths = getResumePaths(rootDir);
+  fs.mkdirSync(paths.artifactsDir, { recursive: true });
+
+  return withResumeBuildLock({ rootDir: paths.rootDir }, async () => {
+    const data = loadResumeData({ rootDir: paths.rootDir });
+    validateResumeSources(data);
+    const html = renderResumeHtml(data);
+
+    if (htmlOnly) {
+      writeFileNoFollow(paths.rootDir, paths.htmlOutPath, html, 'resume HTML');
+      log(`Resume HTML written: ${path.relative(paths.rootDir, paths.htmlOutPath)}`);
+      log('Skipping PDF export and manifest update (--html-only).');
+      return { html, paths, manifest: null };
+    }
+
+    fs.mkdirSync(path.dirname(paths.pdfOutPath), { recursive: true });
+    const temporaryDirectory = fs.mkdtempSync(path.join(temporaryRoot, 'projectportfolio-resume-'));
+    const temporaryHtmlPath = path.join(temporaryDirectory, 'resume.html');
+    const temporaryPdfPath = path.join(temporaryDirectory, 'resume.pdf');
+    const temporaryDocxPath = path.join(temporaryDirectory, 'resume.docx');
+
+    try {
+      writeFileNoFollow(temporaryDirectory, temporaryHtmlPath, html, 'temporary resume HTML');
+      await exportPdfImpl(html, temporaryPdfPath, {
+        htmlPath: temporaryHtmlPath,
+        timeoutMs: exportTimeoutMs
+      });
+      await exportDocxImpl(temporaryHtmlPath, temporaryDocxPath, {
+        timeoutMs: exportTimeoutMs
+      });
+
+      const pdfBytes = readStableFileNoFollow(temporaryPdfPath, {
+        rootDir: temporaryDirectory,
+        label: 'temporary resume PDF',
+        maxBytes: MAX_RESUME_ARTIFACT_BYTES
+      });
+      const docxBytes = readStableFileNoFollow(temporaryDocxPath, {
+        rootDir: temporaryDirectory,
+        label: 'temporary resume DOCX',
+        maxBytes: MAX_RESUME_ARTIFACT_BYTES
+      });
+      const manifest = {
+        $generatedBy: 'scripts/build-resume.mjs',
+        description: RESUME_MANIFEST_DESCRIPTION,
+        htmlSha256: computeResumeHtmlHash(html),
+        pdfSha256: computeBytesSha256(pdfBytes),
+        docxSha256: computeBytesSha256(docxBytes),
+        sources: RESUME_SOURCE_FILES.map((name) => `data/${name}`)
+      };
+      const manifestBytes = `${JSON.stringify(manifest, null, 2)}\n`;
+
+      // Every shared file is individually atomic and the exclusive lock spans
+      // the complete bundle, so concurrent builders cannot interleave versions.
+      // If an atomic write still fails, previously published entries are
+      // restored from bounded stable snapshots before the lock is released.
+      publishResumeBundle({
+        rootDir: paths.rootDir,
+        writeFileImpl: publishFileImpl,
+        entries: [
+          { path: paths.htmlOutPath, bytes: html, label: 'resume HTML', maxBytes: MAX_RESUME_HTML_BYTES },
+          { path: paths.pdfOutPath, bytes: pdfBytes, label: 'resume PDF', maxBytes: MAX_RESUME_ARTIFACT_BYTES },
+          { path: paths.docxOutPath, bytes: docxBytes, label: 'resume DOCX', maxBytes: MAX_RESUME_ARTIFACT_BYTES },
+          { path: paths.manifestOutPath, bytes: manifestBytes, label: 'resume manifest', maxBytes: MAX_RESUME_MANIFEST_BYTES }
+        ]
+      });
+
+      log(`Resume HTML written: ${path.relative(paths.rootDir, paths.htmlOutPath)}`);
+      log(
+        `Resume PDF written: ${path.relative(paths.rootDir, paths.pdfOutPath)} ` +
+        `(${(pdfBytes.length / 1024).toFixed(1)} KiB)`
+      );
+      log(
+        `Resume DOCX written: ${path.relative(paths.rootDir, paths.docxOutPath)} ` +
+        `(${(docxBytes.length / 1024).toFixed(1)} KiB)`
+      );
+      log(`Resume manifest written: ${path.relative(paths.rootDir, paths.manifestOutPath)}`);
+      return { html, paths, manifest };
+    } finally {
+      fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+    }
+  });
+}
+
+function parseArgs(argv = process.argv.slice(2)) {
+  if (!Array.isArray(argv)) throw new TypeError('argv must be an array');
+  let htmlOnly = false;
+  for (const argument of argv) {
+    if (typeof argument !== 'string' || argument.length === 0) {
+      throw new Error('Resume build arguments must be non-empty strings.');
+    }
+    if (argument === '--html-only') {
+      if (htmlOnly) throw new Error('Duplicate argument: --html-only');
+      htmlOnly = true;
+      continue;
+    }
+    if (argument.startsWith('--html-only=')) {
+      throw new Error('Argument --html-only does not accept a value.');
+    }
+    if (argument === '--') {
+      throw new Error('Missing argument after --.');
+    }
+    throw new Error(`Unknown argument: ${argument}`);
+  }
+  return { htmlOnly };
+}
+
+async function main() {
+  await buildResume(parseArgs());
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -602,8 +1104,24 @@ export {
   safeHttpsHref,
   loadResumeData,
   validateResumeData,
+  validateResumeSources,
   computeResumeHtmlHash,
-  computeFileSha256,
+  computeBytesSha256,
+  parseArgs,
+  readStableFileNoFollow,
+  StableFileReadError,
+  getResumePaths,
+  publishResumeBundle,
+  acquireResumeBuildLock,
+  withResumeBuildLock,
+  buildResume,
+  exportPdf,
+  exportDocx,
+  ResumeExportTimeoutError,
   RESUME_MANIFEST_DESCRIPTION,
-  RESUME_SOURCE_FILES
+  RESUME_SOURCE_FILES,
+  MAX_RESUME_SOURCE_BYTES,
+  RESUME_EXPORT_TIMEOUT_MS,
+  MAX_RESUME_EXPORT_TIMEOUT_MS,
+  MAX_PANDOC_DIAGNOSTIC_BYTES
 };

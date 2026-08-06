@@ -17,10 +17,7 @@ function escapeJsonLd(value) {
 }
 
 function stripTrailingWhitespace(content) {
-  return content
-    .split('\n')
-    .map((line) => line.replace(/[ \t]+$/g, ''))
-    .join('\n');
+  return content.replace(/[ \t]+(?=\r|\n|$)/g, '');
 }
 
 function hashInlineScript(content) {

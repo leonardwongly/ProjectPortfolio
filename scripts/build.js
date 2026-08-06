@@ -1,6 +1,12 @@
 const fs = require('fs');
 const path = require('path');
-const { writeFileNoFollow } = require('./lib/safe-output.cjs');
+const {
+  StableFileReadError,
+  readStableFileNoFollow,
+  sameFileIdentity,
+  sameFileSnapshot
+} = require('./lib/safe-input.cjs');
+const { assertSafeOutputPath, writeFileNoFollow } = require('./lib/safe-output.cjs');
 const {
   escapeHtml,
   escapeJsonLd,
@@ -13,55 +19,124 @@ const {
 } = require('./lib/asset-paths.cjs');
 
 const projectRoot = process.cwd();
-const srcDir = path.join(projectRoot, 'src');
-const partialDir = path.join(projectRoot, 'partials');
-const dataDir = path.join(projectRoot, 'data');
-const headersTemplatePath = path.join(srcDir, '_headers.template');
-
-const partials = {
-  NAV: fs.readFileSync(path.join(partialDir, 'nav.html'), 'utf8'),
-  FOOTER: fs.readFileSync(path.join(partialDir, 'footer.html'), 'utf8')
-};
+const MAX_BUILD_INPUT_BYTES = 2 * 1024 * 1024;
+const MAX_SITE_OUTPUT_BYTES = 4 * 1024 * 1024;
 
 const CSP_INLINE_SCRIPT_HASH_TOKEN = '{{CSP_SCRIPT_HASHES}}';
 
-function readJson(name) {
-  const file = path.join(dataDir, name);
-  if (!fs.existsSync(file)) {
-    throw new Error(`Missing data file: ${file}`);
+function readBuildText(relativePath, {
+  rootDir = projectRoot,
+  maxBytes = MAX_BUILD_INPUT_BYTES,
+  afterRead,
+  openSync = fs.openSync
+} = {}) {
+  const resolvedRoot = path.resolve(rootDir);
+  const file = path.resolve(resolvedRoot, relativePath);
+  return readStableFileNoFollow(file, {
+    rootDir: resolvedRoot,
+    label: relativePath,
+    maxBytes,
+    afterRead,
+    fatalUtf8: true,
+    openSync
+  });
+}
+
+function readJson(name, { rootDir = projectRoot, afterRead } = {}) {
+  const relativePath = path.posix.join('data', name);
+  const source = readBuildText(relativePath, { rootDir, afterRead });
+  try {
+    return JSON.parse(source);
+  } catch (error) {
+    throw new Error(`Invalid JSON in build input ${relativePath}: ${error.message}`, { cause: error });
   }
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function loadPartials({ rootDir = projectRoot } = {}) {
+  return {
+    NAV: readBuildText('partials/nav.html', { rootDir }),
+    FOOTER: readBuildText('partials/footer.html', { rootDir })
+  };
 }
 
 function isAsciiWhitespace(char) {
   return char === ' ' || char === '\t' || char === '\n' || char === '\f' || char === '\r';
 }
 
-function findScriptStartTag(html, fromIndex) {
-  const normalizedHtml = html.toLowerCase();
-  let start = normalizedHtml.indexOf('<script', fromIndex);
+function isAsciiLetter(char) {
+  return char >= 'a' && char <= 'z';
+}
 
-  while (start !== -1) {
-    const nextChar = normalizedHtml[start + '<script'.length];
-    if (nextChar === '>' || isAsciiWhitespace(nextChar)) {
-      return start;
+function findTagEnd(html, fromIndex) {
+  let quote = '';
+
+  for (let index = fromIndex; index < html.length; index += 1) {
+    const char = html[index];
+    if (quote) {
+      if (char === quote) quote = '';
+      continue;
     }
-    start = normalizedHtml.indexOf('<script', start + '<script'.length);
+    if (char === '"' || char === "'") {
+      quote = char;
+    } else if (char === '>') {
+      return index;
+    }
   }
 
   return -1;
 }
 
-function findScriptEndTag(html, fromIndex) {
-  const normalizedHtml = html.toLowerCase();
+function findScriptStartTag(normalizedHtml, html, fromIndex) {
+  let cursor = fromIndex;
+
+  while (cursor < normalizedHtml.length) {
+    const start = normalizedHtml.indexOf('<', cursor);
+    if (start === -1) return null;
+
+    if (normalizedHtml.startsWith('<!--', start)) {
+      const commentEnd = normalizedHtml.indexOf('-->', start + '<!--'.length);
+      if (commentEnd === -1) return null;
+      cursor = commentEnd + '-->'.length;
+      continue;
+    }
+
+    const afterScriptName = start + '<script'.length;
+    const scriptBoundary = normalizedHtml[afterScriptName];
+    if (
+      normalizedHtml.startsWith('<script', start) &&
+      (scriptBoundary === '>' || scriptBoundary === '/' || isAsciiWhitespace(scriptBoundary))
+    ) {
+      const openEnd = findTagEnd(html, afterScriptName);
+      return openEnd === -1 ? null : { start, openEnd };
+    }
+
+    const firstNameChar = normalizedHtml[start + 1];
+    const secondNameChar = normalizedHtml[start + 2];
+    const isOtherTag = isAsciiLetter(firstNameChar) ||
+      firstNameChar === '!' ||
+      firstNameChar === '?' ||
+      (firstNameChar === '/' && isAsciiLetter(secondNameChar));
+    if (isOtherTag) {
+      const tagEnd = findTagEnd(html, start + 1);
+      if (tagEnd === -1) return null;
+      cursor = tagEnd + 1;
+    } else {
+      cursor = start + 1;
+    }
+  }
+
+  return null;
+}
+
+function findScriptEndTag(normalizedHtml, html, fromIndex) {
   let start = normalizedHtml.indexOf('</script', fromIndex);
 
   while (start !== -1) {
     const afterName = start + '</script'.length;
     const nextChar = normalizedHtml[afterName];
 
-    if (nextChar === '>' || isAsciiWhitespace(nextChar)) {
-      const end = html.indexOf('>', afterName);
+    if (nextChar === '>' || nextChar === '/' || isAsciiWhitespace(nextChar)) {
+      const end = findTagEnd(html, afterName);
       return end === -1 ? null : { start, end: end + 1 };
     }
 
@@ -100,15 +175,15 @@ function hasScriptSrcAttribute(attrs) {
       index += 1;
     }
 
+    if (name === 'src') {
+      return true;
+    }
+
     if (attrs[index] !== '=') {
       if (index === nameStart) {
         index += 1;
       }
       continue;
-    }
-
-    if (name === 'src') {
-      return true;
     }
 
     index += 1;
@@ -132,18 +207,24 @@ function hasScriptSrcAttribute(attrs) {
   return false;
 }
 
+function foldAsciiCase(value) {
+  return value.replace(/[A-Z]/g, (character) =>
+    String.fromCharCode(character.charCodeAt(0) + 32));
+}
+
 function collectInlineScriptHashes(html) {
   const hashes = [];
+  // Unicode lowercasing can expand one source code point into multiple code
+  // points (for example U+0130), which would desynchronize parser offsets from
+  // the original HTML. HTML tag names are ASCII case-insensitive, so fold only
+  // ASCII and preserve every source index exactly.
+  const normalizedHtml = foldAsciiCase(html);
   let fromIndex = 0;
-  let start = findScriptStartTag(html, fromIndex);
+  let startTag = findScriptStartTag(normalizedHtml, html, fromIndex);
 
-  while (start !== -1) {
-    const openEnd = html.indexOf('>', start + '<script'.length);
-    if (openEnd === -1) {
-      break;
-    }
-
-    const endTag = findScriptEndTag(html, openEnd + 1);
+  while (startTag) {
+    const { start, openEnd } = startTag;
+    const endTag = findScriptEndTag(normalizedHtml, html, openEnd + 1);
     if (!endTag) {
       break;
     }
@@ -154,7 +235,7 @@ function collectInlineScriptHashes(html) {
     }
 
     fromIndex = endTag.end;
-    start = findScriptStartTag(html, fromIndex);
+    startTag = findScriptStartTag(normalizedHtml, html, fromIndex);
   }
 
   return hashes;
@@ -228,6 +309,12 @@ function hasUrlScheme(value) {
   return /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value);
 }
 
+function assertNoUrlControls(value, fieldPath) {
+  if (/[\u0000-\u001f\u007f]/.test(value)) {
+    failValidation(fieldPath, 'URL contains ASCII control characters');
+  }
+}
+
 function assertNoTraversal(pathPart, fieldPath) {
   if (pathPart.includes('\0') || pathPart.includes('\\')) {
     failValidation(fieldPath, 'path contains disallowed characters');
@@ -256,6 +343,7 @@ function assertNoTraversal(pathPart, fieldPath) {
 
 function sanitizeRelativeLink(rawValue, fieldPath) {
   const value = ensureString(rawValue, fieldPath, { maxLength: MAX_URL_LENGTH });
+  assertNoUrlControls(value, fieldPath);
   if (value.startsWith('//')) {
     failValidation(fieldPath, 'protocol-relative URLs are not allowed');
   }
@@ -281,6 +369,7 @@ function sanitizeRelativeLink(rawValue, fieldPath) {
 
 function sanitizeHref(rawValue, fieldPath) {
   const value = ensureString(rawValue, fieldPath, { maxLength: MAX_URL_LENGTH });
+  assertNoUrlControls(value, fieldPath);
 
   if (hasUrlScheme(value)) {
     let parsed;
@@ -787,15 +876,47 @@ function validateReadingData(items) {
 
 function validateReadingAssetInventory(items, { rootDir = projectRoot } = {}) {
   const missing = [];
+  let resolvedRoot;
+  try {
+    resolvedRoot = fs.realpathSync(rootDir);
+  } catch (error) {
+    failValidation('reading', `could not resolve asset root: ${error.message}`);
+  }
+
   items.forEach((entry, index) => {
     if (entry.cover === undefined || String(entry.cover).trim() === '') {
       return;
     }
 
     const coverPath = sanitizeAssetPath(entry.cover, `reading[${index}].cover`);
-    const absolutePath = path.join(rootDir, coverPath);
-    if (!fs.existsSync(absolutePath)) {
-      missing.push(`reading[${index}].cover: ${coverPath}`);
+    const fieldPath = `reading[${index}].cover`;
+    const segments = coverPath.split('/');
+    let currentPath = resolvedRoot;
+
+    for (let segmentIndex = 0; segmentIndex < segments.length; segmentIndex += 1) {
+      currentPath = path.join(currentPath, segments[segmentIndex]);
+      let stats;
+      try {
+        stats = fs.lstatSync(currentPath);
+      } catch (error) {
+        if (error.code === 'ENOENT') {
+          missing.push(`${fieldPath}: ${coverPath}`);
+          break;
+        }
+        failValidation(fieldPath, `could not inspect declared cover asset: ${error.message}`);
+      }
+
+      if (stats.isSymbolicLink()) {
+        failValidation(fieldPath, 'declared cover asset must not contain symbolic links');
+      }
+
+      const isCover = segmentIndex === segments.length - 1;
+      if (!isCover && !stats.isDirectory()) {
+        failValidation(fieldPath, 'declared cover asset parent is not a directory');
+      }
+      if (isCover && !stats.isFile()) {
+        failValidation(fieldPath, 'declared cover asset is not a regular file');
+      }
     }
   });
 
@@ -806,6 +927,15 @@ function validateReadingAssetInventory(items, { rootDir = projectRoot } = {}) {
 
 function validateDataCollections(allData) {
   ensureObject(allData, 'data');
+  ensureAllowedKeys(allData, 'data', [
+    'profile',
+    'featured',
+    'caseStudies',
+    'skills',
+    'experience',
+    'certifications',
+    'reading'
+  ]);
   validateProfileData(allData.profile);
   validateFeaturedData(allData.featured);
   validateCaseStudyData(allData.caseStudies, allData.featured);
@@ -1493,7 +1623,8 @@ function inferTags(entry) {
   return Array.from(tags);
 }
 
-function renderReadingGrid(reading) {
+function renderReadingGrid(reading, { rootDir = projectRoot } = {}) {
+  const resolvedRoot = path.resolve(rootDir);
   const MAX_HIGH_DPI_IMAGE_BYTES = 128 * 1024;
 
   function shouldUseAsHighDpi(relativePath) {
@@ -1502,7 +1633,7 @@ function renderReadingGrid(reading) {
     }
 
     try {
-      const absolutePath = path.join(projectRoot, relativePath);
+      const absolutePath = path.join(resolvedRoot, relativePath);
       return fs.existsSync(absolutePath) && fs.statSync(absolutePath).size <= MAX_HIGH_DPI_IMAGE_BYTES;
     } catch (error) {
       return false;
@@ -1525,8 +1656,8 @@ function renderReadingGrid(reading) {
       cover2xPath = coverPath;
     }
 
-    const hasCover = coverPath && fs.existsSync(path.join(projectRoot, coverPath));
-    const safeCover2x = cover2xPath && fs.existsSync(path.join(projectRoot, cover2xPath)) ? cover2xPath : coverPath;
+    const hasCover = coverPath && fs.existsSync(path.join(resolvedRoot, coverPath));
+    const safeCover2x = cover2xPath && fs.existsSync(path.join(resolvedRoot, cover2xPath)) ? cover2xPath : coverPath;
     const cover = escapeHtml(coverPath);
     const cover2x = escapeHtml(safeCover2x);
 
@@ -1538,10 +1669,10 @@ function renderReadingGrid(reading) {
     if (hasCover) {
       const webp1xPath = coverPath.replace('.jpg', '.webp').replace('.jpeg', '.webp');
       const webp2xCandidatePath = safeCover2x.replace('.jpg', '.webp').replace('.jpeg', '.webp');
-      const hasWebp1x = fs.existsSync(path.join(projectRoot, webp1xPath));
+      const hasWebp1x = fs.existsSync(path.join(resolvedRoot, webp1xPath));
       const useWebp2x = webp2xCandidatePath !== webp1xPath && shouldUseAsHighDpi(webp2xCandidatePath);
       const webp2xPath = useWebp2x ? webp2xCandidatePath : webp1xPath;
-      const hasWebp = hasWebp1x && fs.existsSync(path.join(projectRoot, webp2xPath));
+      const hasWebp = hasWebp1x && fs.existsSync(path.join(resolvedRoot, webp2xPath));
       const webp1x = escapeHtml(webp1xPath);
       const webp2x = escapeHtml(webp2xPath);
       const webpSrcset = webp2xPath === webp1xPath ? `${webp1x} 1x` : `${webp1x} 1x, ${webp2x} 2x`;
@@ -1688,116 +1819,428 @@ function renderSiteEngineering(profile) {
 </section>`;
 }
 
-function buildSite() {
-  const data = {
-    profile: readJson('profile.json'),
-    featured: readJson('featured-projects.json'),
-    caseStudies: readJson('case-studies.json'),
-    skills: readJson('skills.json'),
-    experience: readJson('experience.json'),
-    certifications: readJson('certifications.json'),
-    reading: readJson('reading.json')
-  };
+function publicationBytes(bytes) {
+  if (Buffer.isBuffer(bytes)) return Buffer.from(bytes);
+  if (ArrayBuffer.isView(bytes)) {
+    return Buffer.from(new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength));
+  }
+  if (typeof bytes === 'string') return Buffer.from(bytes, 'utf8');
+  throw new TypeError('Site publication bytes must be a string, Buffer, or typed-array view.');
+}
 
-  validateDataCollections(data);
-  validateReadingAssetInventory(data.reading);
+function inspectPublishedSiteFile(entry) {
+  let stats;
+  try {
+    stats = fs.lstatSync(entry.path, { bigint: true });
+  } catch (error) {
+    throw new Error(`Published ${entry.label} could not be inspected: ${error.message}`, { cause: error });
+  }
+  if (!stats.isFile() || stats.isSymbolicLink() || stats.nlink !== 1n) {
+    throw new Error(`Published ${entry.label} is not an owned single-link regular file.`);
+  }
+  if (stats.size < 1n || stats.size > BigInt(entry.maxBytes)) {
+    throw new Error(`Published ${entry.label} is outside the allowed 1-${entry.maxBytes} byte range.`);
+  }
+  return stats;
+}
 
-  const tokens = {
-    ...partials,
-    PROFILE_SCHEMA: renderProfileSchema(data.profile, data.certifications),
-    HERO: renderHero(data.profile),
-    FEATURED_WORK: renderFeaturedWork(data.featured),
-    PROJECT_ARCHIVE: renderProjectArchive(data.featured),
-    SKILLS: renderSkills(data.skills),
-    EXPERIENCE: renderExperience(data.experience),
-    WRITING: renderWriting(data.profile),
-    PROFILE_CREDENTIALS: renderProfileCredentials(data.profile),
-    CERTIFICATIONS: renderCertifications(data.certifications),
-    HONORS: renderHonors(data.profile),
-    COMMUNITY: renderCommunity(data.profile),
-    SITE_ENGINEERING: renderSiteEngineering(data.profile),
-    READING_GRID: renderReadingGrid(data.reading),
-    CONTACT: renderContact(data.profile),
-    WORK_NAV_CURRENT: ''
-  };
-
-  const pages = ['index.html', 'work.html', 'reading.html', 'offline.html'];
-  const renderedPages = new Map();
-
-  pages.forEach((page) => {
-    const srcPath = path.join(srcDir, page);
-    if (!fs.existsSync(srcPath)) {
-      throw new Error(`Missing source page: ${srcPath}`);
+function snapshotSiteOutput(entry) {
+  try {
+    const bytes = readStableFileNoFollow(entry.path, {
+      rootDir: entry.rootDir,
+      label: entry.label,
+      maxBytes: entry.maxBytes,
+      minBytes: 0
+    });
+    const stats = fs.lstatSync(entry.path, { bigint: true });
+    return { existed: true, bytes, stats };
+  } catch (error) {
+    if (error instanceof StableFileReadError && error.reason === 'missing') {
+      try {
+        fs.lstatSync(entry.path);
+      } catch (inspectionError) {
+        if (inspectionError.code === 'ENOENT') return { existed: false, bytes: null, stats: null };
+      }
     }
+    throw error;
+  }
+}
 
-    const pageTokens = {
-      ...tokens,
-      WORK_NAV_CURRENT: page === 'work.html' ? ' aria-current="page"' : ''
+function assertSiteSnapshotUnchanged(entry, snapshot) {
+  if (!snapshot.existed) {
+    try {
+      fs.lstatSync(entry.path);
+    } catch (error) {
+      if (error.code === 'ENOENT') return;
+      throw error;
+    }
+    throw new Error(`${entry.label} appeared after publication preflight; refusing to replace it.`);
+  }
+
+  const currentBytes = readStableFileNoFollow(entry.path, {
+    rootDir: entry.rootDir,
+    label: entry.label,
+    maxBytes: entry.maxBytes,
+    minBytes: 0
+  });
+  const currentStats = fs.lstatSync(entry.path, { bigint: true });
+  if (!sameFileSnapshot(snapshot.stats, currentStats) || !snapshot.bytes.equals(currentBytes)) {
+    throw new Error(`${entry.label} changed after publication preflight; refusing to replace it.`);
+  }
+}
+
+function publishSiteBundle({ rootDir = projectRoot, entries, writeFileImpl = writeFileNoFollow }) {
+  const resolvedRoot = path.resolve(rootDir);
+  if (!Array.isArray(entries) || entries.length === 0) {
+    throw new TypeError('Site publication entries must be a non-empty array.');
+  }
+  if (typeof writeFileImpl !== 'function') {
+    throw new TypeError('Site publication writeFileImpl must be a function.');
+  }
+
+  const seenPaths = new Set();
+  const preparedEntries = entries.map((entry) => {
+    if (!entry || typeof entry !== 'object' || typeof entry.path !== 'string' ||
+        typeof entry.label !== 'string' || entry.label.trim() === '' ||
+        !Object.hasOwn(entry, 'bytes') || !Number.isSafeInteger(entry.maxBytes) || entry.maxBytes < 1) {
+      throw new TypeError('Each site publication entry requires a path, bytes, label, and positive maxBytes.');
+    }
+    const resolvedPath = assertSafeOutputPath(resolvedRoot, entry.path, entry.label);
+    if (seenPaths.has(resolvedPath)) {
+      throw new Error(`Duplicate site publication path: ${resolvedPath}`);
+    }
+    seenPaths.add(resolvedPath);
+    const bytes = publicationBytes(entry.bytes);
+    if (bytes.byteLength < 1 || bytes.byteLength > entry.maxBytes) {
+      throw new Error(`Generated ${entry.label} is outside the allowed 1-${entry.maxBytes} byte range.`);
+    }
+    return {
+      rootDir: resolvedRoot,
+      path: resolvedPath,
+      label: entry.label,
+      maxBytes: entry.maxBytes,
+      bytes
     };
-    let content = fs.readFileSync(srcPath, 'utf8');
-    Object.entries(pageTokens).forEach(([key, value]) => {
-      const token = `{{${key}}}`;
-      if (content.includes(token)) {
-        content = content.replaceAll(token, value);
+  });
+
+  // Snapshot every destination before publishing any file so preflight failure
+  // cannot leave a mixed old/new site bundle.
+  const snapshots = preparedEntries.map(snapshotSiteOutput);
+  const published = [];
+
+  try {
+    preparedEntries.forEach((entry, index) => {
+      assertSiteSnapshotUnchanged(entry, snapshots[index]);
+      writeFileImpl(resolvedRoot, entry.path, entry.bytes, entry.label);
+      const initialStats = inspectPublishedSiteFile(entry);
+      published.push({ index, stats: initialStats, bytes: null });
+
+      const writtenBytes = readStableFileNoFollow(entry.path, {
+        rootDir: resolvedRoot,
+        label: entry.label,
+        maxBytes: entry.maxBytes,
+        minBytes: 1
+      });
+      const verifiedStats = inspectPublishedSiteFile(entry);
+      published[published.length - 1] = { index, stats: verifiedStats, bytes: writtenBytes };
+      if (!sameFileSnapshot(initialStats, verifiedStats) || !entry.bytes.equals(writtenBytes)) {
+        throw new Error(`Published ${entry.label} does not match its validated rendered bytes.`);
       }
     });
+  } catch (publicationError) {
+    const rollbackErrors = [];
+    for (let cursor = published.length - 1; cursor >= 0; cursor -= 1) {
+      const { index, stats: publishedStats, bytes: publishedBytes } = published[cursor];
+      const entry = preparedEntries[index];
+      const snapshot = snapshots[index];
+      try {
+        const currentBytes = readStableFileNoFollow(entry.path, {
+          rootDir: resolvedRoot,
+          label: `rollback ownership ${entry.label}`,
+          maxBytes: entry.maxBytes,
+          minBytes: 1
+        });
+        const currentStats = fs.lstatSync(entry.path, { bigint: true });
+        if (!currentStats.isFile() || currentStats.isSymbolicLink() ||
+            !sameFileSnapshot(publishedStats, currentStats) ||
+            (publishedBytes && !publishedBytes.equals(currentBytes))) {
+          throw new Error(
+            `Published ${entry.label} changed ownership or content before rollback; refusing to alter it.`
+          );
+        }
 
-    const leftover = content.match(/\{\{[A-Z_]+}}/g)?.filter((token) => token !== CSP_INLINE_SCRIPT_HASH_TOKEN);
-    if (leftover && leftover.length > 0) {
-      throw new Error(`Unresolved tokens in ${page}: ${leftover.join(', ')}`);
+        if (snapshot.existed) {
+          writeFileNoFollow(resolvedRoot, entry.path, snapshot.bytes, `rollback ${entry.label}`);
+          const restoredBytes = readStableFileNoFollow(entry.path, {
+            rootDir: resolvedRoot,
+            label: `rollback ${entry.label}`,
+            maxBytes: entry.maxBytes,
+            minBytes: 0
+          });
+          if (!snapshot.bytes.equals(restoredBytes)) {
+            throw new Error(`Rollback of ${entry.label} did not restore the exact prior bytes.`);
+          }
+        } else {
+          // Node does not expose unlinkat here, so a final syscall-sized path-swap
+          // window remains between ownership validation and unlinkSync. Suspicious
+          // identities are retained rather than removed.
+          fs.unlinkSync(entry.path);
+          try {
+            fs.lstatSync(entry.path);
+            throw new Error(`Rollback of ${entry.label} did not remove the new output.`);
+          } catch (error) {
+            if (error.code !== 'ENOENT') throw error;
+          }
+        }
+      } catch (error) {
+        rollbackErrors.push(error);
+      }
     }
-
-    renderedPages.set(page, stripTrailingWhitespace(content));
-  });
-
-  const caseStudyTemplatePath = path.join(srcDir, 'case-study.html');
-  if (!fs.existsSync(caseStudyTemplatePath)) {
-    throw new Error(`Missing case study source page: ${caseStudyTemplatePath}`);
+    if (rollbackErrors.length > 0) {
+      throw new AggregateError(
+        [publicationError, ...rollbackErrors],
+        `Site publication failed and ${rollbackErrors.length} rollback operation(s) also failed.`
+      );
+    }
+    throw publicationError;
   }
-  const caseStudyTemplate = fs.readFileSync(caseStudyTemplatePath, 'utf8');
-  data.caseStudies.forEach((study) => {
-    const canonical = `https://leonardwong.tech/${study.slug}`;
-    const caseTokens = {
-      ...partials,
-      WORK_NAV_CURRENT: ' aria-current="page"',
-      CASE_STUDY_TITLE: escapeHtml(study.title),
-      CASE_STUDY_DESCRIPTION: escapeHtml(study.summary),
-      CASE_STUDY_CANONICAL: escapeHtml(canonical),
-      CASE_STUDY: renderCaseStudy(study, data.caseStudies)
+}
+
+function getSiteBuildPaths(rootDir = projectRoot) {
+  const resolvedRoot = path.resolve(rootDir);
+  const artifactsDir = path.join(resolvedRoot, 'artifacts');
+  return {
+    rootDir: resolvedRoot,
+    artifactsDir,
+    buildLockPath: path.join(artifactsDir, '.site-build.lock')
+  };
+}
+
+function acquireSiteBuildLock({ rootDir = projectRoot } = {}) {
+  const paths = getSiteBuildPaths(rootDir);
+  fs.mkdirSync(paths.artifactsDir, { recursive: true });
+  const lockPath = assertSafeOutputPath(paths.rootDir, paths.buildLockPath, 'site build lock');
+  const flags = fs.constants.O_WRONLY |
+    fs.constants.O_CREAT |
+    fs.constants.O_EXCL |
+    (fs.constants.O_NOFOLLOW || 0) |
+    (fs.constants.O_CLOEXEC || 0);
+  let descriptor;
+  let lockStats;
+
+  try {
+    descriptor = fs.openSync(lockPath, flags, 0o600);
+  } catch (error) {
+    if (error.code === 'EEXIST' || error.code === 'ELOOP') {
+      throw new Error(
+        `Site build lock is already held or unsafe: ${path.relative(paths.rootDir, lockPath)}. ` +
+        'Wait for the active build to finish; remove a stale lock only after verifying no build is running.'
+      );
+    }
+    throw error;
+  }
+
+  try {
+    lockStats = fs.fstatSync(descriptor, { bigint: true });
+    if (!lockStats.isFile() || lockStats.nlink !== 1n) {
+      throw new Error('Site build lock is not an owned single-link regular file.');
+    }
+    fs.writeFileSync(
+      descriptor,
+      `${JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() })}\n`,
+      'utf8'
+    );
+    fs.fsyncSync(descriptor);
+  } catch (error) {
+    try {
+      if (lockStats) {
+        const currentStats = fs.lstatSync(lockPath, { bigint: true });
+        if (currentStats.isFile() && currentStats.nlink === 1n && sameFileIdentity(lockStats, currentStats)) {
+          fs.unlinkSync(lockPath);
+        }
+      }
+    } catch {
+      // Preserve the acquisition error and any suspicious replacement fail-closed.
+    } finally {
+      fs.closeSync(descriptor);
+    }
+    throw error;
+  }
+
+  let released = false;
+  return {
+    path: lockPath,
+    release() {
+      if (released) return;
+      released = true;
+      let releaseError;
+      try {
+        const currentStats = fs.lstatSync(lockPath, { bigint: true });
+        if (!currentStats.isFile() || currentStats.nlink !== 1n ||
+            !sameFileIdentity(lockStats, currentStats)) {
+          throw new Error('Site build lock changed ownership before release; refusing to remove it.');
+        }
+        // As above, unlinkat is unavailable; the identity check minimizes but
+        // cannot eliminate the final path-swap window before this unlink.
+        fs.unlinkSync(lockPath);
+      } catch (error) {
+        releaseError = error;
+      } finally {
+        fs.closeSync(descriptor);
+      }
+      if (releaseError) throw releaseError;
+    }
+  };
+}
+
+function withSiteBuildLock(options, operation) {
+  if (typeof operation !== 'function') {
+    throw new TypeError('Site build lock operation must be a function.');
+  }
+  const lock = acquireSiteBuildLock(options);
+  let result;
+  let operationError;
+  try {
+    result = operation();
+  } catch (error) {
+    operationError = error;
+  }
+
+  let releaseError;
+  try {
+    lock.release();
+  } catch (error) {
+    releaseError = error;
+  }
+  if (operationError && releaseError) {
+    throw new AggregateError(
+      [operationError, releaseError],
+      'Site build failed and its lock could not be released safely.'
+    );
+  }
+  if (operationError) throw operationError;
+  if (releaseError) throw releaseError;
+  return result;
+}
+
+function buildSite({
+  rootDir = projectRoot,
+  writeFileImpl = writeFileNoFollow,
+  log = console.log
+} = {}) {
+  const resolvedRoot = path.resolve(rootDir);
+  return withSiteBuildLock({ rootDir: resolvedRoot }, () => {
+    const partials = loadPartials({ rootDir: resolvedRoot });
+    const data = {
+      profile: readJson('profile.json', { rootDir: resolvedRoot }),
+      featured: readJson('featured-projects.json', { rootDir: resolvedRoot }),
+      caseStudies: readJson('case-studies.json', { rootDir: resolvedRoot }),
+      skills: readJson('skills.json', { rootDir: resolvedRoot }),
+      experience: readJson('experience.json', { rootDir: resolvedRoot }),
+      certifications: readJson('certifications.json', { rootDir: resolvedRoot }),
+      reading: readJson('reading.json', { rootDir: resolvedRoot })
     };
-    let content = caseStudyTemplate;
-    Object.entries(caseTokens).forEach(([key, value]) => {
-      content = content.replaceAll(`{{${key}}}`, value);
+
+    validateDataCollections(data);
+    validateReadingAssetInventory(data.reading, { rootDir: resolvedRoot });
+
+    const tokens = {
+      ...partials,
+      PROFILE_SCHEMA: renderProfileSchema(data.profile, data.certifications),
+      HERO: renderHero(data.profile),
+      FEATURED_WORK: renderFeaturedWork(data.featured),
+      PROJECT_ARCHIVE: renderProjectArchive(data.featured),
+      SKILLS: renderSkills(data.skills),
+      EXPERIENCE: renderExperience(data.experience),
+      WRITING: renderWriting(data.profile),
+      PROFILE_CREDENTIALS: renderProfileCredentials(data.profile),
+      CERTIFICATIONS: renderCertifications(data.certifications),
+      HONORS: renderHonors(data.profile),
+      COMMUNITY: renderCommunity(data.profile),
+      SITE_ENGINEERING: renderSiteEngineering(data.profile),
+      READING_GRID: renderReadingGrid(data.reading, { rootDir: resolvedRoot }),
+      CONTACT: renderContact(data.profile),
+      WORK_NAV_CURRENT: ''
+    };
+
+    const pages = ['index.html', 'work.html', 'reading.html', 'offline.html'];
+    const renderedPages = new Map();
+
+    pages.forEach((page) => {
+      const pageTokens = {
+        ...tokens,
+        WORK_NAV_CURRENT: page === 'work.html' ? ' aria-current="page"' : ''
+      };
+      let content = readBuildText(path.posix.join('src', page), { rootDir: resolvedRoot });
+      Object.entries(pageTokens).forEach(([key, value]) => {
+        const token = `{{${key}}}`;
+        if (content.includes(token)) {
+          content = content.replaceAll(token, value);
+        }
+      });
+
+      const leftover = content.match(/\{\{[A-Z_]+}}/g)
+        ?.filter((token) => token !== CSP_INLINE_SCRIPT_HASH_TOKEN);
+      if (leftover && leftover.length > 0) {
+        throw new Error(`Unresolved tokens in ${page}: ${leftover.join(', ')}`);
+      }
+
+      renderedPages.set(page, stripTrailingWhitespace(content));
     });
-    const leftover = content.match(/\{\{[A-Z_]+}}/g);
-    if (leftover && leftover.length > 0) {
-      throw new Error(`Unresolved tokens in ${study.slug}: ${leftover.join(', ')}`);
+
+    const caseStudyTemplate = readBuildText('src/case-study.html', { rootDir: resolvedRoot });
+    data.caseStudies.forEach((study) => {
+      const canonical = `https://leonardwong.tech/${study.slug}`;
+      const caseTokens = {
+        ...partials,
+        WORK_NAV_CURRENT: ' aria-current="page"',
+        CASE_STUDY_TITLE: escapeHtml(study.title),
+        CASE_STUDY_DESCRIPTION: escapeHtml(study.summary),
+        CASE_STUDY_CANONICAL: escapeHtml(canonical),
+        CASE_STUDY: renderCaseStudy(study, data.caseStudies)
+      };
+      let content = caseStudyTemplate;
+      Object.entries(caseTokens).forEach(([key, value]) => {
+        content = content.replaceAll(`{{${key}}}`, value);
+      });
+      const leftover = content.match(/\{\{[A-Z_]+}}/g);
+      if (leftover && leftover.length > 0) {
+        throw new Error(`Unresolved tokens in ${study.slug}: ${leftover.join(', ')}`);
+      }
+      renderedPages.set(study.slug, stripTrailingWhitespace(content));
+      pages.push(study.slug);
+    });
+
+    const indexPage = renderedPages.get('index.html');
+    if (!indexPage) {
+      throw new Error('Missing rendered index page content');
     }
-    renderedPages.set(study.slug, stripTrailingWhitespace(content));
-    pages.push(study.slug);
+    const headersTemplate = readBuildText('src/_headers.template', { rootDir: resolvedRoot });
+    const headersContent = injectCspScriptHashes(headersTemplate, indexPage);
+
+    const entries = [];
+    renderedPages.forEach((content, page) => {
+      const finalContent = page === 'index.html'
+        ? injectCspScriptHashes(content, content)
+        : content;
+      entries.push({
+        path: path.join(resolvedRoot, page),
+        bytes: finalContent,
+        label: `generated ${page}`,
+        maxBytes: MAX_SITE_OUTPUT_BYTES
+      });
+    });
+
+    entries.push({
+      path: path.join(resolvedRoot, '_headers'),
+      bytes: headersContent,
+      label: 'generated _headers',
+      maxBytes: MAX_SITE_OUTPUT_BYTES
+    });
+    publishSiteBundle({ rootDir: resolvedRoot, entries, writeFileImpl });
+
+    log('Build complete: generated', pages.join(', '));
   });
-
-  const indexPage = renderedPages.get('index.html');
-  if (!indexPage) {
-    throw new Error('Missing rendered index page content');
-  }
-
-  renderedPages.forEach((content, page) => {
-    const finalContent = page === 'index.html'
-      ? injectCspScriptHashes(content, content)
-      : content;
-    writeFileNoFollow(projectRoot, path.join(projectRoot, page), finalContent, `generated ${page}`);
-  });
-
-  if (!fs.existsSync(headersTemplatePath)) {
-    throw new Error(`Missing headers template: ${headersTemplatePath}`);
-  }
-
-  const headersTemplate = fs.readFileSync(headersTemplatePath, 'utf8');
-  const headersContent = injectCspScriptHashes(headersTemplate, indexPage);
-  writeFileNoFollow(projectRoot, path.join(projectRoot, '_headers'), headersContent, 'generated _headers');
-
-  console.log('Build complete: generated', pages.join(', '));
 }
 
 if (require.main === module) {
@@ -1805,17 +2248,28 @@ if (require.main === module) {
 }
 
 module.exports = {
+  acquireSiteBuildLock,
   buildSite,
   collectInlineScriptHashes,
   hashInlineScript,
   injectCspScriptHashes,
+  loadPartials,
+  MAX_BUILD_INPUT_BYTES,
+  MAX_SITE_OUTPUT_BYTES,
+  publishSiteBundle,
+  readBuildText,
+  readJson,
   renderCspScriptHashesDirective,
   renderProfileSchema,
   renderReadingGrid,
   sanitizeHref,
   sanitizeAssetPath,
   sanitizeRelativeLink,
+  validateCertificationData,
   validateDataCollections,
+  validateExperienceData,
   validateReadingAssetInventory,
-  validateProfileData
+  validateProfileData,
+  validateSkillsData,
+  withSiteBuildLock
 };
