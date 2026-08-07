@@ -86,6 +86,31 @@ function findTagEnd(html, fromIndex) {
   return -1;
 }
 
+// Raw-text elements whose content is parsed as text, not markup, so any
+// `<script>` text inside them must not be treated as executable inline script.
+const RAW_TEXT_ELEMENT_NAMES = new Set(['style', 'textarea', 'title', 'xmp']);
+
+function findRawTextElementEnd(normalizedHtml, html, start) {
+  // `start` is the index of the '<' of a raw-text element opening tag.
+  const openEnd = findTagEnd(html, start + 1);
+  if (openEnd === -1) return -1;
+
+  let nameEnd = start + 1;
+  while (
+    nameEnd < normalizedHtml.length &&
+    !isAsciiWhitespace(normalizedHtml[nameEnd]) &&
+    normalizedHtml[nameEnd] !== '>' &&
+    normalizedHtml[nameEnd] !== '/'
+  ) {
+    nameEnd += 1;
+  }
+  const tagName = normalizedHtml.slice(start + 1, nameEnd);
+  const closeStart = normalizedHtml.indexOf(`</${tagName}`, openEnd + 1);
+  if (closeStart === -1) return -1;
+  const closeEnd = findTagEnd(html, closeStart + `</${tagName}`.length);
+  return closeEnd === -1 ? -1 : closeEnd + 1;
+}
+
 function findScriptStartTag(normalizedHtml, html, fromIndex) {
   let cursor = fromIndex;
 
@@ -117,9 +142,25 @@ function findScriptStartTag(normalizedHtml, html, fromIndex) {
       firstNameChar === '?' ||
       (firstNameChar === '/' && isAsciiLetter(secondNameChar));
     if (isOtherTag) {
-      const tagEnd = findTagEnd(html, start + 1);
-      if (tagEnd === -1) return null;
-      cursor = tagEnd + 1;
+      let nameEnd = start + 1;
+      while (
+        nameEnd < normalizedHtml.length &&
+        !isAsciiWhitespace(normalizedHtml[nameEnd]) &&
+        normalizedHtml[nameEnd] !== '>' &&
+        normalizedHtml[nameEnd] !== '/'
+      ) {
+        nameEnd += 1;
+      }
+      const tagName = normalizedHtml.slice(start + 1, nameEnd);
+      if (RAW_TEXT_ELEMENT_NAMES.has(tagName)) {
+        const rawTextEnd = findRawTextElementEnd(normalizedHtml, html, start);
+        if (rawTextEnd === -1) return null;
+        cursor = rawTextEnd;
+      } else {
+        const tagEnd = findTagEnd(html, start + 1);
+        if (tagEnd === -1) return null;
+        cursor = tagEnd + 1;
+      }
     } else {
       cursor = start + 1;
     }
@@ -1931,8 +1972,23 @@ function publishSiteBundle({ rootDir = projectRoot, entries, writeFileImpl = wri
   try {
     preparedEntries.forEach((entry, index) => {
       assertSiteSnapshotUnchanged(entry, snapshots[index]);
-      writeFileImpl(resolvedRoot, entry.path, entry.bytes, entry.label);
-      const initialStats = inspectPublishedSiteFile(entry);
+      let writeError = null;
+      try {
+        writeFileImpl(resolvedRoot, entry.path, entry.bytes, entry.label);
+      } catch (error) {
+        writeError = error;
+      }
+
+      // Inspect the on-disk result even when the writer threw: a writer may
+      // have committed the file before failing, and that write must still be
+      // rolled back to the pre-publication snapshot.
+      let initialStats;
+      try {
+        initialStats = inspectPublishedSiteFile(entry);
+      } catch (inspectionError) {
+        if (writeError) throw writeError;
+        throw inspectionError;
+      }
       published.push({ index, stats: initialStats, bytes: null });
 
       const writtenBytes = readStableFileNoFollow(entry.path, {
@@ -1943,6 +1999,10 @@ function publishSiteBundle({ rootDir = projectRoot, entries, writeFileImpl = wri
       });
       const verifiedStats = inspectPublishedSiteFile(entry);
       published[published.length - 1] = { index, stats: verifiedStats, bytes: writtenBytes };
+
+      if (writeError) {
+        throw writeError;
+      }
       if (!sameFileSnapshot(initialStats, verifiedStats) || !entry.bytes.equals(writtenBytes)) {
         throw new Error(`Published ${entry.label} does not match its validated rendered bytes.`);
       }
