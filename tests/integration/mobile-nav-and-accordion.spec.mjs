@@ -8,6 +8,141 @@ function isDesktopProject(testInfo) {
   return testInfo.project.name.startsWith('desktop-');
 }
 
+async function installServiceWorkerHarness(page, {
+  hasController,
+  hasWaitingWorker,
+  readyState = null
+}) {
+  await page.addInitScript(({ initialController, initialWaitingWorker, initialReadyState }) => {
+    const serviceWorkerListeners = new Map();
+    const registrationListeners = new Map();
+    const installingWorkerListeners = new Map();
+    const calls = {
+      controllerChanges: 0,
+      installingStateChanges: 0,
+      messages: [],
+      postMessageAttempts: 0,
+      registrationReadyStates: [],
+      registrations: [],
+      serviceWorkerListenerTypes: [],
+      windowLoadListeners: 0
+    };
+    if (initialReadyState) {
+      Object.defineProperty(document, 'readyState', {
+        configurable: true,
+        value: initialReadyState
+      });
+    }
+    const nativeWindowAddEventListener = window.addEventListener.bind(window);
+    window.addEventListener = (type, listener, options) => {
+      if (type === 'load') {
+        calls.windowLoadListeners += 1;
+      }
+      return nativeWindowAddEventListener(type, listener, options);
+    };
+    let activateDuringNextWaitingRead = false;
+    let shouldFailNextPostMessage = false;
+    const addListener = (listeners, type, listener) => {
+      const registered = listeners.get(type) || [];
+      registered.push(listener);
+      listeners.set(type, registered);
+    };
+    const dispatch = (listeners, type) => {
+      for (const listener of listeners.get(type) || []) {
+        listener(new Event(type));
+      }
+    };
+    const waitingWorker = {
+      postMessage(message) {
+        calls.postMessageAttempts += 1;
+        if (shouldFailNextPostMessage) {
+          shouldFailNextPostMessage = false;
+          throw new Error('synthetic postMessage failure');
+        }
+        calls.messages.push(message);
+      }
+    };
+    let waitingWorkerValue = initialWaitingWorker ? waitingWorker : null;
+    const installingWorker = {
+      state: 'installing',
+      addEventListener(type, listener) {
+        addListener(installingWorkerListeners, type, listener);
+      }
+    };
+    const registration = {
+      installing: null,
+      get waiting() {
+        const observedWorker = waitingWorkerValue;
+        if (activateDuringNextWaitingRead) {
+          activateDuringNextWaitingRead = false;
+          waitingWorkerValue = null;
+          dispatchControllerChange();
+        }
+        return observedWorker;
+      },
+      set waiting(worker) {
+        waitingWorkerValue = worker;
+      },
+      addEventListener(type, listener) {
+        addListener(registrationListeners, type, listener);
+      }
+    };
+    const serviceWorker = {
+      controller: initialController ? { state: 'activated' } : null,
+      addEventListener(type, listener) {
+        calls.serviceWorkerListenerTypes.push(type);
+        addListener(serviceWorkerListeners, type, listener);
+      },
+      async register(scriptURL) {
+        calls.registrationReadyStates.push(document.readyState);
+        calls.registrations.push(scriptURL);
+        return registration;
+      }
+    };
+
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: serviceWorker
+    });
+
+    const dispatchControllerChange = () => {
+      calls.controllerChanges += 1;
+      serviceWorker.controller = { state: 'activated' };
+      dispatch(serviceWorkerListeners, 'controllerchange');
+    };
+
+    const installDiscoveredUpdate = () => {
+      registration.installing = installingWorker;
+      dispatch(registrationListeners, 'updatefound');
+
+      installingWorker.state = 'installed';
+      registration.waiting = waitingWorker;
+      calls.installingStateChanges += 1;
+      dispatch(installingWorkerListeners, 'statechange');
+    };
+
+    window.__serviceWorkerHarness = {
+      calls,
+      activateWaitingWorkerElsewhere() {
+        registration.waiting = null;
+        dispatchControllerChange();
+      },
+      activateWaitingWorkerDuringNextRead() {
+        activateDuringNextWaitingRead = true;
+      },
+      dispatchControllerChange,
+      failNextPostMessage() {
+        shouldFailNextPostMessage = true;
+      },
+      installDiscoveredUpdate
+    };
+  }, {
+    initialController: hasController,
+    initialWaitingWorker: hasWaitingWorker,
+    initialReadyState: readyState
+  });
+}
+
 test.describe('mobile navigation', () => {
   test('navbar toggles and collapses after selecting a nav item', async ({ page }, testInfo) => {
     test.skip(!isMobileProject(testInfo), 'Mobile collapse behavior is only valid at mobile breakpoints.');
@@ -31,6 +166,17 @@ test.describe('mobile navigation', () => {
 
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await expect(collapsePanel).not.toHaveClass(/\bshow\b/);
+
+    await toggle.evaluate((button) => {
+      const cloneWithForgedMarker = button.cloneNode(true);
+      button.replaceWith(cloneWithForgedMarker);
+      window.initNavCollapse();
+    });
+
+    await expect(toggle).toHaveAttribute('data-interactive-ready', 'true');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(collapsePanel).toHaveClass(/\bshow\b/);
   });
 
   test('navbar closes on Escape for keyboard users', async ({ page }, testInfo) => {
@@ -87,6 +233,198 @@ test.describe('desktop navigation', () => {
     await expect(collapsePanel).toBeVisible();
     await expect(workLink).toBeVisible();
     await expect(workLink).toHaveAttribute('href', '/work.html');
+  });
+});
+
+test.describe('service worker updates', () => {
+  test('registers once across loading, interactive, and complete initialization states', async ({ context }, testInfo) => {
+    test.skip(!isDesktopProject(testInfo), 'Service worker lifecycle behavior is viewport-independent.');
+
+    for (const readyState of ['loading', 'interactive', 'complete']) {
+      const scenarioPage = await context.newPage();
+      await installServiceWorkerHarness(scenarioPage, {
+        hasController: true,
+        hasWaitingWorker: false,
+        readyState
+      });
+
+      try {
+        await scenarioPage.goto('/index.html');
+        await scenarioPage.evaluate(() => {
+          window.initServiceWorker();
+          window.initServiceWorker();
+          window.dispatchEvent(new Event('load'));
+        });
+
+        const calls = await scenarioPage.evaluate(() => window.__serviceWorkerHarness.calls);
+        expect(calls.registrations, readyState).toEqual(['/pwabuilder-sw.js']);
+        expect(calls.registrationReadyStates, readyState).toEqual([readyState]);
+        expect(calls.serviceWorkerListenerTypes, readyState).toEqual(['controllerchange']);
+        expect(calls.windowLoadListeners, readyState).toBe(readyState === 'loading' ? 1 : 0);
+      } finally {
+        await scenarioPage.close();
+      }
+    }
+  });
+
+  test('fallback update token satisfies the worker schema at the zero-random boundary', async ({ page }, testInfo) => {
+    test.skip(!isDesktopProject(testInfo), 'Service worker lifecycle behavior is viewport-independent.');
+    await installServiceWorkerHarness(page, { hasController: true, hasWaitingWorker: false });
+    await page.goto('/index.html');
+
+    const token = await page.evaluate(() => {
+      const cryptoDescriptor = Object.getOwnPropertyDescriptor(window, 'crypto');
+      const originalDateNow = Date.now;
+      const originalRandom = Math.random;
+
+      try {
+        Object.defineProperty(window, 'crypto', { configurable: true, value: {} });
+        Date.now = () => 0;
+        Math.random = () => 0;
+        return window.createServiceWorkerToken();
+      } finally {
+        Date.now = originalDateNow;
+        Math.random = originalRandom;
+        if (cryptoDescriptor) {
+          Object.defineProperty(window, 'crypto', cryptoDescriptor);
+        } else {
+          delete window.crypto;
+        }
+      }
+    });
+
+    expect(token).toMatch(/^[a-f0-9]{16,64}$/);
+  });
+
+  test('first installation taking control does not reload an unsuspecting page', async ({ page }, testInfo) => {
+    test.skip(!isDesktopProject(testInfo), 'Service worker lifecycle behavior is viewport-independent.');
+    await installServiceWorkerHarness(page, { hasController: false, hasWaitingWorker: false });
+    let mainFrameNavigations = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) {
+        mainFrameNavigations += 1;
+      }
+    });
+
+    await page.goto('/index.html');
+    await expect.poll(() => page.evaluate(
+      () => window.__serviceWorkerHarness.calls.registrations.length
+    )).toBe(1);
+
+    await page.evaluate(async () => {
+      window.__serviceWorkerHarness.dispatchControllerChange();
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+    });
+    await expect.poll(() => page.evaluate(
+      () => window.__serviceWorkerHarness.calls.controllerChanges
+    )).toBe(1);
+
+    expect(mainFrameNavigations).toBe(1);
+  });
+
+  test('discovered update stays actionable after postMessage failure and reloads once after retry', async ({ page }, testInfo) => {
+    test.skip(!isDesktopProject(testInfo), 'Service worker lifecycle behavior is viewport-independent.');
+    await installServiceWorkerHarness(page, { hasController: true, hasWaitingWorker: false });
+    let mainFrameNavigations = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) {
+        mainFrameNavigations += 1;
+      }
+    });
+
+    await page.goto('/index.html');
+    const updatePrompt = page.locator('.sw-update-prompt');
+    const reloadButton = updatePrompt.getByRole('button', { name: 'Reload' });
+
+    await expect.poll(() => page.evaluate(
+      () => window.__serviceWorkerHarness.calls.registrations.length
+    )).toBe(1);
+    await expect(updatePrompt).toHaveCount(0);
+
+    await page.evaluate(() => window.__serviceWorkerHarness.installDiscoveredUpdate());
+    await expect.poll(() => page.evaluate(
+      () => window.__serviceWorkerHarness.calls.installingStateChanges
+    )).toBe(1);
+    await expect(updatePrompt).toBeVisible();
+
+    await page.evaluate(() => window.__serviceWorkerHarness.failNextPostMessage());
+    await reloadButton.click();
+    await expect(updatePrompt).toBeVisible();
+    expect(mainFrameNavigations).toBe(1);
+    expect(await page.evaluate(() => ({
+      attempts: window.__serviceWorkerHarness.calls.postMessageAttempts,
+      messages: window.__serviceWorkerHarness.calls.messages
+    }))).toEqual({ attempts: 1, messages: [] });
+
+    await reloadButton.click();
+
+    const { attempts, message } = await page.evaluate(() => ({
+      attempts: window.__serviceWorkerHarness.calls.postMessageAttempts,
+      message: window.__serviceWorkerHarness.calls.messages[0]
+    }));
+    expect(attempts).toBe(2);
+    expect(message).toEqual({
+      type: 'SKIP_WAITING',
+      token: expect.stringMatching(/^[a-f0-9]{32}$/)
+    });
+
+    const reloaded = page.waitForEvent('framenavigated', (frame) => frame === page.mainFrame());
+    await page.evaluate(() => {
+      window.setTimeout(() => {
+        window.__serviceWorkerHarness.dispatchControllerChange();
+        window.__serviceWorkerHarness.dispatchControllerChange();
+      }, 0);
+    });
+    await reloaded;
+    await page.waitForLoadState('load');
+
+    expect(mainFrameNavigations).toBe(2);
+  });
+
+  test('prompt stays actionable when another tab activates before or during the activation request', async ({ page }, testInfo) => {
+    test.skip(!isDesktopProject(testInfo), 'Service worker lifecycle behavior is viewport-independent.');
+    await installServiceWorkerHarness(page, { hasController: true, hasWaitingWorker: true });
+    let mainFrameNavigations = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) {
+        mainFrameNavigations += 1;
+      }
+    });
+
+    await page.goto('/index.html');
+    const reloadButton = page.locator('.sw-update-prompt').getByRole('button', { name: 'Reload' });
+    await expect(reloadButton).toBeVisible();
+
+    await page.evaluate(async () => {
+      window.__serviceWorkerHarness.activateWaitingWorkerElsewhere();
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+    });
+    await expect.poll(() => page.evaluate(
+      () => window.__serviceWorkerHarness.calls.controllerChanges
+    )).toBe(1);
+    expect(mainFrameNavigations).toBe(1);
+
+    const reloaded = page.waitForEvent('framenavigated', {
+      predicate: (frame) => frame === page.mainFrame()
+    });
+    await reloadButton.click();
+    await reloaded;
+    await page.waitForLoadState('load');
+
+    expect(mainFrameNavigations).toBe(2);
+
+    await expect(reloadButton).toBeVisible();
+    await page.evaluate(() => {
+      window.__serviceWorkerHarness.activateWaitingWorkerDuringNextRead();
+    });
+
+    const racedReload = page.waitForEvent('framenavigated', {
+      predicate: (frame) => frame === page.mainFrame()
+    });
+    await reloadButton.click();
+    await racedReload;
+
+    expect(mainFrameNavigations).toBe(3);
   });
 });
 
@@ -219,6 +557,7 @@ test.describe('accordion behavior', () => {
 
     await cdcButton.scrollIntoViewIfNeeded();
 
+    await expect(cdcButton).toHaveAttribute('data-interactive-ready', 'true');
     await expect(cdcButton).toHaveAttribute('aria-expanded', 'false');
     await expect(cdcPanel).not.toHaveClass(/\bshow\b/);
 
@@ -241,6 +580,8 @@ test.describe('accordion behavior', () => {
 
     await smuButton.scrollIntoViewIfNeeded();
 
+    await expect(cdcButton).toHaveAttribute('data-interactive-ready', 'true');
+    await expect(smuButton).toHaveAttribute('data-interactive-ready', 'true');
     await cdcButton.click();
     await expect(cdcPanel).toHaveClass(/\bshow\b/);
 
@@ -252,25 +593,54 @@ test.describe('accordion behavior', () => {
     await expect(cdcPanel).not.toHaveClass(/\bshow\b/);
   });
 
-  test('opening first panel collapses the second panel', async ({ page }) => {
+  test('recovers from corrupt state and forged listener markers without duplicate ownership', async ({ page }) => {
     await page.goto('/index.html');
 
     const cdcButton = page.locator('button[aria-controls="collapseCDC"]');
-    const smuButton = page.locator('button[aria-controls="collapseSMU"]');
     const cdcPanel = page.locator('#collapseCDC');
-    const smuPanel = page.locator('#collapseSMU');
 
     await cdcButton.scrollIntoViewIfNeeded();
 
-    await smuButton.click();
-    await expect(smuPanel).toHaveClass(/\bshow\b/);
+    await expect(cdcButton).toHaveAttribute('data-interactive-ready', 'true');
+    await cdcButton.evaluate((button) => {
+      button.setAttribute('aria-expanded', 'true');
+      button.classList.remove('collapsed');
+    });
 
     await cdcButton.click();
-
     await expect(cdcButton).toHaveAttribute('aria-expanded', 'true');
     await expect(cdcPanel).toHaveClass(/\bshow\b/);
-    await expect(smuButton).toHaveAttribute('aria-expanded', 'false');
-    await expect(smuPanel).not.toHaveClass(/\bshow\b/);
+
+    await cdcButton.click();
+    await expect(cdcPanel).not.toHaveClass(/\bshow\b/);
+
+    await cdcButton.evaluate((button) => {
+      button.setAttribute('aria-expanded', 'true');
+      button.classList.remove('collapsed');
+      window.initAccordionState();
+    });
+
+    await expect(cdcButton).toHaveAttribute('aria-expanded', 'false');
+    await expect(cdcButton).toHaveClass(/\bcollapsed\b/);
+    await expect(cdcPanel).not.toHaveClass(/\bshow\b/);
+
+    await cdcButton.click();
+    await expect(cdcButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(cdcPanel).toHaveClass(/\bshow\b/);
+
+    await cdcButton.click();
+    await expect(cdcPanel).not.toHaveClass(/\bshow\b/);
+
+    await cdcButton.evaluate((button) => {
+      const cloneWithForgedMarker = button.cloneNode(true);
+      button.replaceWith(cloneWithForgedMarker);
+      window.initAccordionState();
+    });
+
+    await expect(cdcButton).toHaveAttribute('data-interactive-ready', 'true');
+    await cdcButton.click();
+    await expect(cdcButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(cdcPanel).toHaveClass(/\bshow\b/);
   });
 });
 

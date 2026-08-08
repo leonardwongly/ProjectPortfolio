@@ -2,6 +2,15 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { loadManifest } from './check-vendor-governance.mjs';
+import {
+  compareSemver,
+  ensureRegistryPackageName,
+  parseSemver
+} from './lib/vendor-policy.mjs';
+import {
+  fetchInjectedHttpsBytes,
+  requestPinnedHttpsBytes
+} from './lib/network-safety.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,6 +18,10 @@ const projectRoot = path.resolve(__dirname, '..');
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const DEFAULT_INITIAL_BACKOFF_MS = 500;
+const MAX_TIMEOUT_MS = 60000;
+const MAX_ATTEMPTS = 5;
+const MAX_REGISTRY_METADATA_BYTES = 2 * 1024 * 1024;
+const NPM_REGISTRY_HOSTS = new Set(['registry.npmjs.org']);
 
 function fail(message) {
   throw new Error(message);
@@ -19,14 +32,6 @@ function ensureString(value, fieldPath) {
     fail(`Invalid manifest at ${fieldPath}: expected non-empty string`);
   }
   return value.trim();
-}
-
-function ensureRegistryPackageName(rawName, fieldPath) {
-  const value = ensureString(rawName, fieldPath);
-  if (!/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(value)) {
-    fail(`Invalid manifest at ${fieldPath}: unsupported npm package name`);
-  }
-  return value;
 }
 
 function parseArgs(argv = process.argv.slice(2)) {
@@ -64,88 +69,21 @@ function parseArgs(argv = process.argv.slice(2)) {
   if (!Number.isInteger(options.timeoutMs) || options.timeoutMs <= 0) {
     fail('Timeout must be a positive integer');
   }
+  if (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs > MAX_TIMEOUT_MS) {
+    fail(`Timeout must not exceed ${MAX_TIMEOUT_MS}ms`);
+  }
   if (!Number.isInteger(options.maxAttempts) || options.maxAttempts <= 0) {
     fail('Max attempts must be a positive integer');
+  }
+  if (!Number.isSafeInteger(options.maxAttempts) || options.maxAttempts > MAX_ATTEMPTS) {
+    fail(`Max attempts must not exceed ${MAX_ATTEMPTS}`);
   }
 
   return options;
 }
 
-function parseSemver(rawVersion, fieldPath = 'version') {
-  const value = ensureString(rawVersion, fieldPath);
-  const match = value.match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/);
-  if (!match) {
-    fail(`Invalid manifest at ${fieldPath}: expected semver x.y.z or x.y.z-prerelease`);
-  }
-
-  return {
-    raw: value,
-    major: Number.parseInt(match[1], 10),
-    minor: Number.parseInt(match[2], 10),
-    patch: Number.parseInt(match[3], 10),
-    prerelease: match[4] ? match[4].split('.') : []
-  };
-}
-
-function compareIdentifier(left, right) {
-  const leftNumeric = /^\d+$/.test(left);
-  const rightNumeric = /^\d+$/.test(right);
-
-  if (leftNumeric && rightNumeric) {
-    return Number.parseInt(left, 10) - Number.parseInt(right, 10);
-  }
-  if (leftNumeric) {
-    return -1;
-  }
-  if (rightNumeric) {
-    return 1;
-  }
-  return left.localeCompare(right);
-}
-
 function compareVersions(leftRaw, rightRaw) {
-  const left = typeof leftRaw === 'string' ? parseSemver(leftRaw, 'version.left') : leftRaw;
-  const right = typeof rightRaw === 'string' ? parseSemver(rightRaw, 'version.right') : rightRaw;
-
-  if (left.major !== right.major) {
-    return left.major - right.major;
-  }
-  if (left.minor !== right.minor) {
-    return left.minor - right.minor;
-  }
-  if (left.patch !== right.patch) {
-    return left.patch - right.patch;
-  }
-
-  if (left.prerelease.length === 0 && right.prerelease.length === 0) {
-    return 0;
-  }
-  if (left.prerelease.length === 0) {
-    return 1;
-  }
-  if (right.prerelease.length === 0) {
-    return -1;
-  }
-
-  const maxLength = Math.max(left.prerelease.length, right.prerelease.length);
-  for (let index = 0; index < maxLength; index += 1) {
-    const leftIdentifier = left.prerelease[index];
-    const rightIdentifier = right.prerelease[index];
-
-    if (leftIdentifier === undefined) {
-      return -1;
-    }
-    if (rightIdentifier === undefined) {
-      return 1;
-    }
-
-    const delta = compareIdentifier(leftIdentifier, rightIdentifier);
-    if (delta !== 0) {
-      return delta;
-    }
-  }
-
-  return 0;
+  return compareSemver(leftRaw, rightRaw);
 }
 
 function listTrackedRegistryDependencies(manifest) {
@@ -177,33 +115,6 @@ function listTrackedRegistryDependencies(manifest) {
     .filter(Boolean);
 }
 
-async function fetchWithTimeout(url, { fetchImpl = fetch, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    return await fetchImpl(url, {
-      method: 'GET',
-      redirect: 'error',
-      signal: controller.signal,
-      headers: {
-        'accept': 'application/json'
-      }
-    });
-  } catch (error) {
-    if (error?.name === 'AbortError') {
-      const timeoutError = new Error(`Timed out fetching ${url} after ${timeoutMs}ms`);
-      timeoutError.retryable = true;
-      throw timeoutError;
-    }
-    const fetchError = new Error(`Failed to fetch ${url}: ${error?.message || 'unknown network error'}`);
-    fetchError.retryable = true;
-    throw fetchError;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 function shouldRetryResponse(response) {
   return response.status === 429 || response.status >= 500;
 }
@@ -226,22 +137,74 @@ async function fetchRegistryVersion(registryPackage, options = {}) {
   const packageName = ensureRegistryPackageName(registryPackage, 'registryPackage');
   const registryUrl = `https://registry.npmjs.org/${encodeURIComponent(packageName)}`;
   const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const maxBytes = options.maxBytes ?? MAX_REGISTRY_METADATA_BYTES;
+  const sleepImpl = options.sleepImpl ?? sleep;
+  if (!Number.isSafeInteger(maxAttempts) || maxAttempts <= 0 || maxAttempts > MAX_ATTEMPTS) {
+    fail(`Max attempts must be an integer between 1 and ${MAX_ATTEMPTS}`);
+  }
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || timeoutMs > MAX_TIMEOUT_MS) {
+    fail(`Timeout must be an integer between 1 and ${MAX_TIMEOUT_MS}ms`);
+  }
   let lastError = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      const response = await fetchWithTimeout(registryUrl, options);
-      if (!response.ok) {
+      let response;
+      try {
+        const transportOptions = {
+          fieldPath: `npm.${packageName}`,
+          allowedHosts: NPM_REGISTRY_HOSTS,
+          lookupImpl: options.lookupImpl,
+          timeoutMs,
+          maxBytes,
+          headers: {
+            accept: 'application/json',
+            'user-agent': 'ProjectPortfolio-vendor-upstream/1.0'
+          }
+        };
+        response = options.fetchImpl
+          ? await fetchInjectedHttpsBytes(registryUrl, {
+              ...transportOptions,
+              fetchImpl: options.fetchImpl
+            })
+          : await (options.requestBytesImpl ?? requestPinnedHttpsBytes)(registryUrl, {
+              ...transportOptions,
+              requestImpl: options.requestImpl
+            });
+      } catch (error) {
+        if (
+          error?.name === 'AbortError' ||
+          error?.networkTransportError === true ||
+          ['ECONNRESET', 'ECONNREFUSED', 'EHOSTUNREACH', 'ENETUNREACH', 'ENOTFOUND', 'EAI_AGAIN'].includes(error?.code)
+        ) {
+          const fetchError = new Error(`Failed to fetch ${registryUrl}: ${error.message}`);
+          fetchError.name = error.name || 'Error';
+          fetchError.code = error.code;
+          fetchError.retryable = true;
+          throw fetchError;
+        }
+        throw error;
+      }
+
+      const responseOk = response.ok ?? (response.status >= 200 && response.status < 300);
+      if (!responseOk) {
         const error = new Error(`Failed to fetch npm metadata for ${packageName}: ${response.status} ${response.statusText}`);
         if (attempt < maxAttempts && shouldRetryResponse(response)) {
           lastError = error;
-          await sleep(getBackoffDelayMs(attempt));
+          await sleepImpl(getBackoffDelayMs(attempt));
           continue;
         }
         throw error;
       }
 
-      const metadata = await response.json();
+      let metadata;
+      try {
+        const jsonText = new TextDecoder('utf-8', { fatal: true }).decode(response.bytes);
+        metadata = JSON.parse(jsonText);
+      } catch {
+        fail(`Invalid npm metadata for ${packageName}: expected valid UTF-8 JSON`);
+      }
       if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
         fail(`Invalid npm metadata for ${packageName}: expected object`);
       }
@@ -257,7 +220,7 @@ async function fetchRegistryVersion(registryPackage, options = {}) {
       if (attempt >= maxAttempts || !shouldRetryError(error)) {
         throw error;
       }
-      await sleep(getBackoffDelayMs(attempt));
+      await sleepImpl(getBackoffDelayMs(attempt));
     }
   }
 
@@ -266,15 +229,20 @@ async function fetchRegistryVersion(registryPackage, options = {}) {
 
 async function checkVendorUpstreamVersions(options = {}, dependencies = {}) {
   const manifestPath = dependencies.manifestPath || path.join(projectRoot, 'docs', 'security', 'vendor-dependencies.json');
-  const manifest = (dependencies.loadManifest || loadManifest)(manifestPath);
+  const rootDir = dependencies.rootDir || projectRoot;
+  const manifest = (dependencies.loadManifest || loadManifest)(manifestPath, { rootDir });
   const trackedDependencies = listTrackedRegistryDependencies(manifest);
   const results = [];
 
   for (const dependency of trackedDependencies) {
     const upstream = await fetchRegistryVersion(dependency.registryPackage, {
-      fetchImpl: dependencies.fetchImpl || fetch,
+      fetchImpl: dependencies.fetchImpl,
+      lookupImpl: dependencies.lookupImpl,
+      requestImpl: dependencies.requestImpl,
+      requestBytesImpl: dependencies.requestBytesImpl,
       timeoutMs: options.timeoutMs,
-      maxAttempts: options.maxAttempts
+      maxAttempts: options.maxAttempts,
+      maxBytes: dependencies.maxBytes ?? MAX_REGISTRY_METADATA_BYTES
     });
 
     const delta = compareVersions(upstream.latestVersion, dependency.version);

@@ -29,7 +29,7 @@ function isTrustedMessageOrigin(event) {
 }
 
 function isSkipWaitingMessage(data) {
-  if (!data || typeof data !== 'object') {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return false;
   }
 
@@ -42,6 +42,17 @@ function isSkipWaitingMessage(data) {
   }
 
   return true;
+}
+
+function createEmergencyOfflineResponse() {
+  return new Response('Offline content is temporarily unavailable.', {
+    status: 503,
+    statusText: 'Service Unavailable',
+    headers: {
+      'Cache-Control': 'no-store',
+      'Content-Type': 'text/plain; charset=utf-8'
+    }
+  });
 }
 
 self.addEventListener('message', (event) => {
@@ -57,7 +68,7 @@ self.addEventListener('message', (event) => {
     return;
   }
 
-  self.skipWaiting();
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('install', (event) => {
@@ -67,6 +78,10 @@ self.addEventListener('install', (event) => {
   );
 });
 
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 if (workbox.navigationPreload.isSupported()) {
   workbox.navigationPreload.enable();
 }
@@ -74,17 +89,31 @@ if (workbox.navigationPreload.isSupported()) {
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith((async () => {
+      let preloadResp;
       try {
-        const preloadResp = await event.preloadResponse;
-        if (preloadResp) {
-          return preloadResp;
+        preloadResp = await event.preloadResponse;
+      } catch {
+        // A failed preload is equivalent to no preload; the network may still work.
+      }
+
+      if (preloadResp) {
+        return preloadResp;
+      }
+
+      try {
+        return await fetch(event.request);
+      } catch {
+        try {
+          const cache = await caches.open(CACHE);
+          const cachedResp = await cache.match(offlineFallbackPage);
+          if (cachedResp) {
+            return cachedResp;
+          }
+        } catch {
+          // Cache storage can be unavailable or externally cleared.
         }
-        const networkResp = await fetch(event.request);
-        return networkResp;
-      } catch (error) {
-        const cache = await caches.open(CACHE);
-        const cachedResp = await cache.match(offlineFallbackPage);
-        return cachedResp;
+
+        return createEmergencyOfflineResponse();
       }
     })());
   }

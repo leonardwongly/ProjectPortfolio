@@ -1,6 +1,19 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const integrationPort = Number.parseInt(process.env.PLAYWRIGHT_PORT || '4173', 10);
+function parseIntegrationPort(rawValue = process.env.PLAYWRIGHT_PORT ?? '4173') {
+  const value = String(rawValue);
+  if (!/^\d+$/.test(value)) {
+    throw new Error('PLAYWRIGHT_PORT must be an integer in the range 1..65535');
+  }
+
+  const port = Number(value);
+  if (!Number.isSafeInteger(port) || port < 1 || port > 65535) {
+    throw new Error('PLAYWRIGHT_PORT must be an integer in the range 1..65535');
+  }
+  return port;
+}
+
+const integrationPort = parseIntegrationPort();
 const integrationBaseURL = `http://127.0.0.1:${integrationPort}`;
 
 export default defineConfig({
@@ -38,3 +51,5 @@ export default defineConfig({
     }
   ]
 });
+
+export { parseIntegrationPort };

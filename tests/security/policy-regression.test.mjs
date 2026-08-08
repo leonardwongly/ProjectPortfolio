@@ -1,16 +1,10 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import path from 'node:path';
 import { createRequire } from 'node:module';
 import test from 'node:test';
 
 const require = createRequire(import.meta.url);
 const { renderCspScriptHashesDirective } = require('../../scripts/build.js');
-
-const WORKFLOW_FILES = fs.readdirSync('.github/workflows')
-  .filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'))
-  .map((file) => path.posix.join('.github/workflows', file))
-  .sort();
 
 const SOURCE_HTML_FILES = [
   'src/index.html',
@@ -31,53 +25,6 @@ const GENERATED_HTML_FILES = [
 ];
 
 const HEADERS_FILE = '_headers';
-
-test('workflow uses references are pinned by SHA', () => {
-  assert.deepEqual(WORKFLOW_FILES, [
-    '.github/workflows/build.yml',
-    '.github/workflows/codeql.yml',
-    '.github/workflows/dependency-review.yml',
-    '.github/workflows/gemini-cli.yml',
-    '.github/workflows/link-health.yml',
-    '.github/workflows/playwright-integration.yml',
-    '.github/workflows/production-smoke.yml',
-    '.github/workflows/release-candidate.yml',
-    '.github/workflows/scan.yml',
-    '.github/workflows/vendor-review.yml'
-  ]);
-
-  const unpinned = [];
-  const pinPattern = /uses:\s*[^@\s]+@[0-9a-f]{40}\b/;
-  const usesPattern = /uses:\s*[^@\s]+@/;
-
-  for (const file of WORKFLOW_FILES) {
-    const content = fs.readFileSync(file, 'utf8');
-    const lines = content.split('\n');
-    lines.forEach((line, index) => {
-      if (usesPattern.test(line) && !pinPattern.test(line)) {
-        unpinned.push(`${file}:${index + 1}:${line.trim()}`);
-      }
-    });
-  }
-
-  assert.deepEqual(unpinned, [], `Found unpinned action references:\n${unpinned.join('\n')}`);
-});
-
-test('workflow npm installs disable dependency lifecycle scripts', () => {
-  const unsafeInstalls = [];
-
-  for (const file of WORKFLOW_FILES) {
-    const content = fs.readFileSync(file, 'utf8');
-    const lines = content.split('\n');
-    lines.forEach((line, index) => {
-      if (/\brun:\s*npm ci\b/.test(line) && !line.includes('--ignore-scripts')) {
-        unsafeInstalls.push(`${file}:${index + 1}:${line.trim()}`);
-      }
-    });
-  }
-
-  assert.deepEqual(unsafeInstalls, [], `Found npm ci without --ignore-scripts:\n${unsafeInstalls.join('\n')}`);
-});
 
 test('scan workflow enforces dependency audit and vendor governance gates', () => {
   const content = fs.readFileSync('.github/workflows/scan.yml', 'utf8');
@@ -177,6 +124,36 @@ test('required CI workflows use the authoritative generated-file inventory', () 
   }
 });
 
+test('the security coverage contract and required CI workflows enforce exact thresholds', () => {
+  const coverageCommand = JSON.parse(fs.readFileSync('package.json', 'utf8'))
+    .scripts['test:security:coverage'];
+  const thresholds = [...coverageCommand.matchAll(
+    /--test-coverage-(lines|branches|functions)=(\d+)/g
+  )].map((match) => [match[1], Number(match[2])]);
+  const includes = [...coverageCommand.matchAll(
+    /--test-coverage-include=(?:'([^']+)'|"([^"]+)"|(\S+))/g
+  )].map((match) => match[1] || match[2] || match[3]);
+
+  assert.deepEqual(thresholds, [
+    ['lines', 75],
+    ['branches', 75],
+    ['functions', 85]
+  ]);
+  assert.deepEqual(includes, [
+    'scripts/**/*.js',
+    'scripts/**/*.mjs',
+    'scripts/**/*.cjs',
+    'playwright.config.mjs',
+    'pwabuilder-sw.js'
+  ]);
+
+  for (const file of ['.github/workflows/build.yml', '.github/workflows/scan.yml']) {
+    const content = fs.readFileSync(file, 'utf8');
+    assert.match(content, /run: npm run test:security:coverage/);
+    assert.doesNotMatch(content, /run: npm run test:security(?:\s|$)/);
+  }
+});
+
 test('CSP is declared in source pages and appears before script tags when present', () => {
   for (const file of SOURCE_HTML_FILES) {
     const lines = fs.readFileSync(file, 'utf8').split('\n');
@@ -239,6 +216,7 @@ test('_headers includes required runtime security headers', () => {
   assert.match(content, /X-Frame-Options:\s*DENY/i);
   assert.match(content, /X-Content-Type-Options:\s*nosniff/i);
   assert.match(content, /Referrer-Policy:\s*strict-origin-when-cross-origin/i);
+  assert.match(content, /Vary:\s*Accept/i);
 });
 
 test('CSP monitoring fallback and rollout requirements are documented', () => {

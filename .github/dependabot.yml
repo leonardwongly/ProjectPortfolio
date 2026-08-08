@@ -11,10 +11,15 @@ updates:
       - "dependencies"
       - "security"
     open-pull-requests-limit: 10
+    groups:
+      weekly-batch:
+        patterns:
+          - "*"
+
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
       day: "monday"
       time: "03:30"
       timezone: "Etc/UTC"
@@ -22,3 +27,7 @@ updates:
       - "dependencies"
       - "security"
     open-pull-requests-limit: 5
+    groups:
+      weekly-batch:
+        patterns:
+          - "*"

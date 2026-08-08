@@ -2,6 +2,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import assetPaths from './lib/asset-paths.cjs';
+import { decodeHtmlAttributeEntities, scanHtmlAttributes } from './lib/html-attributes.mjs';
+import safeInput from './lib/safe-input.cjs';
+
+const { resolveContainedPath, sanitizeRelativeAssetPath } = assetPaths;
+const { readStableFileNoFollow } = safeInput;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
@@ -35,6 +42,9 @@ const MAX_SINGLE_ASSET_BYTES = 20 * MiB;
 const MAX_UNREFERENCED_BOOK_ASSET_BYTES = 512 * KiB;
 const MAX_RENDERED_READING_MEDIA_BYTES = 12 * MiB;
 const MAX_RENDERED_READING_2X_BYTES = 6 * MiB;
+const MAX_RENDERED_HTML_BYTES = 1024 * KiB;
+const MAX_RENDERED_ASSET_REFERENCES = 5000;
+const MAX_ASSET_INVENTORY_ENTRIES = 20000;
 const DISALLOWED_WEB_ROOT_ASSET_PATTERNS = [
   /^css\/bootstrap(?:-grid|-reboot|-utilities|\.rtl|\.css|\.min\.css\.map)/,
   /^css\/bootstrap.*\.map$/,
@@ -55,23 +65,48 @@ function formatBytes(bytes) {
 }
 
 function fileSize(relativePath, { rootDir = projectRoot } = {}) {
-  return fs.statSync(path.join(rootDir, relativePath)).size;
+  const absolutePath = resolveContainedPath(rootDir, relativePath, 'performance asset');
+  const stats = fs.lstatSync(absolutePath);
+  if (stats.isSymbolicLink() || !stats.isFile()) {
+    throw new Error(`${relativePath} must be a non-symlink regular file`);
+  }
+  return stats.size;
 }
 
-function walkFiles(relativePath, { rootDir = projectRoot } = {}) {
-  const root = path.join(rootDir, relativePath);
+function walkFiles(relativePath, {
+  rootDir = projectRoot,
+  maxEntries = MAX_ASSET_INVENTORY_ENTRIES
+} = {}) {
+  const root = resolveContainedPath(rootDir, relativePath, 'performance asset directory');
   if (!fs.existsSync(root)) return [];
+  const rootStats = fs.lstatSync(root);
+  if (rootStats.isSymbolicLink() || !rootStats.isDirectory()) {
+    throw new Error(`${relativePath} must be a non-symlink directory`);
+  }
 
   const files = [];
   const queue = [root];
+  let visitedEntries = 0;
   while (queue.length > 0) {
     const current = queue.pop();
+    const currentStats = fs.lstatSync(current);
+    if (currentStats.isSymbolicLink() || !currentStats.isDirectory()) {
+      throw new Error(`${path.relative(rootDir, current)} must remain a non-symlink directory`);
+    }
     fs.readdirSync(current, { withFileTypes: true }).forEach((entry) => {
+      visitedEntries += 1;
+      if (visitedEntries > maxEntries) {
+        throw new Error(`${relativePath} exceeds ${maxEntries} inventory entry limit`);
+      }
       const absolutePath = path.join(current, entry.name);
-      if (entry.isDirectory()) {
+      if (entry.isSymbolicLink()) {
+        throw new Error(`${path.relative(rootDir, absolutePath)} must not be a symbolic link`);
+      } else if (entry.isDirectory()) {
         queue.push(absolutePath);
       } else if (entry.isFile()) {
         files.push(path.relative(rootDir, absolutePath).split(path.sep).join('/'));
+      } else {
+        throw new Error(`${path.relative(rootDir, absolutePath)} must be a regular file or directory`);
       }
     });
   }
@@ -82,34 +117,117 @@ function directorySize(relativePath, { rootDir = projectRoot } = {}) {
   return walkFiles(relativePath, { rootDir }).reduce((sum, file) => sum + fileSize(file, { rootDir }), 0);
 }
 
+function readBoundedTextFile(relativePath, maxBytes, {
+  rootDir = projectRoot,
+  openSync = fs.openSync
+} = {}) {
+  const resolvedRoot = path.resolve(rootDir);
+  const absolutePath = resolveContainedPath(resolvedRoot, relativePath, relativePath);
+  return readStableFileNoFollow(absolutePath, {
+    label: relativePath,
+    rootDir: resolvedRoot,
+    maxBytes,
+    minBytes: 0,
+    openSync
+  }).toString('utf8');
+}
+
+function normalizeRenderedAssetReference(rawUrl, findings) {
+  let value;
+  try {
+    value = decodeHtmlAttributeEntities(rawUrl).trim();
+  } catch (error) {
+    findings.push(error.message);
+    return null;
+  }
+  if (!value || value.startsWith('data:') || value.startsWith('//') || /^[a-z][a-z\d+.-]*:/i.test(value)) {
+    return null;
+  }
+  if (/[\u0000-\u001f\u007f\\]/.test(value)) {
+    findings.push(`asset reference contains disallowed characters: "${value}"`);
+    return null;
+  }
+
+  try {
+    const pathSource = value.split(/[?#]/, 1)[0];
+    const decodedPath = decodeURIComponent(pathSource).replace(/^\/+/, '');
+    if (!decodedPath) return null;
+    const relativePath = sanitizeRelativeAssetPath(decodedPath, 'rendered asset reference');
+    resolveContainedPath('/rendered-assets', relativePath, 'rendered asset reference');
+    return relativePath;
+  } catch (error) {
+    findings.push(`asset reference is malformed: "${value}" (${error?.message || 'invalid path'})`);
+    return null;
+  }
+}
+
 function collectRenderedAssetReferences(html) {
+  if (typeof html !== 'string') {
+    throw new TypeError('Rendered HTML must be a string');
+  }
+  if (Buffer.byteLength(html, 'utf8') > MAX_RENDERED_HTML_BYTES) {
+    throw new RangeError(`Rendered HTML exceeds ${MAX_RENDERED_HTML_BYTES} byte parse limit`);
+  }
+
   const references = new Set();
   const highDpiReferences = new Set();
-  const attrPattern = /\b(src|srcset)="([^"]+)"/g;
-  let match = attrPattern.exec(html);
+  const scanned = scanHtmlAttributes(html, {
+    attributeNames: ['src', 'srcset'],
+    maxAttributes: MAX_RENDERED_ASSET_REFERENCES,
+    maxBytes: MAX_RENDERED_HTML_BYTES
+  });
+  const findings = [...scanned.findings];
+  let referenceCount = 0;
 
-  while (match) {
-    const [, attrName, rawValue] = match;
+  for (const { name: attrName, value: rawValue } of scanned.attributes) {
+    if (!rawValue.trim()) {
+      findings.push(`${attrName} has an empty value`);
+      continue;
+    }
+    if (/[<>]/.test(rawValue)) {
+      findings.push(`${attrName} contains an invalid tag boundary`);
+      continue;
+    }
+
     if (attrName === 'srcset') {
-      rawValue.split(',').forEach((candidate) => {
+      const candidates = rawValue.split(',');
+      if (referenceCount + candidates.length > MAX_RENDERED_ASSET_REFERENCES) {
+        findings.push(`rendered asset references exceed ${MAX_RENDERED_ASSET_REFERENCES} entry limit`);
+        break;
+      }
+      candidates.forEach((candidate) => {
         const parts = candidate.trim().split(/\s+/);
         const url = parts[0];
         if (url) {
+          referenceCount += 1;
           references.add(url);
           if (parts.includes('2x')) {
             highDpiReferences.add(url);
           }
         }
+        if (!url || parts.length > 2 || (parts[1] && !/^(?:\d+(?:\.\d+)?x|\d+w)$/.test(parts[1]))) {
+          findings.push(`srcset contains malformed candidate "${candidate.trim()}"`);
+        }
       });
     } else {
+      referenceCount += 1;
       references.add(rawValue.trim());
     }
-    match = attrPattern.exec(html);
+
+    if (referenceCount > MAX_RENDERED_ASSET_REFERENCES) {
+      findings.push(`rendered asset references exceed ${MAX_RENDERED_ASSET_REFERENCES} entry limit`);
+      break;
+    }
   }
 
   return {
-    references: Array.from(references).filter((url) => url && !url.startsWith('data:') && !/^[a-z][a-z\d+.-]*:/i.test(url)),
-    highDpiReferences: Array.from(highDpiReferences).filter((url) => url && !url.startsWith('data:') && !/^[a-z][a-z\d+.-]*:/i.test(url))
+    references: [...new Set(Array.from(references)
+      .map((url) => normalizeRenderedAssetReference(url, findings))
+      .filter(Boolean))],
+    highDpiReferences: [...new Set(Array.from(highDpiReferences)
+      .map((url) => normalizeRenderedAssetReference(url, findings))
+      .filter(Boolean))],
+    findings
   };
 }
 
@@ -123,7 +241,7 @@ function sumExistingFiles(relativePaths, { rootDir = projectRoot } = {}) {
   }, 0);
 }
 
-function checkPerformanceBudget({ rootDir = projectRoot } = {}) {
+function checkPerformanceBudget({ rootDir = projectRoot, openSync = fs.openSync } = {}) {
   const failures = [];
   const report = [];
 
@@ -167,7 +285,15 @@ function checkPerformanceBudget({ rootDir = projectRoot } = {}) {
 
   const readingHtmlPath = path.join(rootDir, 'reading.html');
   if (fs.existsSync(readingHtmlPath)) {
-    const renderedAssets = collectRenderedAssetReferences(fs.readFileSync(readingHtmlPath, 'utf8'));
+    let renderedAssets = { references: [], highDpiReferences: [], findings: [] };
+    try {
+      renderedAssets = collectRenderedAssetReferences(
+        readBoundedTextFile('reading.html', MAX_RENDERED_HTML_BYTES, { rootDir, openSync })
+      );
+    } catch (error) {
+      failures.push(`reading.html asset parsing failed: ${error?.message || 'invalid HTML'}`);
+    }
+    renderedAssets.findings.forEach((finding) => failures.push(`reading.html: ${finding}`));
     const readingMediaReferences = renderedAssets.references.filter((reference) => reference.startsWith('book/'));
     const highDpiReadingReferences = renderedAssets.highDpiReferences.filter((reference) => reference.startsWith('book/'));
     const renderedReadingBytes = sumExistingFiles(readingMediaReferences, { rootDir });
@@ -233,7 +359,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 
 export {
+  MAX_ASSET_INVENTORY_ENTRIES,
   checkPerformanceBudget,
   collectRenderedAssetReferences,
-  createAssetInventoryReport
+  createAssetInventoryReport,
+  walkFiles
 };

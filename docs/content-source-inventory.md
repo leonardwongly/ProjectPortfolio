@@ -6,7 +6,7 @@ This inventory is the acceptance contract for profile and resume reconciliation.
 
 | Source class | Use for | Current repository surface | Validation |
 | --- | --- | --- | --- |
-| Resume artifacts | Current resume copy and downloadable resume links | `docs/resume.pdf`, `docs/resume.docx`, `data/profile.json`, `src/index.html` | Manual artifact review, `npm run build`, `npm run test:content` |
+| Resume sources and artifacts | Resume-only copy plus shared education, publication, work history, skills, credentials, and downloadable resume links | `data/resume.json`, `data/profile.json`, `data/experience.json`, `data/skills.json`, `data/certifications.json`, `artifacts/resume.html`, `docs/resume.pdf`, `docs/resume.docx`, `docs/resume.manifest.json`, `src/index.html` | `npm run build:resume`, `npm run check:resume`; the manifest requires the exact source list, deterministic HTML SHA-256, exact PDF/DOCX SHA-256 hashes, and structurally valid bounded artifacts |
 | Structured profile data | Hero copy, current role, education, writing, honors, community, contact copy | `data/profile.json` | `scripts/build.js` schema validation, `tests/security/content-parity.test.mjs` |
 | Credentials data | Certification title, issuer, issue date, credential ID, public link, icon | `data/certifications.json` | `tests/security/content-parity.test.mjs`, unsafe URL/path tests |
 | Work history data | Role chronology and impact bullets | `data/experience.json` | `scripts/build.js` schema validation, generated page review |
@@ -54,6 +54,7 @@ Until that contract exists, external content should be reviewed and committed by
 - [ ] Identify the source class before editing content.
 - [ ] Update structured JSON rather than generated HTML when a tokenized section exists.
 - [ ] Run `npm run build`.
+- [ ] Run `npm run build:resume` and `npm run check:resume` when any resume source changes.
 - [ ] Run `npm run test:content` for profile or credential changes.
 - [ ] Run `npm run check:reading` for reading changes.
 - [ ] Confirm generated output changes are limited to expected files.

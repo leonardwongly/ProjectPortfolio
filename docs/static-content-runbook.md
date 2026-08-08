@@ -41,9 +41,30 @@ The content parity tests verify that source-backed profile facts such as the cur
 
 The reading audit rejects missing authors, missing ISBNs, invalid years, duplicate ISBN/title-year records, and missing declared cover files. Reading years must be canonical four-digit years or integer years in the accepted range, and generated filter attributes must remain escaped so quote-bearing metadata cannot break out of HTML attributes.
 
-The link-health checker performs URL-shape and DNS preflight checks before fetches and blocks non-HTTPS, credential-bearing, localhost, private literal host, and private DNS-resolved references. This is a maintainer-side hardening control for repository content, not a general-purpose network sandbox; the full link check still fetches the original hostname and therefore depends on resolver stability between preflight and request. Use `npm run check:links:preflight` for a lower-risk PR-safe validation mode that does not issue HTTP requests after DNS preflight. The default `npm run check:links` mode reports network failures without failing the build; use `npm run check:links -- --strict` before release if you need broken-link enforcement.
+The link-health checker performs URL-shape and DNS preflight checks before fetches and blocks non-HTTPS, credential-bearing, localhost, private literal host, and private or reserved DNS-resolved references. For each HTTP request, it disables connection reuse and pins hostname lookup to the same approved A/AAAA records, so a second resolver answer cannot switch the destination between validation and connection. This is a maintainer-side hardening control for repository content, not a general-purpose network sandbox. Use `npm run check:links:preflight` for a lower-risk PR-safe validation mode that stops after URL and DNS validation without issuing HTTP requests. The default `npm run check:links` mode reports failures without failing the build; use `npm run check:links -- --strict` before release to fail on any malformed, unsafe, unreachable, timed-out, or non-auth HTTP error response.
 
 The performance budget check caps generated page sizes, key static assets, asset directories, and individual book/image/font files. Update `docs/media-asset-policy.md` before changing those budgets.
+
+## Markdown for Agents
+
+The site supports [Markdown content negotiation](https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/) so agents can request a clean, formatting-stripped representation with `Accept: text/markdown` while browsers keep HTML by default. This is powered by Cloudflare's **Markdown for Agents** edge conversion (no origin code change needed).
+
+Enable it for the zone (one-time, in the Cloudflare dashboard or via API):
+
+1. Cloudflare dashboard: select the zone, open **AI Crawl Control**, and enable **Markdown for Agents**.
+2. Or via API: `PATCH /client/v4/zones/{zone_tag}/settings/content_converter` with `{"value": "on"}` (requires a token with Zone Settings edit permission).
+
+Supporting origin config is committed in `_headers` (`Vary: Accept` on the `/*` section) so caches store separate HTML and Markdown variants.
+
+Verify after the zone setting is enabled and the site is deployed:
+
+```bash
+npm run check:markdown
+# or
+curl -sI https://leonardwong.tech/ -H "Accept: text/markdown" | rg -i "^(content-type|vary|x-markdown-tokens):"
+```
+
+The `check:markdown` script confirms the default request returns HTML and that an `Accept: text/markdown` request returns `Content-Type: text/markdown` with a non-HTML body and `Vary: Accept`. It fails (exit code 1) until the zone setting is enabled and deployed.
 
 ## CI
 

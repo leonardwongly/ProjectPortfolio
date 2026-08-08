@@ -11,6 +11,7 @@
     "build:resume:html": "node scripts/build-resume.mjs --html-only",
     "test": "npx --no-install playwright test",
     "test:security": "node --test tests/security/*.test.mjs",
+    "test:security:coverage": "node --experimental-test-coverage --test-coverage-include='scripts/**/*.js' --test-coverage-include='scripts/**/*.mjs' --test-coverage-include='scripts/**/*.cjs' --test-coverage-include='playwright.config.mjs' --test-coverage-include='pwabuilder-sw.js' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=85 --test tests/security/*.test.mjs",
     "test:content": "node --test tests/security/content-parity.test.mjs",
     "test:integration": "npx --no-install playwright install chromium && npx --no-install playwright test tests/integration/mobile-nav-and-accordion.spec.mjs --config=playwright.config.mjs",
     "audit:high": "npm audit --audit-level=high",
@@ -19,6 +20,7 @@
     "check:assets": "node scripts/check-performance-budget.mjs",
     "check:accessibility": "npx --no-install playwright install chromium && npx --no-install playwright test tests/integration/accessibility-smoke.spec.mjs --config=playwright.config.mjs",
     "check:links": "node scripts/check-link-health.mjs",
+    "check:markdown": "node scripts/check-markdown-negotiation.mjs",
     "check:links:preflight": "node scripts/check-link-health.mjs --preflight-only --strict",
     "check:performance": "node scripts/check-performance-budget.mjs",
     "check:production": "node scripts/check-production-smoke.mjs",
@@ -29,8 +31,8 @@
     "validate:vendor:governance": "node scripts/check-vendor-governance.mjs",
     "validate:vendor:upstream": "node scripts/update-vendor.mjs && node scripts/check-vendor-upstream.mjs",
     "validate:vendor": "npm run validate:vendor:governance && npm run validate:vendor:upstream",
-    "validate": "npm run build && npm run check:generated && npm run check:hygiene && npm run check:reading && npm run check:performance && npm run test:security",
-    "validate:full": "npm run build && npm run check:generated && npm run check:resume && npm run check:hygiene && npm run check:workflows && npm run test:security && npm run check:reading && npm run check:performance && npm run check:telemetry && npm run check:links:preflight && npm run audit:high && npm run validate:vendor && npm run test:integration && npm run check:accessibility"
+    "validate": "npm run build && npm run check:generated && npm run check:hygiene && npm run check:reading && npm run check:performance && npm run test:security:coverage",
+    "validate:full": "npm run build && npm run check:generated && npm run check:resume && npm run check:hygiene && npm run check:workflows && npm run test:security:coverage && npm run check:reading && npm run check:performance && npm run check:telemetry && npm run check:links:preflight && npm run audit:high && npm run validate:vendor && npm run test:integration && npm run check:accessibility"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",

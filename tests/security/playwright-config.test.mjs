@@ -2,10 +2,28 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
 
-test('local Playwright runs can reuse an existing static server', () => {
-  const content = fs.readFileSync('playwright.config.mjs', 'utf8');
+import config, { parseIntegrationPort } from '../../playwright.config.mjs';
 
-  assert.match(content, /reuseExistingServer:\s*!process\.env\.CI/);
+test('Playwright port parsing rejects malformed and out-of-range values', () => {
+  assert.equal(parseIntegrationPort('1'), 1);
+  assert.equal(parseIntegrationPort('65535'), 65535);
+
+  for (const value of ['', '0', '65536', '-1', '1.5', '12px', ' 4173', '9'.repeat(100)]) {
+    assert.throws(() => parseIntegrationPort(value), /range 1\.\.65535/);
+  }
+});
+
+test('local Playwright runs bind a loopback server and can reuse it outside CI', () => {
+  const configuredPort = parseIntegrationPort();
+  assert.equal(config.webServer.url, `http://127.0.0.1:${configuredPort}/index.html`);
+  assert.equal(config.use.baseURL, `http://127.0.0.1:${configuredPort}`);
+  assert.ok(
+    config.webServer.command.includes(
+      `python3 -m http.server ${configuredPort} --bind 127.0.0.1`
+    )
+  );
+  assert.equal(config.webServer.reuseExistingServer, !process.env.CI);
+  assert.equal(config.use.serviceWorkers, 'block');
 });
 
 test('browser validation scripts install Chromium and execute their test suites', () => {

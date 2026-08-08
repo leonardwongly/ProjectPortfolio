@@ -1,15 +1,26 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { ensureVendorHttpsUrl, ensureVendorUpstreamMatchesSource } from './lib/vendor-policy.mjs';
+import {
+  ensureRegistryPackageName,
+  ensureVendorHttpsUrl,
+  ensureVendorSourceMatchesVersion,
+  ensureVendorUpstreamMatchesSource,
+  parseSemver
+} from './lib/vendor-policy.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const vendorRoot = path.join(projectRoot, 'js', 'vendor');
 const manifestPath = path.join(projectRoot, 'docs', 'security', 'vendor-dependencies.json');
+const MAX_VENDOR_MANIFEST_BYTES = 256 * 1024;
+const MAX_VENDOR_FILE_BYTES = 5 * 1024 * 1024;
+const require = createRequire(import.meta.url);
+const { readStableFileNoFollow } = require('./lib/safe-input.cjs');
 
 function fail(message) {
   throw new Error(message);
@@ -56,15 +67,18 @@ function ensureAllowedKeys(value, fieldPath, allowedKeys) {
 
 function ensureVendorPath(rawPath, fieldPath) {
   const relativePath = ensureString(rawPath, fieldPath);
-  if (path.isAbsolute(relativePath)) {
+  if (path.isAbsolute(relativePath) || path.win32.isAbsolute(relativePath)) {
     fail(`Invalid manifest at ${fieldPath}: expected relative path`);
+  }
+  if (relativePath.includes('\\')) {
+    fail(`Invalid manifest at ${fieldPath}: path must not contain backslashes`);
   }
 
   const normalized = path.posix.normalize(relativePath);
   if (normalized !== relativePath) {
     fail(`Invalid manifest at ${fieldPath}: path must already be normalized`);
   }
-  if (!normalized.startsWith('js/vendor/')) {
+  if (normalized === 'js/vendor' || !normalized.startsWith('js/vendor/')) {
     fail(`Invalid manifest at ${fieldPath}: path must stay under js/vendor/`);
   }
   if (normalized.includes('../') || normalized === '..') {
@@ -106,8 +120,18 @@ function getTodayIsoDate() {
   return (process.env.VENDOR_GOVERNANCE_TODAY || new Date().toISOString().slice(0, 10)).trim();
 }
 
-function sha256File(filePath) {
-  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+function readRegularFileNoFollow(filePath, fieldPath = filePath, options = {}) {
+  return readStableFileNoFollow(filePath, {
+    label: `Vendored file ${fieldPath}`,
+    rootDir: options.rootDir ?? path.dirname(path.resolve(filePath)),
+    maxBytes: options.maxBytes ?? MAX_VENDOR_FILE_BYTES,
+    minBytes: options.minBytes ?? 1,
+    afterRead: options.afterRead
+  });
+}
+
+function sha256File(filePath, options = {}) {
+  return crypto.createHash('sha256').update(readRegularFileNoFollow(filePath, filePath, options)).digest('hex');
 }
 
 function collectVendoredFiles(rootDir = vendorRoot, baseDir = projectRoot) {
@@ -115,30 +139,62 @@ function collectVendoredFiles(rootDir = vendorRoot, baseDir = projectRoot) {
     return [];
   }
 
+  const rootStats = fs.lstatSync(rootDir);
+  const rootLabel = path.relative(baseDir, rootDir).split(path.sep).join('/') || '.';
+  if (rootStats.isSymbolicLink()) {
+    fail(`Unsafe vendored filesystem node: symlink not allowed at ${rootLabel}`);
+  }
+  if (!rootStats.isDirectory()) {
+    fail(`Unsafe vendored filesystem node: expected directory at ${rootLabel}`);
+  }
+
   const files = [];
   const queue = [rootDir];
 
   while (queue.length > 0) {
     const currentDir = queue.pop();
-    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+    const entries = fs.readdirSync(currentDir);
 
-    entries.forEach((entry) => {
-      const absolutePath = path.join(currentDir, entry.name);
-      if (entry.isDirectory()) {
+    entries.forEach((entryName) => {
+      const absolutePath = path.join(currentDir, entryName);
+      const relativePath = path.relative(baseDir, absolutePath).split(path.sep).join('/');
+      const stats = fs.lstatSync(absolutePath);
+      if (stats.isSymbolicLink()) {
+        fail(`Unsafe vendored filesystem node: symlink not allowed at ${relativePath}`);
+      }
+      if (stats.isDirectory()) {
         queue.push(absolutePath);
         return;
       }
-      if (entry.isFile()) {
-        files.push(path.relative(baseDir, absolutePath).split(path.sep).join('/'));
+      if (stats.isFile()) {
+        files.push(relativePath);
+        return;
       }
+      fail(`Unsafe vendored filesystem node: special node not allowed at ${relativePath}`);
     });
   }
 
   return files.sort();
 }
 
-function loadManifest(filePath = manifestPath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+function loadManifest(filePath = manifestPath, options = {}) {
+  const resolvedFile = path.resolve(filePath);
+  const defaultRoot = resolvedFile === path.resolve(manifestPath)
+    ? projectRoot
+    : path.dirname(resolvedFile);
+  const text = readStableFileNoFollow(resolvedFile, {
+    label: 'Vendor dependency manifest',
+    rootDir: options.rootDir ?? defaultRoot,
+    maxBytes: options.maxBytes ?? MAX_VENDOR_MANIFEST_BYTES,
+    minBytes: 2,
+    fatalUtf8: true,
+    afterRead: options.afterRead
+  });
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    fail(`Invalid vendor dependency manifest JSON: ${error.message}`);
+  }
 }
 
 function validateVendorGovernance(manifest, options = {}) {
@@ -156,6 +212,7 @@ function validateVendorGovernance(manifest, options = {}) {
   const reviewCadence = ensureString(manifestObject.review_cadence, 'manifest.review_cadence');
   const maxReviewAgeDays = ensurePositiveInteger(manifestObject.max_review_age_days, 'manifest.max_review_age_days');
   const dependencyList = ensureArray(manifestObject.dependencies, 'manifest.dependencies');
+  const initialActualFiles = collectVendoredFiles(resolvedVendorRoot, resolvedRoot);
 
   const reviewAgeDays = daysBetweenIsoDates(lastReviewed, today);
   if (reviewAgeDays < 0) {
@@ -168,15 +225,21 @@ function validateVendorGovernance(manifest, options = {}) {
   }
 
   const declaredFiles = [];
+  const validatedFiles = [];
 
   dependencyList.forEach((dependency, dependencyIndex) => {
     const fieldPath = `manifest.dependencies[${dependencyIndex}]`;
     const dependencyObject = ensureObject(dependency, fieldPath);
     ensureAllowedKeys(dependencyObject, fieldPath, ['name', 'registry_package', 'source', 'version', 'files']);
     ensureString(dependencyObject.name, `${fieldPath}.name`);
-    ensureString(dependencyObject.registry_package, `${fieldPath}.registry_package`);
-    const sourceUrl = ensureHttpsUrl(dependencyObject.source, `${fieldPath}.source`);
-    ensureString(dependencyObject.version, `${fieldPath}.version`);
+    ensureRegistryPackageName(dependencyObject.registry_package, `${fieldPath}.registry_package`);
+    const version = parseSemver(dependencyObject.version, `${fieldPath}.version`);
+    const sourceFieldPath = `${fieldPath}.source`;
+    const sourceUrl = ensureVendorSourceMatchesVersion(
+      ensureHttpsUrl(dependencyObject.source, sourceFieldPath),
+      version.raw,
+      sourceFieldPath
+    );
 
     ensureArray(dependencyObject.files, `${fieldPath}.files`).forEach((fileEntry, fileIndex) => {
       const filePath = `${fieldPath}.files[${fileIndex}]`;
@@ -197,6 +260,9 @@ function validateVendorGovernance(manifest, options = {}) {
       const signatures = ensureArray(fileObject.signatures, `${filePath}.signatures`).map((signature, signatureIndex) =>
         ensureString(signature, `${filePath}.signatures[${signatureIndex}]`)
       );
+      if (new Set(signatures).size !== signatures.length) {
+        fail(`Invalid manifest at ${filePath}.signatures: duplicate signatures are not allowed`);
+      }
 
       if (declaredFiles.includes(relativeFilePath)) {
         fail(`Duplicate vendored file declaration: ${relativeFilePath}`);
@@ -207,22 +273,36 @@ function validateVendorGovernance(manifest, options = {}) {
       if (!fs.existsSync(absoluteFilePath)) {
         fail(`Vendored file missing from repository: ${relativeFilePath}`);
       }
-
-      const actualSha = sha256File(absoluteFilePath);
+      const fileBytes = readRegularFileNoFollow(absoluteFilePath, relativeFilePath, {
+        rootDir: resolvedRoot,
+        maxBytes: MAX_VENDOR_FILE_BYTES
+      });
+      const actualSha = crypto.createHash('sha256').update(fileBytes).digest('hex');
       if (actualSha !== expectedSha) {
         fail(`Vendored file hash mismatch for ${relativeFilePath}: expected ${expectedSha}, found ${actualSha}`);
       }
 
-      const fileContent = fs.readFileSync(absoluteFilePath, 'utf8');
+      const fileContent = fileBytes.toString('utf8');
       signatures.forEach((signature) => {
         if (!new RegExp(escapeRegex(signature)).test(fileContent)) {
           fail(`Missing signature "${signature}" in ${relativeFilePath}`);
         }
       });
+      validatedFiles.push({
+        path: relativeFilePath,
+        expectedSha
+      });
     });
   });
 
   const actualFiles = collectVendoredFiles(resolvedVendorRoot, resolvedRoot);
+  if (
+    initialActualFiles.length !== actualFiles.length ||
+    initialActualFiles.some((filePath, index) => actualFiles[index] !== filePath)
+  ) {
+    fail('Vendored file inventory changed during validation');
+  }
+
   const unexpectedFiles = actualFiles.filter((filePath) => !declaredFiles.includes(filePath));
   if (unexpectedFiles.length > 0) {
     fail(`Unexpected vendored file(s) present: ${unexpectedFiles.join(', ')}`);
@@ -232,6 +312,21 @@ function validateVendorGovernance(manifest, options = {}) {
   if (missingFromVendorRoot.length > 0) {
     fail(`Manifest declares file(s) missing from js/vendor/: ${missingFromVendorRoot.join(', ')}`);
   }
+
+  validatedFiles.forEach((fileEntry) => {
+    const finalBytes = readRegularFileNoFollow(
+      path.join(resolvedRoot, fileEntry.path),
+      fileEntry.path,
+      {
+        rootDir: resolvedRoot,
+        maxBytes: MAX_VENDOR_FILE_BYTES
+      }
+    );
+    const finalSha = crypto.createHash('sha256').update(finalBytes).digest('hex');
+    if (finalSha !== fileEntry.expectedSha) {
+      fail(`Vendored file changed during validation: ${fileEntry.path}`);
+    }
+  });
 
   return {
     checkedAt: today,
@@ -260,6 +355,9 @@ export {
   daysBetweenIsoDates,
   getTodayIsoDate,
   loadManifest,
+  MAX_VENDOR_FILE_BYTES,
+  MAX_VENDOR_MANIFEST_BYTES,
+  readRegularFileNoFollow,
   sha256File,
   validateVendorGovernance
 };
