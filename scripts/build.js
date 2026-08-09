@@ -21,6 +21,7 @@ const {
 const projectRoot = process.cwd();
 const MAX_BUILD_INPUT_BYTES = 2 * 1024 * 1024;
 const MAX_SITE_OUTPUT_BYTES = 4 * 1024 * 1024;
+const discoveryFiles = ['auth.md', '.well-known/oauth-authorization-server'];
 
 const CSP_INLINE_SCRIPT_HASH_TOKEN = '{{CSP_SCRIPT_HASHES}}';
 
@@ -2296,6 +2297,15 @@ function buildSite({
       bytes: headersContent,
       label: 'generated _headers',
       maxBytes: MAX_SITE_OUTPUT_BYTES
+    });
+
+    discoveryFiles.forEach((file) => {
+      entries.push({
+        path: path.join(resolvedRoot, file),
+        bytes: readBuildText(path.posix.join('src', file), { rootDir: resolvedRoot }),
+        label: `generated ${file}`,
+        maxBytes: MAX_SITE_OUTPUT_BYTES
+      });
     });
     publishSiteBundle({ rootDir: resolvedRoot, entries, writeFileImpl });
 
