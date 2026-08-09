@@ -16,6 +16,7 @@ const srcDir = path.join(projectRoot, 'src');
 const partialDir = path.join(projectRoot, 'partials');
 const dataDir = path.join(projectRoot, 'data');
 const headersTemplatePath = path.join(srcDir, '_headers.template');
+const discoveryFiles = ['.well-known/ucp'];
 
 const partials = {
   NAV: fs.readFileSync(path.join(partialDir, 'nav.html'), 'utf8'),
@@ -1788,6 +1789,15 @@ function buildSite() {
 
   const headersTemplate = fs.readFileSync(headersTemplatePath, 'utf8');
   const headersContent = injectCspScriptHashes(headersTemplate, indexPage);
+  discoveryFiles.forEach((file) => {
+    const sourcePath = path.join(srcDir, file);
+    if (!fs.existsSync(sourcePath)) {
+      throw new Error(`Missing discovery source file: ${sourcePath}`);
+    }
+    const targetPath = path.join(projectRoot, file);
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    fs.writeFileSync(targetPath, fs.readFileSync(sourcePath, 'utf8'));
+  });
   fs.writeFileSync(path.join(projectRoot, '_headers'), headersContent);
 
   console.log('Build complete: generated', pages.join(', '));
