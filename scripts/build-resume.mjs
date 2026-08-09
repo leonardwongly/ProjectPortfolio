@@ -28,9 +28,17 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import safeOutput from './lib/safe-output.cjs';
+
+const {
+  readTrustedText,
+  writeTrustedTextAtomic,
+  writeTrustedFileAtomic
+} = safeOutput;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,11 +54,12 @@ const RESUME_SOURCE_FILES = ['resume.json', 'profile.json', 'experience.json', '
 const AI_PATTERN = /\b(AI|LLM|agent|agentic|responsible|explainable|cybersecurity|machine learning)\b/i;
 
 function readJson(name, { rootDir = projectRoot } = {}) {
-  const file = path.join(rootDir, 'data', name);
-  if (!fs.existsSync(file)) {
-    throw new Error(`Missing data file: ${file}`);
+  const relativePath = `data/${name}`;
+  try {
+    return JSON.parse(readTrustedText(rootDir, relativePath));
+  } catch (error) {
+    throw new Error(`Unable to read trusted data file ${relativePath}: ${error.message}`);
   }
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
 function loadResumeData({ rootDir = projectRoot } = {}) {
@@ -472,7 +481,7 @@ function renderResumeHtml(data) {
 </html>`;
 }
 
-async function exportPdf(html) {
+async function exportPdf(html, outputPath) {
   let chromium;
   try {
     ({ chromium } = await import('playwright'));
@@ -499,7 +508,7 @@ async function exportPdf(html) {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle' });
     await page.pdf({
-      path: pdfOutPath,
+      path: outputPath,
       format: 'A4',
       printBackground: true,
       margin: { top: '13mm', bottom: '13mm', left: '14mm', right: '14mm' }
@@ -509,7 +518,7 @@ async function exportPdf(html) {
   }
 }
 
-function exportDocx() {
+function exportDocx(outputPath) {
   try {
     execFileSync(
       'pandoc',
@@ -518,7 +527,7 @@ function exportDocx() {
         '--from=html',
         '--to=docx',
         '--output',
-        docxOutPath,
+        outputPath,
         '--metadata',
         'title=Leonard Wong Resume'
       ],
@@ -540,8 +549,7 @@ async function main() {
 
   const html = renderResumeHtml(data);
 
-  fs.mkdirSync(artifactsDir, { recursive: true });
-  fs.writeFileSync(htmlOutPath, html);
+  writeTrustedTextAtomic(projectRoot, 'artifacts/resume.html', html);
   console.log(`Resume HTML written: ${path.relative(projectRoot, htmlOutPath)}`);
 
   if (htmlOnly) {
@@ -549,12 +557,25 @@ async function main() {
     return;
   }
 
-  fs.mkdirSync(path.dirname(pdfOutPath), { recursive: true });
-  await exportPdf(html);
+  const exportTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-resume-'));
+  const pdfTempPath = path.join(exportTempDir, 'resume.pdf');
+  try {
+    await exportPdf(html, pdfTempPath);
+    writeTrustedFileAtomic(projectRoot, 'docs/resume.pdf', pdfTempPath);
+  } finally {
+    try { fs.rmSync(exportTempDir, { recursive: true, force: true }); } catch {}
+  }
   const { size: pdfSize } = fs.statSync(pdfOutPath);
   console.log(`Resume PDF written: ${path.relative(projectRoot, pdfOutPath)} (${(pdfSize / 1024).toFixed(1)} KiB)`);
 
-  exportDocx();
+  const docxTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-resume-'));
+  const docxTempPath = path.join(docxTempDir, 'resume.docx');
+  try {
+    exportDocx(docxTempPath);
+    writeTrustedFileAtomic(projectRoot, 'docs/resume.docx', docxTempPath);
+  } finally {
+    try { fs.rmSync(docxTempDir, { recursive: true, force: true }); } catch {}
+  }
   const { size: docxSize } = fs.statSync(docxOutPath);
   console.log(`Resume DOCX written: ${path.relative(projectRoot, docxOutPath)} (${(docxSize / 1024).toFixed(1)} KiB)`);
 
@@ -564,7 +585,7 @@ async function main() {
     htmlSha256: computeResumeHtmlHash(html),
     sources: RESUME_SOURCE_FILES.map((name) => `data/${name}`)
   };
-  fs.writeFileSync(manifestOutPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  writeTrustedTextAtomic(projectRoot, 'docs/resume.manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(`Resume manifest written: ${path.relative(projectRoot, manifestOutPath)}`);
 }
 

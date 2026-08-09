@@ -2,11 +2,13 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { assertRegularSource, readTrustedText, SafeOutputPathError } from './lib/safe-output.cjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
-const readingPath = path.join(projectRoot, 'data', 'reading.json');
+const MAX_READING_DATA_BYTES = 4 * 1024 * 1024;
+const MAX_COVER_HASH_BYTES = 20 * 1024 * 1024;
 const ALLOWED_DUPLICATE_COVER_GROUPS = new Set([
   [
     'book/2019/2019-22-300.jpg',
@@ -23,11 +25,26 @@ function fail(message) {
 }
 
 function readReadingData() {
-  return JSON.parse(fs.readFileSync(readingPath, 'utf8'));
+  return JSON.parse(readTrustedText(projectRoot, 'data/reading.json', { maxBytes: MAX_READING_DATA_BYTES }));
 }
 
 function sha256File(filePath) {
-  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+  let descriptor;
+  try {
+    descriptor = fs.openSync(filePath, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
+    const stat = fs.fstatSync(descriptor);
+    if (!stat.isFile()) {
+      throw new SafeOutputPathError(`Cover is not a regular file: ${filePath}`);
+    }
+    if (stat.size > MAX_COVER_HASH_BYTES) {
+      throw new SafeOutputPathError(`Cover exceeds the ${MAX_COVER_HASH_BYTES}-byte hash limit: ${filePath}`);
+    }
+    return crypto.createHash('sha256').update(fs.readFileSync(descriptor)).digest('hex');
+  } finally {
+    if (descriptor !== undefined) {
+      try { fs.closeSync(descriptor); } catch {}
+    }
+  }
 }
 
 function auditReadingMetadata(reading, { rootDir = projectRoot } = {}) {
@@ -64,10 +81,19 @@ function auditReadingMetadata(reading, { rootDir = projectRoot } = {}) {
     });
 
     if (entry.cover) {
-      const coverPath = path.join(rootDir, entry.cover);
-      if (!fs.existsSync(coverPath)) {
-        findings.push(`${context}: declared cover is missing: ${entry.cover}`);
-      } else {
+      let coverPath;
+      try {
+        coverPath = assertRegularSource(rootDir, entry.cover);
+      } catch (error) {
+        if (error.message.includes('ENOENT')) {
+          findings.push(`${context}: declared cover is missing: ${entry.cover}`);
+        } else {
+          findings.push(`${context}: declared cover is unsafe: ${entry.cover} (${error.message})`);
+        }
+        return;
+      }
+
+      try {
         const digest = sha256File(coverPath);
         const duplicates = coverHashes.get(digest) || [];
         duplicates.forEach((duplicate) => {
@@ -78,6 +104,8 @@ function auditReadingMetadata(reading, { rootDir = projectRoot } = {}) {
         });
         duplicates.push({ cover: entry.cover, index });
         coverHashes.set(digest, duplicates);
+      } catch (error) {
+        findings.push(`${context}: declared cover could not be hashed: ${entry.cover} (${error.message})`);
       }
     }
   });

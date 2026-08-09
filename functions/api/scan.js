@@ -198,7 +198,7 @@ export function createScanApp(env = {}, { facilitatorClient, server } = {}) {
             payTo: config.payTo,
             maxTimeoutSeconds: 300
           },
-          description: 'Run an AgentReady scan for a public HTTPS site',
+          description: 'Validate an AgentReady scan request for a public HTTPS site; target analysis is not yet performed',
           mimeType: 'application/json'
         }
       },
@@ -248,6 +248,9 @@ export function createScanApp(env = {}, { facilitatorClient, server } = {}) {
         price: config.price,
         protocol: 'x402'
       }
+    }, 200, {
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff'
     });
   });
 

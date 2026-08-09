@@ -1,6 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  assertRegularSource,
+  readTrustedText,
+  resolveTrustedDirectory,
+  SafeOutputPathError
+} from './lib/safe-output.cjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +41,7 @@ const MAX_SINGLE_ASSET_BYTES = 20 * MiB;
 const MAX_UNREFERENCED_BOOK_ASSET_BYTES = 512 * KiB;
 const MAX_RENDERED_READING_MEDIA_BYTES = 12 * MiB;
 const MAX_RENDERED_READING_2X_BYTES = 6 * MiB;
+const MAX_RENDERED_HTML_READ_BYTES = 4 * MiB;
 const DISALLOWED_WEB_ROOT_ASSET_PATTERNS = [
   /^css\/bootstrap(?:-grid|-reboot|-utilities|\.rtl|\.css|\.min\.css\.map)/,
   /^css\/bootstrap.*\.map$/,
@@ -55,12 +62,32 @@ function formatBytes(bytes) {
 }
 
 function fileSize(relativePath, { rootDir = projectRoot } = {}) {
-  return fs.statSync(path.join(rootDir, relativePath)).size;
+  const trustedPath = assertRegularSource(rootDir, relativePath);
+  let descriptor;
+  try {
+    descriptor = fs.openSync(trustedPath, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
+    const stat = fs.fstatSync(descriptor);
+    if (!stat.isFile()) {
+      throw new SafeOutputPathError(`Asset is not a regular file: ${trustedPath}`);
+    }
+    return stat.size;
+  } finally {
+    if (descriptor !== undefined) {
+      try { fs.closeSync(descriptor); } catch {}
+    }
+  }
 }
 
 function walkFiles(relativePath, { rootDir = projectRoot } = {}) {
-  const root = path.join(rootDir, relativePath);
-  if (!fs.existsSync(root)) return [];
+  let root;
+  let trustedRoot;
+  try {
+    root = resolveTrustedDirectory(rootDir, relativePath);
+    trustedRoot = resolveTrustedDirectory(rootDir);
+  } catch (error) {
+    if (error.message.includes('ENOENT')) return [];
+    throw error;
+  }
 
   const files = [];
   const queue = [root];
@@ -71,7 +98,11 @@ function walkFiles(relativePath, { rootDir = projectRoot } = {}) {
       if (entry.isDirectory()) {
         queue.push(absolutePath);
       } else if (entry.isFile()) {
-        files.push(path.relative(rootDir, absolutePath).split(path.sep).join('/'));
+        const relativeFile = path.relative(trustedRoot, absolutePath).split(path.sep).join('/');
+        assertRegularSource(rootDir, relativeFile);
+        files.push(relativeFile);
+      } else {
+        throw new SafeOutputPathError(`Asset tree contains a symlink or non-regular entry: ${absolutePath}`);
       }
     });
   }
@@ -115,11 +146,14 @@ function collectRenderedAssetReferences(html) {
 
 function sumExistingFiles(relativePaths, { rootDir = projectRoot } = {}) {
   return relativePaths.reduce((sum, relativePath) => {
-    const absolutePath = path.join(rootDir, relativePath);
-    if (!fs.existsSync(absolutePath) || !fs.statSync(absolutePath).isFile()) {
-      return sum;
+    try {
+      return sum + fileSize(relativePath, { rootDir });
+    } catch (error) {
+      if (error.message.includes('ENOENT')) {
+        return sum;
+      }
+      throw error;
     }
-    return sum + fs.statSync(absolutePath).size;
   }, 0);
 }
 
@@ -165,9 +199,14 @@ function checkPerformanceBudget({ rootDir = projectRoot } = {}) {
       }
     });
 
-  const readingHtmlPath = path.join(rootDir, 'reading.html');
-  if (fs.existsSync(readingHtmlPath)) {
-    const renderedAssets = collectRenderedAssetReferences(fs.readFileSync(readingHtmlPath, 'utf8'));
+  let readingHtml;
+  try {
+    readingHtml = readTrustedText(rootDir, 'reading.html', { maxBytes: MAX_RENDERED_HTML_READ_BYTES });
+  } catch (error) {
+    if (!error.message.includes('ENOENT')) throw error;
+  }
+  if (readingHtml !== undefined) {
+    const renderedAssets = collectRenderedAssetReferences(readingHtml);
     const readingMediaReferences = renderedAssets.references.filter((reference) => reference.startsWith('book/'));
     const highDpiReadingReferences = renderedAssets.highDpiReferences.filter((reference) => reference.startsWith('book/'));
     const renderedReadingBytes = sumExistingFiles(readingMediaReferences, { rootDir });

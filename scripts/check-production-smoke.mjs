@@ -5,6 +5,48 @@ const DEFAULT_TIMEOUT_MS = 10000;
 const DEFAULT_ATTEMPTS = 6;
 const DEFAULT_RETRY_DELAY_MS = 10000;
 
+function canonicalizeOrigin(rawOrigin) {
+  if (typeof rawOrigin !== 'string' || rawOrigin.trim() === '') {
+    throw new Error('Production smoke origin is required');
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(rawOrigin);
+  } catch {
+    throw new Error('Production smoke origin must be a valid HTTPS origin');
+  }
+
+  if (
+    parsed.protocol !== 'https:' ||
+    parsed.username ||
+    parsed.password ||
+    parsed.search ||
+    parsed.hash ||
+    (parsed.pathname !== '' && parsed.pathname !== '/')
+  ) {
+    throw new Error('Production smoke origin must be an HTTPS origin without credentials, path, query, or fragment');
+  }
+
+  return parsed.origin;
+}
+
+function approvedOrigins() {
+  const configured = process.env.SMOKE_ALLOWED_ORIGINS
+    ? process.env.SMOKE_ALLOWED_ORIGINS.split(',').map((value) => canonicalizeOrigin(value.trim()))
+    : [];
+  return new Set([DEFAULT_ORIGIN, ...configured]);
+}
+
+function parsePositiveInteger(value, name) {
+  const normalizedValue = String(value ?? '').trim();
+  const parsed = Number(normalizedValue);
+  if (!/^\d+$/.test(normalizedValue) || !Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+  return parsed;
+}
+
 const PAGE_CHECKS = [
   {
     path: '/',
@@ -52,9 +94,9 @@ const PAGE_CHECKS = [
 function parseArgs(argv = process.argv.slice(2)) {
   const options = {
     origin: process.env.SITE_ORIGIN || DEFAULT_ORIGIN,
-    timeoutMs: Number.parseInt(process.env.SMOKE_TIMEOUT_MS || `${DEFAULT_TIMEOUT_MS}`, 10),
-    attempts: Number.parseInt(process.env.SMOKE_ATTEMPTS || `${DEFAULT_ATTEMPTS}`, 10),
-    retryDelayMs: Number.parseInt(process.env.SMOKE_RETRY_DELAY_MS || `${DEFAULT_RETRY_DELAY_MS}`, 10)
+    timeoutMs: parsePositiveInteger(process.env.SMOKE_TIMEOUT_MS || `${DEFAULT_TIMEOUT_MS}`, 'Smoke timeout'),
+    attempts: parsePositiveInteger(process.env.SMOKE_ATTEMPTS || `${DEFAULT_ATTEMPTS}`, 'Smoke attempts'),
+    retryDelayMs: parsePositiveInteger(process.env.SMOKE_RETRY_DELAY_MS || `${DEFAULT_RETRY_DELAY_MS}`, 'Smoke retry delay')
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -65,25 +107,26 @@ function parseArgs(argv = process.argv.slice(2)) {
       continue;
     }
     if (arg === '--timeout-ms') {
-      options.timeoutMs = Number.parseInt(argv[index + 1], 10);
+      options.timeoutMs = parsePositiveInteger(argv[index + 1], 'Smoke timeout');
       index += 1;
       continue;
     }
     if (arg === '--attempts') {
-      options.attempts = Number.parseInt(argv[index + 1], 10);
+      options.attempts = parsePositiveInteger(argv[index + 1], 'Smoke attempts');
       index += 1;
       continue;
     }
     if (arg === '--retry-delay-ms') {
-      options.retryDelayMs = Number.parseInt(argv[index + 1], 10);
+      options.retryDelayMs = parsePositiveInteger(argv[index + 1], 'Smoke retry delay');
       index += 1;
       continue;
     }
     throw new Error(`Unknown argument: ${arg}`);
   }
 
-  if (!options.origin.startsWith('https://')) {
-    throw new Error('Production smoke origin must be an HTTPS URL');
+  options.origin = canonicalizeOrigin(options.origin);
+  if (!approvedOrigins().has(options.origin)) {
+    throw new Error(`Production smoke origin is not approved: ${options.origin}`);
   }
 
   return options;
@@ -113,8 +156,21 @@ async function fetchTextWithTimeout(url, { fetchImpl = fetch, timeoutMs = DEFAUL
   }
 }
 
-function validatePage({ url, response, body, check }) {
+function validatePage({ url, response, body, check, approvedOrigin }) {
   const findings = [];
+
+  const expectedOrigin = approvedOrigin || (response.url ? new URL(url).origin : undefined);
+  if (expectedOrigin) {
+    let finalOrigin;
+    try {
+      finalOrigin = new URL(response.url).origin;
+    } catch {
+      findings.push(`${url}: response did not provide a valid final URL`);
+    }
+    if (finalOrigin && finalOrigin !== expectedOrigin) {
+      findings.push(`${url}: response redirected to unapproved origin ${finalOrigin}`);
+    }
+  }
 
   if (response.status !== 200) {
     findings.push(`${url}: expected HTTP 200, received ${response.status}`);
@@ -138,16 +194,35 @@ function validatePage({ url, response, body, check }) {
 }
 
 async function runProductionSmoke(options = parseArgs()) {
+  const normalizedOptions = {
+    timeoutMs: DEFAULT_TIMEOUT_MS,
+    attempts: DEFAULT_ATTEMPTS,
+    retryDelayMs: DEFAULT_RETRY_DELAY_MS,
+    ...options,
+    timeoutMs: parsePositiveInteger(options.timeoutMs ?? DEFAULT_TIMEOUT_MS, 'Smoke timeout'),
+    attempts: parsePositiveInteger(options.attempts ?? DEFAULT_ATTEMPTS, 'Smoke attempts'),
+    retryDelayMs: parsePositiveInteger(options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS, 'Smoke retry delay'),
+    origin: canonicalizeOrigin(options.origin)
+  };
+  if (!approvedOrigins().has(normalizedOptions.origin)) {
+    throw new Error(`Production smoke origin is not approved: ${normalizedOptions.origin}`);
+  }
+
   let lastFindings = [];
 
-  for (let attempt = 1; attempt <= options.attempts; attempt += 1) {
+  for (let attempt = 1; attempt <= normalizedOptions.attempts; attempt += 1) {
     const findings = [];
 
     for (const check of PAGE_CHECKS) {
-      const url = new URL(check.path, options.origin).toString();
+      const url = new URL(check.path, normalizedOptions.origin).toString();
       try {
-        const result = await fetchTextWithTimeout(url, options);
-        findings.push(...validatePage({ url, check, ...result }));
+        const result = await fetchTextWithTimeout(url, normalizedOptions);
+        findings.push(...validatePage({
+          url,
+          check,
+          approvedOrigin: normalizedOptions.origin,
+          ...result
+        }));
       } catch (error) {
         findings.push(`${url}: ${error?.message || 'request failed'}`);
       }
@@ -158,8 +233,8 @@ async function runProductionSmoke(options = parseArgs()) {
     }
 
     lastFindings = findings;
-    if (attempt < options.attempts) {
-      await sleep(options.retryDelayMs);
+    if (attempt < normalizedOptions.attempts) {
+      await sleep(normalizedOptions.retryDelayMs);
     }
   }
 

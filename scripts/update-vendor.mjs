@@ -79,6 +79,11 @@ function parseArgs(argv = process.argv.slice(2)) {
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
 
+    if (arg === '--fail-on-drift') {
+      options.failOnDrift = true;
+      continue;
+    }
+
     if (arg === '--write') {
       options.write = true;
       continue;
@@ -217,6 +222,10 @@ function summarizeFetchedFiles(fetchedFiles, rootDir = projectRoot) {
   });
 }
 
+function getDryRunExitCode({ changedFiles, failOnDrift }) {
+  return failOnDrift && changedFiles.length > 0 ? 1 : 0;
+}
+
 function updateManifestHashes(manifest, fetchedFiles, today) {
   const nextManifest = structuredClone(manifest);
   nextManifest.last_reviewed = today;
@@ -294,6 +303,7 @@ async function main() {
     changedFiles.forEach((entry) => {
       console.log(`- ${entry.path} <= ${entry.upstreamUrl}`);
     });
+    process.exitCode = getDryRunExitCode({ changedFiles, failOnDrift: options.failOnDrift });
     return;
   }
 
@@ -311,6 +321,7 @@ export {
   ensureHttpsUrl,
   ensureVendorPath,
   fetchVendorFiles,
+  getDryRunExitCode,
   parseArgs,
   runVendorRefresh,
   summarizeFetchedFiles,

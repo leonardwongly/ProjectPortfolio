@@ -162,11 +162,13 @@ test('Gemini workflow removes GitHub App bootstrap and branch automation in favo
     assert.match(job, /GH_CONFIG_DIR: '\$\{\{ runner\.temp \}\}/);
   });
 
-  const checkoutTokens = [...content.matchAll(/token: '(\$\{\{[^}]+\}\})'/g)].map((match) => match[1].trim());
-  assert.ok(checkoutTokens.length > 0, 'Expected checkout steps to reference a token');
-  checkoutTokens.forEach((token) => {
-    assert.match(token, /secrets\.GITHUB_TOKEN/);
-  });
+  assert.doesNotMatch(content, /actions\/checkout/, 'Gemini must not checkout repository code before receiving model credentials');
+  assert.doesNotMatch(content, /refs\/pull\/\$\{\{[^}]+\}\}\/head/, 'Gemini must not checkout an untrusted PR head');
+});
+
+test('vendor review fails on upstream byte drift', () => {
+  const workflow = fs.readFileSync('.github/workflows/vendor-review.yml', 'utf8');
+  assert.match(workflow, /node scripts\/update-vendor\.mjs --fail-on-drift/);
 });
 
 test('CSP is declared in source pages and appears before script tags when present', () => {
@@ -231,6 +233,20 @@ test('_headers includes required runtime security headers', () => {
   assert.match(content, /X-Frame-Options:\s*DENY/i);
   assert.match(content, /X-Content-Type-Options:\s*nosniff/i);
   assert.match(content, /Referrer-Policy:\s*strict-origin-when-cross-origin/i);
+});
+
+test('homepage advertises only the deployed OpenAPI service description', () => {
+  const template = fs.readFileSync('src/_headers.template', 'utf8');
+  const generated = fs.readFileSync(HEADERS_FILE, 'utf8');
+  const line = 'Link: </openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"';
+
+  assert.ok(template.split('\n').includes(`  ${line}`));
+  assert.ok(generated.split('\n').includes(`  ${line}`));
+
+  const homepageBlock = template.match(/^\/\n([\s\S]*?)(?=\n\n\/\*\.html)/m)?.[1] ?? '';
+  assert.ok(homepageBlock.split('\n').includes(`  ${line}`));
+  assert.doesNotMatch(template.slice(template.indexOf('\n\n/*.html')), /  Link:/);
+  assert.doesNotMatch(template, /api-catalog|service-doc|describedby/);
 });
 
 test('CSP monitoring fallback and rollout requirements are documented', () => {

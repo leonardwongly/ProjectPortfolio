@@ -82,6 +82,35 @@ test('reading metadata audit detects missing fields, duplicate records, missing 
   assert.ok(findings.some((finding) => finding.includes('cover duplicates')));
 });
 
+test('reading metadata audit rejects traversal, symlink, and oversized cover reads', async () => {
+  const { auditReadingMetadata } = await import('../../scripts/audit-reading-metadata.mjs');
+  const rootDir = makeTempRoot();
+  const outsideCover = path.join(path.dirname(rootDir), 'outside-cover.jpg');
+  fs.writeFileSync(outsideCover, 'outside');
+  writeFile(rootDir, 'book/2026/normal.jpg', 'normal');
+  fs.symlinkSync('/dev/null', path.join(rootDir, 'book/2026/device.jpg'));
+  fs.mkdirSync(path.join(rootDir, 'book/2026'), { recursive: true });
+  const oversizedCover = path.join(rootDir, 'book/2026/oversized.jpg');
+  fs.closeSync(fs.openSync(oversizedCover, 'w'));
+  fs.truncateSync(oversizedCover, 20 * 1024 * 1024 + 1);
+
+  try {
+    const findings = auditReadingMetadata([
+      { title: 'Traversal', author: 'A', year: '2026', isbn: '1', cover: '../outside-cover.jpg' },
+      { title: 'Device', author: 'B', year: '2026', isbn: '2', cover: 'book/2026/device.jpg' },
+      { title: 'Oversized', author: 'C', year: '2026', isbn: '3', cover: 'book/2026/oversized.jpg' },
+      { title: 'Normal', author: 'D', year: '2026', isbn: '4', cover: 'book/2026/normal.jpg' }
+    ], { rootDir });
+
+    assert.ok(findings.some((finding) => finding.includes('declared cover is unsafe') && finding.includes('outside-cover')));
+    assert.ok(findings.some((finding) => finding.includes('declared cover is unsafe') && finding.includes('device.jpg')));
+    assert.ok(findings.some((finding) => finding.includes('could not be hashed') && finding.includes('oversized.jpg')));
+  } finally {
+    fs.rmSync(outsideCover, { force: true });
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('performance budget check reports clean fixtures and oversized generated files', async () => {
   const { checkPerformanceBudget, collectRenderedAssetReferences, createAssetInventoryReport } = await import('../../scripts/check-performance-budget.mjs');
   const rootDir = makeTempRoot();
@@ -126,6 +155,50 @@ test('performance budget rejects unreferenced deployed assets', async () => {
   assert.ok(result.failures.some((failure) => failure.includes('js/bootstrap.bundle.min.js')));
   assert.ok(result.failures.some((failure) => failure.includes('fonts/SF-Pro-Display-Black.otf')));
   assert.ok(result.failures.some((failure) => failure.includes('book/large-original.jpg')));
+});
+
+test('performance budget rejects traversal and symlinked asset trees before reading them', async () => {
+  const { checkPerformanceBudget } = await import('../../scripts/check-performance-budget.mjs');
+  const rootDir = makeTempRoot();
+  writePerformanceFixture(rootDir);
+  const outsideDir = path.join(path.dirname(rootDir), 'outside-assets');
+  fs.mkdirSync(outsideDir);
+  fs.writeFileSync(path.join(outsideDir, 'outside.jpg'), 'outside');
+  writeFile(rootDir, 'reading.html', '<img src="book/../../outside-assets/outside.jpg">');
+
+  try {
+    assert.throws(
+      () => checkPerformanceBudget({ rootDir }),
+      /unsafe path segment/
+    );
+
+    fs.rmSync(path.join(rootDir, 'book'), { recursive: true, force: true });
+    fs.symlinkSync(outsideDir, path.join(rootDir, 'book'));
+    assert.throws(
+      () => checkPerformanceBudget({ rootDir }),
+      /Trusted path is not a regular directory|Trusted directory escapes root/
+    );
+  } finally {
+    fs.rmSync(outsideDir, { recursive: true, force: true });
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('performance budget caps rendered HTML reads and rejects device-like assets', async () => {
+  const { checkPerformanceBudget } = await import('../../scripts/check-performance-budget.mjs');
+  const rootDir = makeTempRoot();
+  writePerformanceFixture(rootDir);
+  writeFile(rootDir, 'reading.html', 'x'.repeat(4 * 1024 * 1024 + 1));
+
+  try {
+    assert.throws(() => checkPerformanceBudget({ rootDir }), /read limit/);
+
+    writePerformanceFixture(rootDir);
+    fs.symlinkSync('/dev/null', path.join(rootDir, 'book/device'));
+    assert.throws(() => checkPerformanceBudget({ rootDir }), /symlink or non-regular entry/);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
 });
 
 test('link health validator rejects unsafe URL shapes before network access', async () => {
@@ -460,6 +533,81 @@ test('production smoke validator reports missing headers and markers', async () 
       }
     }).length > 0
   );
+});
+
+test('production smoke rejects a redirect whose final URL leaves the approved origin', async () => {
+  const { runProductionSmoke } = await import('../../scripts/check-production-smoke.mjs');
+  const headers = new Headers({
+    'content-security-policy': "default-src 'self'",
+    'strict-transport-security': 'max-age=31536000',
+    'x-content-type-options': 'nosniff'
+  });
+  const fetchImpl = async (url) => ({
+    status: 200,
+    headers,
+    url: `https://attacker.example${new URL(url).pathname}`,
+    async text() {
+      return 'Leonard Wong Project Archive AgentForge Merge Guard Reading Offline';
+    }
+  });
+
+  const findings = await runProductionSmoke({
+    origin: 'https://leonardwong.tech',
+    attempts: 1,
+    retryDelayMs: 1,
+    timeoutMs: 100,
+    fetchImpl
+  });
+
+  assert.equal(findings.length, 5);
+  assert.ok(findings.every((finding) => finding.includes('redirected to unapproved origin')));
+});
+
+test('production smoke accepts a same-origin final URL and rejects unapproved targets', async () => {
+  const { parseArgs, runProductionSmoke } = await import('../../scripts/check-production-smoke.mjs');
+  const headers = new Headers({
+    'content-security-policy': "default-src 'self'",
+    'strict-transport-security': 'max-age=31536000',
+    'x-content-type-options': 'nosniff'
+  });
+  const fetchImpl = async (url) => ({
+    status: 200,
+    headers,
+    url,
+    async text() {
+      return 'Leonard Wong Project Archive AgentForge Merge Guard Reading Offline';
+    }
+  });
+
+  assert.deepEqual(
+    await runProductionSmoke({
+      origin: 'https://leonardwong.tech',
+      attempts: 1,
+      retryDelayMs: 1,
+      timeoutMs: 100,
+      fetchImpl
+    }),
+    []
+  );
+
+  const previousAllowlist = process.env.SMOKE_ALLOWED_ORIGINS;
+  delete process.env.SMOKE_ALLOWED_ORIGINS;
+  try {
+    assert.throws(
+      () => parseArgs(['--origin', 'https://attacker.example']),
+      /origin is not approved/
+    );
+    assert.throws(
+      () => parseArgs(['--attempts', '2oops']),
+      /attempts must be a positive integer/
+    );
+  } finally {
+    if (previousAllowlist === undefined) {
+      delete process.env.SMOKE_ALLOWED_ORIGINS;
+    } else {
+      process.env.SMOKE_ALLOWED_ORIGINS = previousAllowlist;
+    }
+  }
 });
 
 test('telemetry policy check rejects external runtime analytics adapters', async () => {

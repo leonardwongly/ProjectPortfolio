@@ -10,27 +10,39 @@ const {
   AssetPathValidationError,
   sanitizeRelativeAssetPath
 } = require('./lib/asset-paths.cjs');
+const {
+  readTrustedText,
+  writeTrustedTextAtomic
+} = require('./lib/safe-output.cjs');
 
 const projectRoot = process.cwd();
-const srcDir = path.join(projectRoot, 'src');
-const partialDir = path.join(projectRoot, 'partials');
-const dataDir = path.join(projectRoot, 'data');
-const headersTemplatePath = path.join(srcDir, '_headers.template');
-const discoveryFiles = ['.well-known/mcp/server-card.json', '.well-known/ucp'];
+const discoveryFiles = [
+  'auth.md',
+  'openapi.json',
+  '.well-known/acp.json',
+  '.well-known/agent-skills/index.json',
+  '.well-known/openid-configuration',
+  '.well-known/oauth-authorization-server',
+  '.well-known/agent-card.json',
+  '.well-known/http-message-signatures-directory',
+  '.well-known/mcp/server-card.json',
+  '.well-known/ucp'
+];
 
 const partials = {
-  NAV: fs.readFileSync(path.join(partialDir, 'nav.html'), 'utf8'),
-  FOOTER: fs.readFileSync(path.join(partialDir, 'footer.html'), 'utf8')
+  NAV: readTrustedText(projectRoot, 'partials/nav.html'),
+  FOOTER: readTrustedText(projectRoot, 'partials/footer.html')
 };
 
 const CSP_INLINE_SCRIPT_HASH_TOKEN = '{{CSP_SCRIPT_HASHES}}';
 
 function readJson(name) {
-  const file = path.join(dataDir, name);
-  if (!fs.existsSync(file)) {
-    throw new Error(`Missing data file: ${file}`);
+  const relativePath = `data/${name}`;
+  try {
+    return JSON.parse(readTrustedText(projectRoot, relativePath));
+  } catch (error) {
+    throw new Error(`Unable to read trusted data file ${relativePath}: ${error.message}`);
   }
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
 function isAsciiWhitespace(char) {
@@ -1724,12 +1736,12 @@ function buildSite() {
   const renderedPages = new Map();
 
   pages.forEach((page) => {
-    const srcPath = path.join(srcDir, page);
-    if (!fs.existsSync(srcPath)) {
-      throw new Error(`Missing source page: ${srcPath}`);
+    let content;
+    try {
+      content = readTrustedText(projectRoot, `src/${page}`);
+    } catch (error) {
+      throw new Error(`Unable to read trusted source page src/${page}: ${error.message}`);
     }
-
-    let content = fs.readFileSync(srcPath, 'utf8');
     Object.entries(tokens).forEach(([key, value]) => {
       const token = `{{${key}}}`;
       if (content.includes(token)) {
@@ -1745,11 +1757,12 @@ function buildSite() {
     renderedPages.set(page, stripTrailingWhitespace(content));
   });
 
-  const caseStudyTemplatePath = path.join(srcDir, 'case-study.html');
-  if (!fs.existsSync(caseStudyTemplatePath)) {
-    throw new Error(`Missing case study source page: ${caseStudyTemplatePath}`);
+  let caseStudyTemplate;
+  try {
+    caseStudyTemplate = readTrustedText(projectRoot, 'src/case-study.html');
+  } catch (error) {
+    throw new Error(`Unable to read trusted source page src/case-study.html: ${error.message}`);
   }
-  const caseStudyTemplate = fs.readFileSync(caseStudyTemplatePath, 'utf8');
   data.caseStudies.forEach((study) => {
     const canonical = `https://leonardwong.tech/${study.slug}`;
     const caseTokens = {
@@ -1780,25 +1793,27 @@ function buildSite() {
     const finalContent = page === 'index.html'
       ? injectCspScriptHashes(content, content)
       : content;
-    fs.writeFileSync(path.join(projectRoot, page), finalContent);
+    writeTrustedTextAtomic(projectRoot, page, finalContent);
   });
 
-  if (!fs.existsSync(headersTemplatePath)) {
-    throw new Error(`Missing headers template: ${headersTemplatePath}`);
+  let headersTemplate;
+  try {
+    headersTemplate = readTrustedText(projectRoot, 'src/_headers.template');
+  } catch (error) {
+    throw new Error(`Unable to read trusted headers template: ${error.message}`);
   }
-
-  const headersTemplate = fs.readFileSync(headersTemplatePath, 'utf8');
   const headersContent = injectCspScriptHashes(headersTemplate, indexPage);
+  writeTrustedTextAtomic(projectRoot, '_headers', headersContent);
+
   discoveryFiles.forEach((file) => {
-    const sourcePath = path.join(srcDir, file);
-    if (!fs.existsSync(sourcePath)) {
-      throw new Error(`Missing discovery source file: ${sourcePath}`);
+    let content;
+    try {
+      content = readTrustedText(projectRoot, `src/${file}`);
+    } catch (error) {
+      throw new Error(`Unable to read trusted discovery source src/${file}: ${error.message}`);
     }
-    const targetPath = path.join(projectRoot, file);
-    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
-    fs.writeFileSync(targetPath, fs.readFileSync(sourcePath, 'utf8'));
+    writeTrustedTextAtomic(projectRoot, file, content);
   });
-  fs.writeFileSync(path.join(projectRoot, '_headers'), headersContent);
 
   console.log('Build complete: generated', pages.join(', '));
 }

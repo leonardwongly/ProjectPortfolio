@@ -28,7 +28,7 @@ jobs:
         run: node scripts/check-vendor-governance.mjs
 
       - name: Check vendored dependencies against declared upstream files
-        run: node scripts/update-vendor.mjs
+        run: node scripts/update-vendor.mjs --fail-on-drift
 
       - name: Check vendored dependencies against latest npm releases
         run: node scripts/check-vendor-upstream.mjs

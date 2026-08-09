@@ -3,6 +3,8 @@ const DEFAULT_AUTHORIZATION_SERVERS = Object.freeze([
   'https://leonardwongly.cloudflareaccess.com'
 ]);
 const DEFAULT_SCOPES_SUPPORTED = Object.freeze(['openid']);
+const ALLOWED_RESOURCE = new Set([DEFAULT_RESOURCE]);
+const ALLOWED_AUTHORIZATION_SERVERS = new Set(DEFAULT_AUTHORIZATION_SERVERS);
 
 const METADATA_HEADERS = Object.freeze({
   'Access-Control-Allow-Origin': '*',
@@ -11,33 +13,43 @@ const METADATA_HEADERS = Object.freeze({
   'X-Content-Type-Options': 'nosniff'
 });
 
-function parseHttpsUrl(value, fallback) {
-  if (typeof value !== 'string' || value.trim().length === 0) {
+function parseHttpsUrl(value, fallback, allowedValues = null) {
+  if (value === undefined || value === null) {
     return fallback;
+  }
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error('OAuth metadata URL configuration is invalid');
   }
 
   try {
     const url = new URL(value.trim());
     if (url.protocol !== 'https:' || url.username || url.password || url.hash) {
-      return fallback;
+      throw new Error('OAuth metadata URL must use HTTPS without credentials or fragments');
     }
-    return url.toString().replace(/\/$/u, '');
+    const normalized = url.toString().replace(/\/$/u, '');
+    if (allowedValues && !allowedValues.has(normalized)) {
+      throw new Error('OAuth metadata URL is not an approved production endpoint');
+    }
+    return normalized;
   } catch {
-    return fallback;
+    throw new Error('OAuth metadata URL configuration is invalid');
   }
 }
 
-function parseHttpsUrlList(value, fallback) {
+function parseHttpsUrlList(value, fallback, allowedValues = null) {
+  if (value === undefined || value === null) {
+    return [...fallback];
+  }
   const candidates = Array.isArray(value)
     ? value
     : typeof value === 'string'
-      ? value.split(/[\s,]+/u)
+      ? value.split(/[\s,]+/u).filter(Boolean)
       : [];
-  const urls = candidates
-    .map((candidate) => parseHttpsUrl(candidate, null))
-    .filter(Boolean);
-
-  return urls.length > 0 ? [...new Set(urls)] : [...fallback];
+  if (candidates.length === 0) {
+    throw new Error('OAuth authorization server configuration is invalid');
+  }
+  const urls = candidates.map((candidate) => parseHttpsUrl(candidate, null, allowedValues));
+  return [...new Set(urls)];
 }
 
 function parseScopes(value, fallback = []) {
@@ -56,10 +68,11 @@ function parseScopes(value, fallback = []) {
 
 function buildMetadata(env = {}) {
   const metadata = {
-    resource: parseHttpsUrl(env.OAUTH_RESOURCE_URL, DEFAULT_RESOURCE),
+    resource: parseHttpsUrl(env.OAUTH_RESOURCE_URL, DEFAULT_RESOURCE, ALLOWED_RESOURCE),
     authorization_servers: parseHttpsUrlList(
       env.OAUTH_AUTHORIZATION_SERVERS,
-      DEFAULT_AUTHORIZATION_SERVERS
+      DEFAULT_AUTHORIZATION_SERVERS,
+      ALLOWED_AUTHORIZATION_SERVERS
     ),
     bearer_methods_supported: ['header']
   };
@@ -85,7 +98,18 @@ function handleMetadataRequest({ request, env } = {}) {
     return methodNotAllowed();
   }
 
-  const body = JSON.stringify(buildMetadata(env));
+  let body;
+  try {
+    body = JSON.stringify(buildMetadata(env));
+  } catch {
+    return new Response(JSON.stringify({ error: 'OAuth metadata configuration is unavailable' }), {
+      status: 503,
+      headers: {
+        ...METADATA_HEADERS,
+        'Cache-Control': 'no-store'
+      }
+    });
+  }
   return new Response(method === 'HEAD' ? null : body, {
     status: 200,
     headers: METADATA_HEADERS

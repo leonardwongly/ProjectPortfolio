@@ -236,27 +236,6 @@ jobs:
             echo "comment_progress_command=${COMMENT_PROGRESS_COMMAND}"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: 'Checkout PR branch'
-        if: |-
-          ${{ steps.get_context.outputs.is_pr == 'true' }}
-        uses: 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' # ratchet:actions/checkout@v7.0.0
-        with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
-          repository: '${{ github.repository }}'
-          ref: 'refs/pull/${{ steps.get_context.outputs.issue_number }}/head'
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: 'Checkout main branch'
-        if: |-
-          ${{ steps.get_context.outputs.is_pr == 'false' }}
-        uses: 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' # ratchet:actions/checkout@v7.0.0
-        with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
-          repository: '${{ github.repository }}'
-          fetch-depth: 0
-          persist-credentials: false
-
       - name: 'Acknowledge planning request'
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
@@ -283,6 +262,7 @@ jobs:
               --repo "${REPOSITORY}"
           fi
 
+      # Do not checkout repository refs in the credentialed model job. The model only writes response.md.
       - name: 'Run Gemini planning'
         id: 'run_gemini'
         uses: 'google-github-actions/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions/run-gemini-cli@v0.1.22
@@ -560,27 +540,7 @@ jobs:
             echo "comment_progress_command=${COMMENT_PROGRESS_COMMAND}"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: 'Checkout PR branch'
-        if: |-
-          ${{ steps.get_context.outputs.is_pr == 'true' }}
-        uses: 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' # ratchet:actions/checkout@v7.0.0
-        with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
-          repository: '${{ github.repository }}'
-          ref: 'refs/pull/${{ steps.get_context.outputs.issue_number }}/head'
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: 'Checkout main branch'
-        if: |-
-          ${{ steps.get_context.outputs.is_pr == 'false' }}
-        uses: 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' # ratchet:actions/checkout@v7.0.0
-        with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
-          repository: '${{ github.repository }}'
-          fetch-depth: 0
-          persist-credentials: false
-
+      # Do not checkout repository refs in the credentialed model job. The model only writes response.md.
       - name: 'Run Gemini execution'
         id: 'run_gemini'
         uses: 'google-github-actions/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions/run-gemini-cli@v0.1.22

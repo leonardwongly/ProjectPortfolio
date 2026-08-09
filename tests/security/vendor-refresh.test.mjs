@@ -8,6 +8,7 @@ import {
   ensureHttpsUrl,
   ensureVendorPath,
   fetchVendorFiles,
+  getDryRunExitCode,
   parseArgs,
   runVendorRefresh,
   updateManifestHashes
@@ -62,6 +63,18 @@ test('parseArgs defaults to dry-run and validates known flags', () => {
     today: '2026-04-09'
   });
   assert.throws(() => parseArgs(['--bogus']), /Unknown argument/);
+});
+
+test('fail-on-drift makes a changed vendored file fail the dry-run check', () => {
+  assert.deepEqual(parseArgs(['--fail-on-drift']), {
+    failOnDrift: true,
+    write: false,
+    timeoutMs: 15000,
+    today: new Date().toISOString().slice(0, 10)
+  });
+  assert.equal(getDryRunExitCode({ changedFiles: [], failOnDrift: true }), 0);
+  assert.equal(getDryRunExitCode({ changedFiles: [{ path: 'js/vendor/workbox/test-file.js' }], failOnDrift: true }), 1);
+  assert.equal(getDryRunExitCode({ changedFiles: [{ path: 'js/vendor/workbox/test-file.js' }], failOnDrift: false }), 0);
 });
 
 
