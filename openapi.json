@@ -1,0 +1,67 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Leonard Wong Portfolio Services",
+    "version": "1.0.0",
+    "description": "Machine-readable discovery for paid portfolio and agent-readiness services."
+  },
+  "servers": [
+    {
+      "url": "https://leonardwong.tech"
+    }
+  ],
+  "x-service-info": {
+    "name": "Leonard Wong Portfolio Services",
+    "description": "Secure software-engineering and agent-readiness consulting services.",
+    "categories": [
+      "software-engineering",
+      "security",
+      "agent-readiness"
+    ]
+  },
+  "paths": {
+    "/api/portfolio-review": {
+      "post": {
+        "operationId": "requestPortfolioReview",
+        "summary": "Request a paid portfolio architecture review",
+        "description": "Submit a project brief for a written architecture and security review.",
+        "x-payment-info": {
+          "intent": "charge",
+          "method": "stripe",
+          "amount": 250,
+          "currency": "USD",
+          "description": "Portfolio architecture and security review"
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "project"
+                ],
+                "properties": {
+                  "project": {
+                    "type": "string",
+                    "description": "A short description of the project to review."
+                  },
+                  "focus": {
+                    "type": "string",
+                    "description": "Optional review focus, such as security or platform architecture."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Review request accepted for fulfillment."
+          }
+        }
+      }
+    }
+  }
+}
