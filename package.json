@@ -38,5 +38,11 @@
     "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "1.62.1",
     "yaml": "^2.9.0"
+  },
+  "dependencies": {
+    "@x402/core": "2.21.0",
+    "@x402/evm": "2.21.0",
+    "@x402/hono": "2.21.0",
+    "hono": "4.13.1"
   }
 }
