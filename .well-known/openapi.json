@@ -1,0 +1,159 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Leonard Wong Portfolio Data API",
+    "description": "Machine-readable data endpoints published by leonardwong.tech, the personal portfolio of Leonard Wong, AI Software Engineer.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://leonardwong.tech"
+    }
+  ],
+  "paths": {
+    "/data/profile.json": {
+      "get": {
+        "summary": "Profile",
+        "description": "Profile, hero, education, publication, and article data.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/experience.json": {
+      "get": {
+        "summary": "Experience",
+        "description": "Professional experience entries.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/skills.json": {
+      "get": {
+        "summary": "Skills",
+        "description": "Skills and competencies.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/featured-projects.json": {
+      "get": {
+        "summary": "Featured Projects",
+        "description": "Featured projects and case studies.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/case-studies.json": {
+      "get": {
+        "summary": "Case Studies",
+        "description": "Detailed case study content.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/certifications.json": {
+      "get": {
+        "summary": "Certifications",
+        "description": "Certifications and credentials.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/reading.json": {
+      "get": {
+        "summary": "Reading",
+        "description": "Reading list.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data/resume.json": {
+      "get": {
+        "summary": "Resume",
+        "description": "Resume data.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

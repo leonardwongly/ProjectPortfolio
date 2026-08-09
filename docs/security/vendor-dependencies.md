@@ -23,7 +23,7 @@ This file tracks locally vendored browser dependencies that are committed under 
 ## Monthly checklist
 
 1. Check upstream release notes for each dependency.
-2. Run `node scripts/update-vendor.mjs` for a dry-run comparison against the declared upstream URLs.
+2. Run `node scripts/update-vendor.mjs` for a dry-run comparison against the declared upstream URLs. The command exits nonzero when any vendored file differs from upstream, so drift cannot be reported as a successful validation.
 3. Run `node scripts/check-vendor-upstream.mjs` to detect whether the pinned registry package version is behind the latest npm release.
 4. Apply the refresh with `node scripts/update-vendor.mjs --write` only after reviewing the upstream release and intended version.
 5. Run `node scripts/check-vendor-governance.mjs` to verify digests, review age, and inventory completeness.

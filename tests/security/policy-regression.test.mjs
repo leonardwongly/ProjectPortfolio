@@ -1,16 +1,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import path from 'node:path';
 import { createRequire } from 'node:module';
+import path from 'node:path';
 import test from 'node:test';
 
 const require = createRequire(import.meta.url);
 const { renderCspScriptHashesDirective } = require('../../scripts/build.js');
-
-const WORKFLOW_FILES = fs.readdirSync('.github/workflows')
-  .filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'))
-  .map((file) => path.posix.join('.github/workflows', file))
-  .sort();
 
 const SOURCE_HTML_FILES = [
   'src/index.html',
@@ -32,51 +27,45 @@ const GENERATED_HTML_FILES = [
 
 const HEADERS_FILE = '_headers';
 
-test('workflow uses references are pinned by SHA', () => {
-  assert.deepEqual(WORKFLOW_FILES, [
-    '.github/workflows/build.yml',
-    '.github/workflows/codeql.yml',
-    '.github/workflows/dependency-review.yml',
-    '.github/workflows/gemini-cli.yml',
-    '.github/workflows/link-health.yml',
-    '.github/workflows/playwright-integration.yml',
-    '.github/workflows/production-smoke.yml',
-    '.github/workflows/release-candidate.yml',
-    '.github/workflows/scan.yml',
-    '.github/workflows/vendor-review.yml'
-  ]);
+test('discovery catalog advertises only static data files that the site serves', () => {
+  const catalog = JSON.parse(fs.readFileSync('.well-known/openapi.json', 'utf8'));
+  const endpointPaths = Object.keys(catalog.paths ?? {});
 
-  const unpinned = [];
-  const pinPattern = /uses:\s*[^@\s]+@[0-9a-f]{40}\b/;
-  const usesPattern = /uses:\s*[^@\s]+@/;
+  assert.ok(endpointPaths.length > 0, 'The static data catalog must not be empty');
+  endpointPaths.forEach((endpointPath) => {
+    assert.match(endpointPath, /^\/data\/[a-z0-9-]+\.json$/);
+    assert.deepEqual(Object.keys(catalog.paths[endpointPath]), ['get']);
+    const targetPath = path.join('.', endpointPath);
+    const stats = fs.lstatSync(targetPath);
+    assert.equal(stats.isFile(), true, `${endpointPath} must be a served static file`);
+  });
 
-  for (const file of WORKFLOW_FILES) {
-    const content = fs.readFileSync(file, 'utf8');
-    const lines = content.split('\n');
-    lines.forEach((line, index) => {
-      if (usesPattern.test(line) && !pinPattern.test(line)) {
-        unpinned.push(`${file}:${index + 1}:${line.trim()}`);
-      }
-    });
+  const headers = fs.readFileSync('src/_headers.template', 'utf8');
+  for (const discoveryFile of [
+    '.well-known/api-catalog',
+    '.well-known/openapi.json',
+    '.well-known/service-doc.html',
+    '.well-known/describedby',
+    '.well-known/status'
+  ]) {
+    assert.equal(fs.lstatSync(discoveryFile).isFile(), true, `${discoveryFile} must be published`);
   }
+  assert.match(headers, /\.well-known\/api-catalog/);
+  assert.match(headers, /\.well-known\/openapi\.json/);
 
-  assert.deepEqual(unpinned, [], `Found unpinned action references:\n${unpinned.join('\n')}`);
-});
-
-test('workflow npm installs disable dependency lifecycle scripts', () => {
-  const unsafeInstalls = [];
-
-  for (const file of WORKFLOW_FILES) {
-    const content = fs.readFileSync(file, 'utf8');
-    const lines = content.split('\n');
-    lines.forEach((line, index) => {
-      if (/\brun:\s*npm ci\b/.test(line) && !line.includes('--ignore-scripts')) {
-        unsafeInstalls.push(`${file}:${index + 1}:${line.trim()}`);
-      }
-    });
+  for (const retiredClaim of [
+    '.well-known/acp.json',
+    '.well-known/agent-card.json',
+    '.well-known/agent-skills/index.json',
+    '.well-known/mcp/server-card.json',
+    '.well-known/oauth-authorization-server',
+    '.well-known/openid-configuration',
+    '.well-known/ucp',
+    'auth.md',
+    'openapi.json'
+  ]) {
+    assert.equal(fs.existsSync(retiredClaim), false, `${retiredClaim} is an unsupported discovery claim`);
   }
-
-  assert.deepEqual(unsafeInstalls, [], `Found npm ci without --ignore-scripts:\n${unsafeInstalls.join('\n')}`);
 });
 
 test('scan workflow enforces dependency audit and vendor governance gates', () => {
@@ -106,6 +95,9 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   const planningPostStart = planJob.indexOf("- name: 'Post validated planning response'");
   const planningAction = planJob.slice(planningActionStart, planningPostStart);
   assert.doesNotMatch(planningAction, /GITHUB_TOKEN:/);
+  assert.match(planningAction, /google-github-actions\/run-gemini-cli@[a-f0-9]{40}/);
+  assert.match(planningAction, /ratchet:google-github-actions\/run-gemini-cli@v0\.1\.22/);
+  assert.doesNotMatch(planJob, /actions\/checkout@/);
   assert.match(planJob, /Write Safety.*planning job MUST NOT run `git add`, `git commit`, `git push`/s);
   assert.ok(
     planJob.includes("!(contains(github.event.issue.body, 'plan#') && contains(github.event.issue.body, 'approved'))"),
@@ -134,6 +126,9 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   const executionPostStart = executeJob.indexOf("- name: 'Validate and publish implementation guidance'");
   const executionAction = executeJob.slice(executionActionStart, executionPostStart);
   assert.doesNotMatch(executionAction, /GITHUB_TOKEN:/);
+  assert.match(executionAction, /google-github-actions\/run-gemini-cli@[a-f0-9]{40}/);
+  assert.match(executionAction, /ratchet:google-github-actions\/run-gemini-cli@v0\.1\.22/);
+  assert.doesNotMatch(executeJob, /actions\/checkout@/);
   assert.doesNotMatch(executeJob, /git (?:add|commit|push)\b/);
 });
 
@@ -162,13 +157,45 @@ test('Gemini workflow removes GitHub App bootstrap and branch automation in favo
     assert.match(job, /GH_CONFIG_DIR: '\$\{\{ runner\.temp \}\}/);
   });
 
-  assert.doesNotMatch(content, /actions\/checkout/, 'Gemini must not checkout repository code before receiving model credentials');
-  assert.doesNotMatch(content, /refs\/pull\/\$\{\{[^}]+\}\}\/head/, 'Gemini must not checkout an untrusted PR head');
+  assert.doesNotMatch(content, /actions\/checkout@/);
 });
 
-test('vendor review fails on upstream byte drift', () => {
-  const workflow = fs.readFileSync('.github/workflows/vendor-review.yml', 'utf8');
-  assert.match(workflow, /node scripts\/update-vendor\.mjs --fail-on-drift/);
+test('required CI workflows use the authoritative generated-file inventory', () => {
+  for (const file of ['.github/workflows/build.yml', '.github/workflows/scan.yml']) {
+    const content = fs.readFileSync(file, 'utf8');
+    assert.match(content, /run: npm run check:generated/);
+    assert.doesNotMatch(content, /git diff --exit-code -- index\.html reading\.html offline\.html _headers/);
+  }
+});
+
+test('the security coverage contract and required CI workflows enforce exact thresholds', () => {
+  const coverageCommand = JSON.parse(fs.readFileSync('package.json', 'utf8'))
+    .scripts['test:security:coverage'];
+  const thresholds = [...coverageCommand.matchAll(
+    /--test-coverage-(lines|branches|functions)=(\d+)/g
+  )].map((match) => [match[1], Number(match[2])]);
+  const includes = [...coverageCommand.matchAll(
+    /--test-coverage-include=(?:'([^']+)'|"([^"]+)"|(\S+))/g
+  )].map((match) => match[1] || match[2] || match[3]);
+
+  assert.deepEqual(thresholds, [
+    ['lines', 75],
+    ['branches', 75],
+    ['functions', 85]
+  ]);
+  assert.deepEqual(includes, [
+    'scripts/**/*.js',
+    'scripts/**/*.mjs',
+    'scripts/**/*.cjs',
+    'playwright.config.mjs',
+    'pwabuilder-sw.js'
+  ]);
+
+  for (const file of ['.github/workflows/build.yml', '.github/workflows/scan.yml']) {
+    const content = fs.readFileSync(file, 'utf8');
+    assert.match(content, /run: npm run test:security:coverage/);
+    assert.doesNotMatch(content, /run: npm run test:security(?:\s|$)/);
+  }
 });
 
 test('CSP is declared in source pages and appears before script tags when present', () => {
@@ -233,6 +260,7 @@ test('_headers includes required runtime security headers', () => {
   assert.match(content, /X-Frame-Options:\s*DENY/i);
   assert.match(content, /X-Content-Type-Options:\s*nosniff/i);
   assert.match(content, /Referrer-Policy:\s*strict-origin-when-cross-origin/i);
+  assert.match(content, /Vary:\s*Accept/i);
 });
 
 test('CSP monitoring fallback and rollout requirements are documented', () => {

@@ -7,10 +7,10 @@ import { defineConfig, devices } from '@playwright/test';
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 function parsePort(rawPort) {
-  const normalizedPort = String(rawPort ?? '').trim();
+  const normalizedPort = String(rawPort ?? '');
   const port = Number(normalizedPort);
   if (!/^\d+$/.test(normalizedPort) || !Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error('PLAYWRIGHT_PORT must be an integer between 1 and 65535');
+    throw new Error('PLAYWRIGHT_PORT must be an integer in the range 1..65535');
   }
   return port;
 }
@@ -121,6 +121,7 @@ export default defineConfig({
 export {
   integrationBaseURL,
   parsePort,
+  parsePort as parseIntegrationPort,
   playwrightStaticRoot,
   webServerCommand
 };

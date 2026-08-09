@@ -4,10 +4,25 @@
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Permissions-Policy: accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()
+  Vary: Accept
+  Link: </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json", </.well-known/service-doc.html>; rel="service-doc"; type="text/html", </.well-known/describedby>; rel="describedby"; type="application/json"
 
 /
   Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-RBh5ZtcP26aZFp/EGYy/BT1gSD595lvp8sWO2T9xesI='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content
   Access-Control-Allow-Origin: https://leonardwong.tech
+  Link: </.well-known/api-catalog>; rel="api-catalog"; type="application/linkset+json", </.well-known/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json", </.well-known/service-doc.html>; rel="service-doc"; type="text/html", </.well-known/describedby>; rel="describedby"; type="application/json"
+
+/.well-known/api-catalog
+  Content-Type: application/linkset+json
+
+/.well-known/openapi.json
+  Content-Type: application/vnd.oai.openapi+json
+
+/.well-known/status
+  Content-Type: application/json
+
+/.well-known/describedby
+  Content-Type: application/json
 
 /*.html
   Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-RBh5ZtcP26aZFp/EGYy/BT1gSD595lvp8sWO2T9xesI='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content

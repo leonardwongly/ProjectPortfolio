@@ -22,7 +22,7 @@ test('Playwright serves a staged deployment allowlist rather than the repository
 
 test('Playwright rejects invalid listener ports before constructing the server command', () => {
   assert.equal(parsePort('4173'), 4173);
-  assert.throws(() => parsePort('0'), /between 1 and 65535/);
-  assert.throws(() => parsePort('65536'), /between 1 and 65535/);
-  assert.throws(() => parsePort('not-a-port'), /between 1 and 65535/);
+  for (const port of ['0', '65536', 'not-a-port', ' 4173']) {
+    assert.throws(() => parsePort(port), /range 1\.\.65535/);
+  }
 });

@@ -23,6 +23,6 @@ jobs:
       - name: Build generated pages
         run: npm run build
       - name: Ensure generated files are committed
-        run: git diff --exit-code -- index.html reading.html offline.html _headers
+        run: npm run check:generated
       - name: Run security and content tests
-        run: npm run test:security
+        run: npm run test:security:coverage

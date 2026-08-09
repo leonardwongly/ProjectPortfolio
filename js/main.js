@@ -25,8 +25,10 @@ const TELEMETRY_ALLOWED_EVENTS = new Set([
 const REVEAL_DELAY_CLASS_PREFIX = 'reveal-delay-';
 const MAX_REVEAL_DELAY_CLASS = 8;
 const SW_UPDATE_EVENT_TYPE = 'SKIP_WAITING';
+const interactiveControlsWithListeners = new WeakSet();
+let serviceWorkerInitializationStarted = false;
 
-document.addEventListener('DOMContentLoaded', () => {
+function initializeSite() {
   initNavActive();
   initNavCollapse();
   initAccordionState();
@@ -37,7 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initReadingFilters();
   initServiceWorker();
   window.addEventListener('hashchange', initNavActive);
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeSite, { once: true });
+} else {
+  initializeSite();
+}
 
 function initCommandPalette() {
   const palette = document.getElementById('commandPalette');
@@ -306,6 +314,10 @@ function initNavCollapse() {
   };
 
   setExpanded(panel.classList.contains('show'));
+  if (interactiveControlsWithListeners.has(toggle)) {
+    toggle.dataset.interactiveReady = 'true';
+    return;
+  }
 
   toggle.addEventListener('click', () => {
     const expanded = toggle.getAttribute('aria-expanded') === 'true';
@@ -330,6 +342,8 @@ function initNavCollapse() {
   });
 
   panel.addEventListener('keydown', closeOnEscape);
+  interactiveControlsWithListeners.add(toggle);
+  toggle.dataset.interactiveReady = 'true';
 }
 
 function initAccordionState() {
@@ -369,10 +383,14 @@ function initAccordionState() {
     }
 
     setButtonState(button, panel.classList.contains('show'));
+    if (interactiveControlsWithListeners.has(button)) {
+      button.dataset.interactiveReady = 'true';
+      return;
+    }
 
     button.addEventListener('click', (event) => {
       event.preventDefault();
-      const expanded = button.getAttribute('aria-expanded') === 'true';
+      const expanded = panel.classList.contains('show');
       const nextExpanded = !expanded;
 
       if (nextExpanded) {
@@ -386,6 +404,8 @@ function initAccordionState() {
       panel.classList.toggle('show', nextExpanded);
       setButtonState(button, nextExpanded);
     });
+    interactiveControlsWithListeners.add(button);
+    button.dataset.interactiveReady = 'true';
   });
 }
 
@@ -555,7 +575,9 @@ function createServiceWorkerToken() {
     return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
   }
 
-  return `${Date.now().toString(16)}${Math.random().toString(16).slice(2, 18)}`;
+  const timestamp = Date.now().toString(16).padStart(16, '0').slice(-16);
+  const random = Math.floor(Math.random() * 0x100000000).toString(16).padStart(8, '0');
+  return `${timestamp}${random}`;
 }
 
 function initServiceWorker() {
@@ -563,8 +585,22 @@ function initServiceWorker() {
     return;
   }
 
+  if (serviceWorkerInitializationStarted) {
+    return;
+  }
+  serviceWorkerInitializationStarted = true;
+
   let refreshing = false;
+  let reloadRequested = false;
   let updatePrompt = null;
+
+  const reloadPageOnce = () => {
+    if (refreshing) {
+      return;
+    }
+    refreshing = true;
+    window.location.reload();
+  };
 
   const createUpdatePrompt = (activateUpdate) => {
     if (updatePrompt) {
@@ -608,25 +644,32 @@ function initServiceWorker() {
   };
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshing) {
+    if (!reloadRequested) {
       return;
     }
-    refreshing = true;
-    window.location.reload();
+    reloadPageOnce();
   });
 
-  window.addEventListener('load', async () => {
+  const registerServiceWorker = async () => {
     try {
       const registration = await navigator.serviceWorker.register('/pwabuilder-sw.js');
 
       const requestActivation = () => {
-        if (!registration.waiting) {
+        reloadRequested = true;
+        const waitingWorker = registration.waiting;
+        if (!waitingWorker) {
+          // Another tab may have activated this update while the prompt was open.
+          reloadPageOnce();
           return;
         }
-        registration.waiting.postMessage({
-          type: SW_UPDATE_EVENT_TYPE,
-          token: createServiceWorkerToken()
-        });
+        try {
+          waitingWorker.postMessage({
+            type: SW_UPDATE_EVENT_TYPE,
+            token: createServiceWorkerToken()
+          });
+        } catch {
+          reloadRequested = false;
+        }
       };
 
       const showUpdatePrompt = () => {
@@ -653,7 +696,13 @@ function initServiceWorker() {
     } catch (error) {
       // Ignore service worker registration errors.
     }
-  });
+  };
+
+  if (document.readyState === 'loading') {
+    window.addEventListener('load', registerServiceWorker, { once: true });
+  } else {
+    registerServiceWorker();
+  }
 }
 
 function sanitizeTelemetryValue(value) {

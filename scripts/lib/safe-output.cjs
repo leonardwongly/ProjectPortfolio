@@ -1,252 +1,271 @@
-'use strict';
-
 const fs = require('node:fs');
-const path = require('node:path');
 const crypto = require('node:crypto');
+const path = require('node:path');
 
-class SafeOutputPathError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = 'SafeOutputPathError';
-  }
+function isContained(rootPath, candidatePath) {
+  return candidatePath === rootPath || candidatePath.startsWith(`${rootPath}${path.sep}`);
 }
 
-function assertRelativePath(relativePath, field = 'path') {
-  if (typeof relativePath !== 'string' || relativePath.length === 0) {
-    throw new SafeOutputPathError(`${field} must be a non-empty relative path`);
-  }
-  if (relativePath.includes('\0') || relativePath.includes('\\') || path.isAbsolute(relativePath)) {
-    throw new SafeOutputPathError(`${field} must be a safe relative path`);
-  }
-
-  const segments = relativePath.split('/');
-  if (segments.some((segment) => segment === '' || segment === '.' || segment === '..')) {
-    throw new SafeOutputPathError(`${field} contains an unsafe path segment`);
-  }
-  return segments;
-}
-
-function rootRealPath(rootPath) {
-  let root;
+function safeRealpath(filePath, fieldPath) {
   try {
-    root = fs.realpathSync(rootPath);
+    return fs.realpathSync(filePath);
   } catch (error) {
-    throw new SafeOutputPathError(`Cannot resolve trusted root ${rootPath}: ${error.message}`);
+    throw new Error(`Unsafe ${fieldPath}: could not resolve ${filePath}: ${error.message}`);
   }
-  const stat = fs.statSync(root);
-  if (!stat.isDirectory()) {
-    throw new SafeOutputPathError(`Trusted root is not a directory: ${rootPath}`);
-  }
-  return root;
 }
 
-function isWithinRoot(root, candidate) {
-  return candidate === root || candidate.startsWith(`${root}${path.sep}`);
+function assertSafeDestination(resolvedFile, fieldPath) {
+  try {
+    const destinationStats = fs.lstatSync(resolvedFile);
+    if (destinationStats.isSymbolicLink()) {
+      throw new Error(`Unsafe ${fieldPath}: refusing to follow an output symlink`);
+    }
+    if (!destinationStats.isFile()) {
+      throw new Error(`Unsafe ${fieldPath}: destination is not a regular file`);
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
 }
 
-function ensureTrustedDirectory(root, relativeDirectory = '') {
-  const segments = relativeDirectory ? assertRelativePath(relativeDirectory, 'directory') : [];
-  let current = root;
+function inspectSafeOutputPath(rootPath, filePath, fieldPath) {
+  const lexicalRoot = path.resolve(rootPath);
+  const resolvedRoot = safeRealpath(lexicalRoot, `${fieldPath} root`);
+  const resolvedFile = path.resolve(filePath);
+  if (!isContained(lexicalRoot, resolvedFile)) {
+    throw new Error(`Unsafe ${fieldPath}: path escapes its allowed root`);
+  }
 
-  for (const segment of segments) {
-    current = path.join(current, segment);
-    let stat;
-    try {
-      stat = fs.lstatSync(current);
-    } catch (error) {
-      if (error.code !== 'ENOENT') {
-        throw new SafeOutputPathError(`Cannot inspect output directory ${current}: ${error.message}`);
-      }
+  const parentPath = path.dirname(resolvedFile);
+  const realParent = safeRealpath(parentPath, `${fieldPath} parent`);
+  if (!isContained(resolvedRoot, realParent)) {
+    throw new Error(`Unsafe ${fieldPath}: parent resolves outside its allowed root`);
+  }
+
+  let parentStats;
+  try {
+    parentStats = fs.statSync(realParent);
+  } catch (error) {
+    throw new Error(`Unsafe ${fieldPath} parent: could not inspect ${realParent}: ${error.message}`);
+  }
+  if (!parentStats.isDirectory()) {
+    throw new Error(`Unsafe ${fieldPath}: output parent is not a directory`);
+  }
+
+  assertSafeDestination(resolvedFile, fieldPath);
+
+  return {
+    parentDevice: parentStats.dev,
+    parentInode: parentStats.ino,
+    parentPath,
+    realParent,
+    resolvedFile
+  };
+}
+
+function assertSafeOutputPath(rootPath, filePath, fieldPath = 'output') {
+  return inspectSafeOutputPath(rootPath, filePath, fieldPath).resolvedFile;
+}
+
+function assertParentUnchanged(outputState, fieldPath) {
+  let currentRealParent;
+  try {
+    currentRealParent = fs.realpathSync(outputState.parentPath);
+  } catch (error) {
+    throw new Error(`Unsafe ${fieldPath}: output parent changed during write: ${error.message}`);
+  }
+
+  if (currentRealParent !== outputState.realParent) {
+    throw new Error(`Unsafe ${fieldPath}: output parent changed during write`);
+  }
+
+  let currentStats;
+  try {
+    currentStats = fs.statSync(currentRealParent);
+  } catch (error) {
+    throw new Error(`Unsafe ${fieldPath}: output parent changed during write: ${error.message}`);
+  }
+  if (
+    !currentStats.isDirectory() ||
+    currentStats.dev !== outputState.parentDevice ||
+    currentStats.ino !== outputState.parentInode
+  ) {
+    throw new Error(`Unsafe ${fieldPath}: output parent changed during write`);
+  }
+}
+
+function sameFileIdentity(stats, identity) {
+  return stats.dev === identity.device && stats.ino === identity.inode;
+}
+
+function sameFileSnapshot(left, right) {
+  return left.dev === right.dev &&
+    left.ino === right.ino &&
+    left.mode === right.mode &&
+    left.nlink === right.nlink &&
+    left.size === right.size &&
+    left.mtimeNs === right.mtimeNs &&
+    left.ctimeNs === right.ctimeNs;
+}
+
+function assertExpectedDestination(resolvedFile, expectedDestination, fieldPath) {
+  if (expectedDestination === undefined) return;
+
+  let currentStats;
+  try {
+    currentStats = fs.lstatSync(resolvedFile, { bigint: true });
+  } catch (error) {
+    if (error.code === 'ENOENT' && expectedDestination.existed === false) return;
+    if (error.code === 'ENOENT') {
+      throw new Error(`Unsafe ${fieldPath}: destination changed before publish (expected an existing file)`);
+    }
+    throw error;
+  }
+
+  if (expectedDestination.existed === false) {
+    throw new Error(`Unsafe ${fieldPath}: destination changed before publish (expected no file)`);
+  }
+  if (!currentStats.isFile() || currentStats.isSymbolicLink() ||
+      !sameFileSnapshot(expectedDestination.stats, currentStats)) {
+    throw new Error(`Unsafe ${fieldPath}: destination changed before publish`);
+  }
+}
+
+function validateWriteOptions(options) {
+  if (options === undefined) return {};
+  if (!options || typeof options !== 'object' || Array.isArray(options)) {
+    throw new TypeError('Safe output options must be an object.');
+  }
+  const { expectedDestination, beforeFinalDestinationCheck } = options;
+  if (beforeFinalDestinationCheck !== undefined && typeof beforeFinalDestinationCheck !== 'function') {
+    throw new TypeError('beforeFinalDestinationCheck must be a function when provided.');
+  }
+  if (expectedDestination !== undefined) {
+    if (!expectedDestination || typeof expectedDestination !== 'object' ||
+        typeof expectedDestination.existed !== 'boolean') {
+      throw new TypeError('expectedDestination must declare whether the destination existed.');
+    }
+    if (expectedDestination.existed &&
+        (!expectedDestination.stats || typeof expectedDestination.stats !== 'object')) {
+      throw new TypeError('An existing expectedDestination requires verified stats.');
+    }
+  }
+  return { expectedDestination, beforeFinalDestinationCheck };
+}
+
+function assertTemporaryPathOwned(temporaryPath, identity, fieldPath) {
+  let currentStats;
+  try {
+    currentStats = fs.lstatSync(temporaryPath, { bigint: true });
+  } catch (error) {
+    throw new Error(`Unsafe ${fieldPath}: temporary destination changed during write: ${error.message}`);
+  }
+  if (!currentStats.isFile() || !sameFileIdentity(currentStats, identity)) {
+    throw new Error(`Unsafe ${fieldPath}: temporary destination changed during write`);
+  }
+}
+
+function cleanupOwnedTemporaryPath(temporaryPath, identity, error) {
+  if (temporaryPath === undefined || identity === undefined) return;
+
+  let currentStats;
+  try {
+    currentStats = fs.lstatSync(temporaryPath, { bigint: true });
+  } catch (cleanupError) {
+    if (cleanupError.code !== 'ENOENT') error.cleanupInspectError = cleanupError;
+    return;
+  }
+
+  if (!currentStats.isFile() || !sameFileIdentity(currentStats, identity)) return;
+
+  // Without unlinkat, a final syscall-sized swap window remains between this
+  // identity check and unlinkSync; suspicious identities are always retained.
+  try {
+    fs.unlinkSync(temporaryPath);
+  } catch (cleanupError) {
+    if (cleanupError.code !== 'ENOENT') error.unlinkError = cleanupError;
+  }
+}
+
+function writeFileNoFollow(rootPath, filePath, bytes, fieldPath = 'output', options) {
+  const { expectedDestination, beforeFinalDestinationCheck } = validateWriteOptions(options);
+  const outputState = inspectSafeOutputPath(rootPath, filePath, fieldPath);
+  const { parentPath, resolvedFile } = outputState;
+  assertExpectedDestination(resolvedFile, expectedDestination, fieldPath);
+  const flags = fs.constants.O_WRONLY |
+    fs.constants.O_CREAT |
+    fs.constants.O_EXCL |
+    (fs.constants.O_NOFOLLOW || 0);
+  let descriptor;
+  let publishedStats;
+  let temporaryIdentity;
+  let temporaryPath;
+
+  try {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const candidatePath = path.join(
+        parentPath,
+        `.safe-output-${process.pid}-${crypto.randomBytes(16).toString('hex')}.tmp`
+      );
       try {
-        fs.mkdirSync(current, { mode: 0o755 });
-      } catch (mkdirError) {
-        throw new SafeOutputPathError(`Cannot create trusted output directory ${current}: ${mkdirError.message}`);
+        descriptor = fs.openSync(candidatePath, flags, 0o644);
+        temporaryPath = candidatePath;
+        break;
+      } catch (error) {
+        if (error.code !== 'EEXIST') throw error;
       }
-      stat = fs.lstatSync(current);
     }
-    if (stat.isSymbolicLink() || !stat.isDirectory()) {
-      throw new SafeOutputPathError(`Output directory is not a trusted directory: ${current}`);
+
+    if (descriptor === undefined) {
+      throw new Error(`Unsafe ${fieldPath}: could not reserve a temporary output file`);
     }
-    const realCurrent = fs.realpathSync(current);
-    if (!isWithinRoot(root, realCurrent)) {
-      throw new SafeOutputPathError(`Output directory escapes trusted root: ${current}`);
+
+    const stats = fs.fstatSync(descriptor, { bigint: true });
+    if (!stats.isFile()) {
+      throw new Error(`Unsafe ${fieldPath}: temporary destination is not a regular file`);
     }
-  }
+    temporaryIdentity = { device: stats.dev, inode: stats.ino };
+    assertParentUnchanged(outputState, fieldPath);
+    assertTemporaryPathOwned(temporaryPath, temporaryIdentity, fieldPath);
 
-  return current;
-}
-
-function resolveTrustedDirectory(rootPath, relativeDirectory = '') {
-  const root = rootRealPath(rootPath);
-  const segments = relativeDirectory ? assertRelativePath(relativeDirectory, 'directory') : [];
-  let current = root;
-
-  for (const segment of segments) {
-    current = path.join(current, segment);
-    let stat;
-    try {
-      stat = fs.lstatSync(current);
-    } catch (error) {
-      throw new SafeOutputPathError(`Cannot inspect trusted directory ${current}: ${error.message}`);
+    fs.writeFileSync(descriptor, bytes);
+    publishedStats = fs.fstatSync(descriptor, { bigint: true });
+    if (!publishedStats.isFile() || publishedStats.nlink !== 1n ||
+        !sameFileIdentity(publishedStats, temporaryIdentity)) {
+      throw new Error(`Unsafe ${fieldPath}: temporary destination changed during write`);
     }
-    if (stat.isSymbolicLink() || !stat.isDirectory()) {
-      throw new SafeOutputPathError(`Trusted path is not a regular directory: ${current}`);
-    }
-    const realCurrent = fs.realpathSync(current);
-    if (!isWithinRoot(root, realCurrent)) {
-      throw new SafeOutputPathError(`Trusted directory escapes root: ${current}`);
-    }
-    current = realCurrent;
-  }
-
-  return current;
-}
-
-function trustedTarget(rootPath, relativePath) {
-  const root = rootRealPath(rootPath);
-  const segments = assertRelativePath(relativePath);
-  const parentSegments = segments.slice(0, -1);
-  const basename = segments[segments.length - 1];
-  const parentRelative = parentSegments.join('/');
-  const parent = ensureTrustedDirectory(root, parentRelative);
-  const parentReal = fs.realpathSync(parent);
-  const target = path.join(parentReal, basename);
-  const lexicalTarget = path.resolve(root, ...segments);
-  if (lexicalTarget !== target || !isWithinRoot(root, target) || !isWithinRoot(root, parentReal)) {
-    throw new SafeOutputPathError(`Path escapes trusted root: ${relativePath}`);
-  }
-  return { root, parent, parentReal, target };
-}
-
-function assertRegularSource(rootPath, relativePath) {
-  const { root, target } = trustedTarget(rootPath, relativePath);
-  let stat;
-  try {
-    stat = fs.lstatSync(target);
-  } catch (error) {
-    throw new SafeOutputPathError(`Cannot inspect source file ${target}: ${error.message}`);
-  }
-  if (stat.isSymbolicLink() || !stat.isFile()) {
-    throw new SafeOutputPathError(`Source is not a regular file: ${target}`);
-  }
-  const realTarget = fs.realpathSync(target);
-  if (!isWithinRoot(root, realTarget)) {
-    throw new SafeOutputPathError(`Source escapes trusted root: ${target}`);
-  }
-  return target;
-}
-
-function readTrustedText(rootPath, relativePath, { maxBytes = Number.POSITIVE_INFINITY } = {}) {
-  const source = assertRegularSource(rootPath, relativePath);
-  let descriptor;
-  try {
-    descriptor = fs.openSync(source, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
-    const stat = fs.fstatSync(descriptor);
-    if (!stat.isFile()) {
-      throw new SafeOutputPathError(`Source is not a regular file: ${source}`);
-    }
-    if (stat.size > maxBytes) {
-      throw new SafeOutputPathError(`Trusted source exceeds the ${maxBytes}-byte read limit: ${source}`);
-    }
-    return fs.readFileSync(descriptor, 'utf8');
-  } catch (error) {
-    if (error instanceof SafeOutputPathError) throw error;
-    throw new SafeOutputPathError(`Cannot read trusted source ${source}: ${error.message}`);
-  } finally {
-    if (descriptor !== undefined) {
-      try { fs.closeSync(descriptor); } catch {}
-    }
-  }
-}
-
-function assertWritableTarget(target) {
-  try {
-    const stat = fs.lstatSync(target);
-    if (stat.isSymbolicLink() || !stat.isFile()) {
-      throw new SafeOutputPathError(`Output is not a regular file: ${target}`);
-    }
-  } catch (error) {
-    if (error.code === 'ENOENT') return;
-    if (error instanceof SafeOutputPathError) throw error;
-    throw new SafeOutputPathError(`Cannot inspect output file ${target}: ${error.message}`);
-  }
-}
-
-function writeTrustedBufferAtomic(rootPath, relativePath, content) {
-  const { root, parent, parentReal, target } = trustedTarget(rootPath, relativePath);
-  assertWritableTarget(target);
-
-  const temporaryPath = path.join(parentReal, `.${path.basename(target)}.${process.pid}.${crypto.randomUUID()}.tmp`);
-  let descriptor;
-  try {
-    const flags = fs.constants.O_WRONLY |
-      fs.constants.O_CREAT |
-      fs.constants.O_EXCL |
-      (fs.constants.O_NOFOLLOW || 0);
-    descriptor = fs.openSync(temporaryPath, flags, 0o644);
-    fs.writeFileSync(descriptor, content);
-    fs.fsyncSync(descriptor);
     fs.closeSync(descriptor);
     descriptor = undefined;
 
-    // Re-check the directory and destination immediately before replacement.
-    const currentParent = fs.realpathSync(parent);
-    if (currentParent !== parentReal || !isWithinRoot(root, currentParent)) {
-      throw new SafeOutputPathError(`Output directory escapes trusted root: ${parent}`);
+    assertParentUnchanged(outputState, fieldPath);
+    assertSafeDestination(resolvedFile, fieldPath);
+    assertTemporaryPathOwned(temporaryPath, temporaryIdentity, fieldPath);
+    assertParentUnchanged(outputState, fieldPath);
+    if (beforeFinalDestinationCheck) {
+      beforeFinalDestinationCheck({ destinationPath: resolvedFile, temporaryPath });
     }
-    assertWritableTarget(target);
-    fs.renameSync(temporaryPath, target);
+    assertParentUnchanged(outputState, fieldPath);
+    assertExpectedDestination(resolvedFile, expectedDestination, fieldPath);
+    assertTemporaryPathOwned(temporaryPath, temporaryIdentity, fieldPath);
+    assertParentUnchanged(outputState, fieldPath);
+
+    // Node does not expose openat/renameat here, so a final syscall-sized path-swap
+    // window remains between this revalidation and renameSync.
+    fs.renameSync(temporaryPath, resolvedFile);
+    temporaryPath = undefined;
+    temporaryIdentity = undefined;
+    return { stats: publishedStats };
   } catch (error) {
     if (descriptor !== undefined) {
-      try { fs.closeSync(descriptor); } catch {}
+      try {
+        fs.closeSync(descriptor);
+      } catch (cleanupError) {
+        error.closeError = cleanupError;
+      }
     }
-    try { fs.unlinkSync(temporaryPath); } catch {}
-    if (error instanceof SafeOutputPathError) throw error;
-    throw new SafeOutputPathError(`Cannot atomically write output ${target}: ${error.message}`);
+    cleanupOwnedTemporaryPath(temporaryPath, temporaryIdentity, error);
+    throw error;
   }
 }
 
-function writeTrustedTextAtomic(rootPath, relativePath, content) {
-  if (typeof content !== 'string') {
-    throw new SafeOutputPathError('Output content must be a string');
-  }
-  writeTrustedBufferAtomic(rootPath, relativePath, Buffer.from(content, 'utf8'));
-}
-
-function writeTrustedFileAtomic(rootPath, relativePath, sourcePath) {
-  let stat;
-  try {
-    stat = fs.lstatSync(sourcePath);
-  } catch (error) {
-    throw new SafeOutputPathError(`Cannot inspect generated source ${sourcePath}: ${error.message}`);
-  }
-  if (stat.isSymbolicLink() || !stat.isFile()) {
-    throw new SafeOutputPathError(`Generated source is not a regular file: ${sourcePath}`);
-  }
-  let descriptor;
-  try {
-    descriptor = fs.openSync(sourcePath, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
-    const openedStat = fs.fstatSync(descriptor);
-    if (!openedStat.isFile()) {
-      throw new SafeOutputPathError(`Generated source is not a regular file: ${sourcePath}`);
-    }
-    writeTrustedBufferAtomic(rootPath, relativePath, fs.readFileSync(descriptor));
-  } catch (error) {
-    if (error instanceof SafeOutputPathError) throw error;
-    throw new SafeOutputPathError(`Cannot read generated source ${sourcePath}: ${error.message}`);
-  } finally {
-    if (descriptor !== undefined) {
-      try { fs.closeSync(descriptor); } catch {}
-    }
-  }
-}
-
-module.exports = {
-  SafeOutputPathError,
-  assertRegularSource,
-  resolveTrustedDirectory,
-  readTrustedText,
-  writeTrustedBufferAtomic,
-  writeTrustedTextAtomic,
-  writeTrustedFileAtomic
-};
+module.exports = { assertSafeOutputPath, writeFileNoFollow };
