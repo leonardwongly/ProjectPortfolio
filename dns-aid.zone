@@ -1,0 +1,13 @@
+; DNS for AI Discovery (DNS-AID) records for leonardwong.tech.
+;
+; Import these records into the authoritative DNS zone for leonardwong.tech.
+; DNSSEC must be enabled at the authoritative provider; RRSIG/NSEC records
+; are provider-generated and must not be hand-authored in this file.
+
+$ORIGIN leonardwong.tech.
+$TTL 3600
+
+; Discovery index and the A2A service both terminate on the HTTPS portfolio
+; origin. The Agent Card is served from /.well-known/agent-card.json.
+_index._agents 3600 IN SVCB 1 leonardwong.tech. alpn="h2,http/1.1" port=443 mandatory=alpn,port
+_a2a._agents   3600 IN HTTPS 1 leonardwong.tech. alpn="h2,http/1.1" port=443 mandatory=alpn,port
