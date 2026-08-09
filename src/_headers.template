@@ -8,7 +8,6 @@
 /
   Content-Security-Policy: default-src 'self'; script-src 'self'{{CSP_SCRIPT_HASHES}}; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content
   Access-Control-Allow-Origin: https://leonardwong.tech
-  Link: </openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"
 
 /*.html
   Content-Security-Policy: default-src 'self'; script-src 'self'{{CSP_SCRIPT_HASHES}}; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content
@@ -22,55 +21,7 @@
   Content-Security-Policy: default-src 'self'; script-src 'self'{{CSP_SCRIPT_HASHES}}; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content
   Access-Control-Allow-Origin: https://leonardwong.tech
 
-/.well-known/agent-skills/index.json
-  Content-Type: application/json; charset=utf-8
-  Cache-Control: public, max-age=300
-  Access-Control-Allow-Origin: *
-
-/openapi.json
-  Content-Type: application/json; charset=utf-8
-  Cache-Control: public, max-age=300, s-maxage=300
-  Access-Control-Allow-Origin: *
-
-/.well-known/openid-configuration
-  Content-Type: application/json; charset=utf-8
-  Access-Control-Allow-Origin: *
-  Cache-Control: public, max-age=3600
-
-/.well-known/oauth-authorization-server
-  Content-Type: application/json; charset=utf-8
-  Access-Control-Allow-Origin: *
-  Cache-Control: public, max-age=3600
-
-/.well-known/agent-card.json
-  Content-Type: application/json; charset=utf-8
-  Access-Control-Allow-Origin: *
-  Cache-Control: public, max-age=3600
-
-/auth.md
-  Content-Type: text/markdown; charset=utf-8
-  Access-Control-Allow-Origin: *
-  Cache-Control: public, max-age=300, s-maxage=300
-
-/.well-known/acp.json
-  Content-Type: application/json; charset=utf-8
-  Access-Control-Allow-Origin: *
-  Cache-Control: public, max-age=3600
-
 /.well-known/http-message-signatures-directory
   Content-Type: application/json; charset=utf-8
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=3600, must-revalidate
-
-/.well-known/mcp/server-card.json
-  Content-Type: application/json; charset=utf-8
-  Cache-Control: public, max-age=3600
-  Access-Control-Allow-Origin: *
-  Access-Control-Allow-Methods: GET, HEAD
-  Access-Control-Allow-Headers: Accept, Content-Type, If-None-Match
-  Access-Control-Expose-Headers: ETag
-
-/.well-known/ucp
-  Content-Type: application/json; charset=utf-8
-  Cache-Control: public, max-age=300, s-maxage=300
-  Access-Control-Allow-Origin: *

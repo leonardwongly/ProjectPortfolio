@@ -235,20 +235,6 @@ test('_headers includes required runtime security headers', () => {
   assert.match(content, /Referrer-Policy:\s*strict-origin-when-cross-origin/i);
 });
 
-test('homepage advertises only the deployed OpenAPI service description', () => {
-  const template = fs.readFileSync('src/_headers.template', 'utf8');
-  const generated = fs.readFileSync(HEADERS_FILE, 'utf8');
-  const line = 'Link: </openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"';
-
-  assert.ok(template.split('\n').includes(`  ${line}`));
-  assert.ok(generated.split('\n').includes(`  ${line}`));
-
-  const homepageBlock = template.match(/^\/\n([\s\S]*?)(?=\n\n\/\*\.html)/m)?.[1] ?? '';
-  assert.ok(homepageBlock.split('\n').includes(`  ${line}`));
-  assert.doesNotMatch(template.slice(template.indexOf('\n\n/*.html')), /  Link:/);
-  assert.doesNotMatch(template, /api-catalog|service-doc|describedby/);
-});
-
 test('CSP monitoring fallback and rollout requirements are documented', () => {
   const monitoring = fs.readFileSync('docs/security/csp-monitoring.md', 'utf8');
   const deploymentHeaders = fs.readFileSync('docs/security/deployment-headers.md', 'utf8');

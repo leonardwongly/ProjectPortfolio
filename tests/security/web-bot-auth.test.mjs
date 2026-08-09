@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { createPublicKey, generateKeyPairSync, verify as verifyBytes } from 'node:crypto';
+import { createHash, createPublicKey, generateKeyPairSync, verify as verifyBytes } from 'node:crypto';
 import { signWebBotAuthRequest, signatureBase } from '../../scripts/web-bot-auth.mjs';
 
 const root = path.resolve(new URL('../..', import.meta.url).pathname);
@@ -44,7 +44,7 @@ test('signs a request with the Web Bot Auth header set', () => {
     created
   });
 
-  assert.equal(headers['Signature-Agent'], 'https://leonardwong.tech');
+  assert.equal(headers['Signature-Agent'], '"https://leonardwong.tech"');
   assert.match(headers['Signature-Input'], new RegExp(`^sig1=\\("@method" "@target-uri" "signature-agent" "content-digest"\\);created=${created};expires=${created + 300};`));
   assert.match(headers['content-digest'], /^sha-256=:[A-Za-z0-9+/]+=*:/);
   assert.match(headers.Signature, /^sig1=:[A-Za-z0-9+/]+=*:[.]?$/);
@@ -68,13 +68,50 @@ test('signature base includes the signature parameters line', () => {
   const base = signatureBase({
     method: 'GET',
     url: 'https://example.com/path',
-    headers: new Map([['signature-agent', 'https://leonardwong.tech']]),
+    headers: new Map([['signature-agent', '"https://leonardwong.tech"']]),
     components: ['@method', '@target-uri', 'signature-agent'],
     signatureParams: '("@method" "@target-uri" "signature-agent");created=1;keyid="leonardwong.tech";alg="ed25519"'
   });
   assert.match(base, /"@method": GET/);
   assert.match(base, /"@target-uri": https:\/\/example\.com\/path/);
   assert.match(base, /"@signature-params":/);
+});
+
+test('derives @authority, preserves method casing, and normalizes covered header whitespace', () => {
+  const base = signatureBase({
+    method: 'propfind',
+    url: 'https://example.com:8443/path',
+    headers: new Map([['x-request-id', 'request-1']]),
+    components: ['@method', '@authority', 'x-request-id'],
+    signatureParams: '("@method" "@authority" "x-request-id");created=1;keyid="test";alg="ed25519"'
+  });
+
+  assert.match(base, /"@method": propfind/);
+  assert.match(base, /"@authority": example\.com:8443/);
+  assert.match(base, /"x-request-id": request-1/);
+
+  const { privateKey } = generateKeyPairSync('ed25519');
+  const headers = signWebBotAuthRequest({
+    url: 'https://example.com/resource',
+    method: 'propfind',
+    headers: { 'x-request-id': '  request-1  ' },
+    privateJwk: privateKey.export({ format: 'jwk' }),
+    components: ['@method', 'x-request-id'],
+    created: Math.floor(Date.now() / 1000)
+  });
+  assert.equal(headers['x-request-id'], 'request-1');
+});
+
+test('hashes the exact byte range for ArrayBuffer views', () => {
+  const { privateKey } = generateKeyPairSync('ed25519');
+  const headers = signWebBotAuthRequest({
+    url: 'https://example.com/resource',
+    body: new Uint16Array([0x1234]),
+    privateJwk: privateKey.export({ format: 'jwk' }),
+    created: Math.floor(Date.now() / 1000)
+  });
+  const expectedDigest = createHash('sha256').update(Buffer.from(new Uint16Array([0x1234]).buffer)).digest('base64');
+  assert.equal(headers['content-digest'], `sha-256=:${expectedDigest}:`);
 });
 
 test('rejects unsafe targets, components, and stale timestamps', () => {

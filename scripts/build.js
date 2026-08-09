@@ -16,19 +16,6 @@ const {
 } = require('./lib/safe-output.cjs');
 
 const projectRoot = process.cwd();
-const discoveryFiles = [
-  'auth.md',
-  'openapi.json',
-  '.well-known/acp.json',
-  '.well-known/agent-skills/index.json',
-  '.well-known/openid-configuration',
-  '.well-known/oauth-authorization-server',
-  '.well-known/agent-card.json',
-  '.well-known/http-message-signatures-directory',
-  '.well-known/mcp/server-card.json',
-  '.well-known/ucp'
-];
-
 const partials = {
   NAV: readTrustedText(projectRoot, 'partials/nav.html'),
   FOOTER: readTrustedText(projectRoot, 'partials/footer.html')
@@ -1805,15 +1792,9 @@ function buildSite() {
   const headersContent = injectCspScriptHashes(headersTemplate, indexPage);
   writeTrustedTextAtomic(projectRoot, '_headers', headersContent);
 
-  discoveryFiles.forEach((file) => {
-    let content;
-    try {
-      content = readTrustedText(projectRoot, `src/${file}`);
-    } catch (error) {
-      throw new Error(`Unable to read trusted discovery source src/${file}: ${error.message}`);
-    }
-    writeTrustedTextAtomic(projectRoot, file, content);
-  });
+  const webBotAuthDirectory = '.well-known/http-message-signatures-directory';
+  const webBotAuthContent = readTrustedText(projectRoot, `src/${webBotAuthDirectory}`);
+  writeTrustedTextAtomic(projectRoot, webBotAuthDirectory, webBotAuthContent);
 
   console.log('Build complete: generated', pages.join(', '));
 }

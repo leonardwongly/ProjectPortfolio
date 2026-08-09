@@ -14,7 +14,7 @@ function quote(value) {
 }
 
 function normalizeHeaders(headers = {}) {
-  return new Map(Object.entries(headers).map(([name, value]) => [name.toLowerCase(), String(value)]));
+  return new Map(Object.entries(headers).map(([name, value]) => [name.toLowerCase(), String(value).trim()]));
 }
 
 function serializeSignatureParams(components, { created, expires, keyId, algorithm }) {
@@ -25,12 +25,23 @@ function serializeSignatureParams(components, { created, expires, keyId, algorit
 
 function signatureBase({ method, url, headers, components, signatureParams }) {
   const values = components.map((component) => {
-    if (component === '@method') return `"@method": ${method.toUpperCase()}`;
+    if (component === '@method') return `"@method": ${method}`;
     if (component === '@target-uri') return `"@target-uri": ${url}`;
+    if (component === '@authority') return `"@authority": ${new URL(url).host}`;
     return `"${component}": ${headers.get(component) ?? ''}`;
   });
   values.push(`"@signature-params": ${signatureParams}`);
   return values.join('\n');
+}
+
+function bodyBytes(body) {
+  if (ArrayBuffer.isView(body)) {
+    return Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+  }
+  if (body instanceof ArrayBuffer) {
+    return Buffer.from(body);
+  }
+  return Buffer.from(body);
 }
 
 function validateTargetUrl(value) {
@@ -137,13 +148,14 @@ export function signWebBotAuthRequest({
 
   const normalized = normalizeHeaders(headers);
   if (body !== undefined) {
-    const digest = createHash('sha256').update(Buffer.from(body)).digest('base64');
+    const digest = createHash('sha256').update(bodyBytes(body)).digest('base64');
     normalized.set('content-digest', `sha-256=:${digest}:`);
     if (!signedComponents.includes('content-digest')) {
       signedComponents.push('content-digest');
     }
   }
-  normalized.set('signature-agent', agent);
+  const signatureAgent = quote(agent);
+  normalized.set('signature-agent', signatureAgent);
   const algorithm = 'ed25519';
   const signatureParams = serializeSignatureParams(signedComponents, {
     created,
@@ -154,10 +166,9 @@ export function signWebBotAuthRequest({
   const base = signatureBase({ method, url: targetUrl, headers: normalized, components: signedComponents, signatureParams });
   const signature = signBytes(null, Buffer.from(base, 'utf8'), loadPrivateKey(privateJwk)).toString('base64');
 
-  normalized.delete('signature-agent');
   return {
     ...Object.fromEntries(normalized),
-    'Signature-Agent': agent,
+    'Signature-Agent': signatureAgent,
     'Signature-Input': `sig1=${signatureParams}`,
     Signature: `sig1=:${signature}:`
   };
