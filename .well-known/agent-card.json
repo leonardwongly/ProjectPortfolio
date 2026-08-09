@@ -1,0 +1,46 @@
+{
+  "name": "Leonard Wong Portfolio Agent",
+  "description": "An informational agent for Leonard Wong's professional portfolio, experience, projects, and case studies.",
+  "url": "https://leonardwong.tech/",
+  "version": "1.0.0",
+  "protocolVersion": "0.3.0",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": [
+    "text"
+  ],
+  "defaultOutputModes": [
+    "text"
+  ],
+  "skills": [
+    {
+      "id": "portfolio-information",
+      "name": "Portfolio information",
+      "description": "Answers questions about Leonard Wong's professional profile, experience, skills, and published work.",
+      "tags": [
+        "portfolio",
+        "profile",
+        "experience"
+      ],
+      "examples": [
+        "What projects has Leonard Wong built?",
+        "Summarize Leonard Wong's AI engineering experience."
+      ]
+    }
+  ],
+  "extensions": [
+    {
+      "uri": "https://github.com/google-agentic-commerce/AP2/tree/v0.1.0",
+      "description": "Optional Agent Payments Protocol support for a shopper agent when an explicitly authorized payment flow is available.",
+      "required": false,
+      "params": {
+        "roles": [
+          "shopper"
+        ]
+      }
+    }
+  ]
+}
