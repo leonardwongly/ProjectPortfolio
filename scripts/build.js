@@ -16,7 +16,7 @@ const srcDir = path.join(projectRoot, 'src');
 const partialDir = path.join(projectRoot, 'partials');
 const dataDir = path.join(projectRoot, 'data');
 const headersTemplatePath = path.join(srcDir, '_headers.template');
-const discoveryFiles = ['.well-known/ucp'];
+const discoveryFiles = ['.well-known/mcp/server-card.json', '.well-known/ucp'];
 
 const partials = {
   NAV: fs.readFileSync(path.join(partialDir, 'nav.html'), 'utf8'),
