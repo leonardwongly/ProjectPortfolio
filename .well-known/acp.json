@@ -1,0 +1,15 @@
+{
+  "protocol": {
+    "name": "acp",
+    "version": "2025-09-29"
+  },
+  "api_base_url": "https://leonardwong.tech/api/acp",
+  "transports": [
+    "rest"
+  ],
+  "capabilities": {
+    "services": [
+      "checkout"
+    ]
+  }
+}
