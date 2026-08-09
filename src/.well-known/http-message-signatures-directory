@@ -1,0 +1,13 @@
+{
+  "keys": [
+    {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "x": "iS9xuNw_9CiU6niQTIB7GX1UD0VCi-S_VblvD7pjVlQ",
+      "kid": "leonardwong.tech",
+      "use": "sig",
+      "key_ops": ["verify"],
+      "alg": "EdDSA"
+    }
+  ]
+}
