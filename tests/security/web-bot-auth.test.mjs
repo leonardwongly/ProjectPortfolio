@@ -102,6 +102,31 @@ test('derives @authority, preserves method casing, and normalizes covered header
   assert.equal(headers['x-request-id'], 'request-1');
 });
 
+test('normalizes Fetch-standard method casing before signing', () => {
+  const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+  const privateJwk = privateKey.export({ format: 'jwk' });
+  const created = Math.floor(Date.now() / 1000);
+  const headers = signWebBotAuthRequest({
+    url: 'https://example.com/resource',
+    method: 'post',
+    privateJwk,
+    created
+  });
+  const fetchMethod = new Request('https://example.com/resource', { method: 'post' }).method;
+  const signatureParams = headers['Signature-Input'].slice('sig1='.length);
+  const base = signatureBase({
+    method: fetchMethod,
+    url: 'https://example.com/resource',
+    headers: new Map([['signature-agent', headers['Signature-Agent']]]),
+    components: ['@method', '@target-uri', 'signature-agent'],
+    signatureParams
+  });
+  const signature = Buffer.from(headers.Signature.slice('sig1=:'.length, -1), 'base64');
+
+  assert.equal(fetchMethod, 'POST');
+  assert.equal(verifyBytes(null, Buffer.from(base), publicKey, signature), true);
+});
+
 test('hashes the exact byte range for ArrayBuffer views', () => {
   const { privateKey } = generateKeyPairSync('ed25519');
   const headers = signWebBotAuthRequest({

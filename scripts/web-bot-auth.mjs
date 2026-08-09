@@ -8,6 +8,7 @@ const CLOCK_SKEW_SECONDS = 30;
 const COMPONENT_PATTERN = /^(?:@[A-Za-z0-9-]+|[!#$%&'*+.^_`|~0-9A-Za-z-]+)$/u;
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/u;
 const SUPPORTED_DERIVED_COMPONENTS = new Set(['@method', '@target-uri', '@authority']);
+const FETCH_NORMALIZED_METHODS = new Set(['DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT']);
 
 function quote(value) {
   const text = String(value).replaceAll('\\', '\\\\').replaceAll('"', '\\"');
@@ -78,6 +79,11 @@ function validateSafeValue(value, fieldName) {
   return value;
 }
 
+function normalizeFetchMethod(method) {
+  const uppercase = method.toUpperCase();
+  return FETCH_NORMALIZED_METHODS.has(uppercase) ? uppercase : method;
+}
+
 function validateComponents(components) {
   if (!Array.isArray(components) || components.length === 0 || components.some((component) => (
     typeof component !== 'string' ||
@@ -140,6 +146,7 @@ export function signWebBotAuthRequest({
   if (!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/u.test(method)) {
     throw new Error('method must be a valid HTTP method token');
   }
+  const normalizedMethod = normalizeFetchMethod(method);
   if (!Number.isSafeInteger(created) || created <= 0) {
     throw new Error('created must be a positive integer timestamp');
   }
@@ -170,7 +177,7 @@ export function signWebBotAuthRequest({
     keyId,
     algorithm
   });
-  const base = signatureBase({ method, url: targetUrl, headers: normalized, components: signedComponents, signatureParams });
+  const base = signatureBase({ method: normalizedMethod, url: targetUrl, headers: normalized, components: signedComponents, signatureParams });
   const signature = signBytes(null, Buffer.from(base, 'utf8'), loadPrivateKey(privateJwk)).toString('base64');
   const outputHeaders = Object.fromEntries(
     [...normalized].filter(([name]) => !['signature-agent', 'signature-input', 'signature'].includes(name))
