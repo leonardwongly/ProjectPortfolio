@@ -2297,6 +2297,13 @@ function buildSite({
       label: 'generated _headers',
       maxBytes: MAX_SITE_OUTPUT_BYTES
     });
+    const ucpProfile = readBuildText('src/.well-known/ucp', { rootDir: resolvedRoot });
+    entries.push({
+      path: path.join(resolvedRoot, '.well-known/ucp'),
+      bytes: ucpProfile,
+      label: 'generated UCP profile',
+      maxBytes: MAX_SITE_OUTPUT_BYTES
+    });
     publishSiteBundle({ rootDir: resolvedRoot, entries, writeFileImpl });
 
     log('Build complete: generated', pages.join(', '));
