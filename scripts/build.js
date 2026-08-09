@@ -2297,6 +2297,18 @@ function buildSite({
       label: 'generated _headers',
       maxBytes: MAX_SITE_OUTPUT_BYTES
     });
+
+    // The only retained agent-facing discovery file is a public verification
+    // key directory for outbound Web Bot Auth signatures. It is static data,
+    // so copy it through the same safe, atomic publication path as the HTML
+    // and header artifacts.
+    const webBotAuthDirectory = '.well-known/http-message-signatures-directory';
+    entries.push({
+      path: path.join(resolvedRoot, webBotAuthDirectory),
+      bytes: readBuildText(path.posix.join('src', webBotAuthDirectory), { rootDir: resolvedRoot }),
+      label: `generated ${webBotAuthDirectory}`,
+      maxBytes: MAX_SITE_OUTPUT_BYTES
+    });
     publishSiteBundle({ rootDir: resolvedRoot, entries, writeFileImpl });
 
     log('Build complete: generated', pages.join(', '));

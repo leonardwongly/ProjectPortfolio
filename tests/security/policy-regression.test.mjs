@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
+import path from 'node:path';
 import test from 'node:test';
 
 const require = createRequire(import.meta.url);
@@ -25,6 +26,48 @@ const GENERATED_HTML_FILES = [
 ];
 
 const HEADERS_FILE = '_headers';
+const GEMINI_ACTION_REFERENCE = /^        uses: 'google-github-actions\/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions\/run-gemini-cli@v0\.1\.22$/m;
+
+test('discovery catalog advertises only static data files that the site serves', () => {
+  const catalog = JSON.parse(fs.readFileSync('.well-known/openapi.json', 'utf8'));
+  const endpointPaths = Object.keys(catalog.paths ?? {});
+
+  assert.ok(endpointPaths.length > 0, 'The static data catalog must not be empty');
+  endpointPaths.forEach((endpointPath) => {
+    assert.match(endpointPath, /^\/data\/[a-z0-9-]+\.json$/);
+    assert.deepEqual(Object.keys(catalog.paths[endpointPath]), ['get']);
+    const targetPath = path.join('.', endpointPath);
+    const stats = fs.lstatSync(targetPath);
+    assert.equal(stats.isFile(), true, `${endpointPath} must be a served static file`);
+  });
+
+  const headers = fs.readFileSync('src/_headers.template', 'utf8');
+  for (const discoveryFile of [
+    '.well-known/api-catalog',
+    '.well-known/openapi.json',
+    '.well-known/service-doc.html',
+    '.well-known/describedby',
+    '.well-known/status'
+  ]) {
+    assert.equal(fs.lstatSync(discoveryFile).isFile(), true, `${discoveryFile} must be published`);
+  }
+  assert.match(headers, /\.well-known\/api-catalog/);
+  assert.match(headers, /\.well-known\/openapi\.json/);
+
+  for (const retiredClaim of [
+    '.well-known/acp.json',
+    '.well-known/agent-card.json',
+    '.well-known/agent-skills/index.json',
+    '.well-known/mcp/server-card.json',
+    '.well-known/oauth-authorization-server',
+    '.well-known/openid-configuration',
+    '.well-known/ucp',
+    'auth.md',
+    'openapi.json'
+  ]) {
+    assert.equal(fs.existsSync(retiredClaim), false, `${retiredClaim} is an unsupported discovery claim`);
+  }
+});
 
 test('scan workflow enforces dependency audit and vendor governance gates', () => {
   const content = fs.readFileSync('.github/workflows/scan.yml', 'utf8');
@@ -53,7 +96,7 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   const planningPostStart = planJob.indexOf("- name: 'Post validated planning response'");
   const planningAction = planJob.slice(planningActionStart, planningPostStart);
   assert.doesNotMatch(planningAction, /GITHUB_TOKEN:/);
-  assert.match(planningAction, /gemini_cli_version: '0\.52\.0'/);
+  assert.match(planningAction, GEMINI_ACTION_REFERENCE);
   assert.doesNotMatch(planJob, /actions\/checkout@/);
   assert.match(planJob, /Write Safety.*planning job MUST NOT run `git add`, `git commit`, `git push`/s);
   assert.ok(
@@ -83,7 +126,7 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   const executionPostStart = executeJob.indexOf("- name: 'Validate and publish implementation guidance'");
   const executionAction = executeJob.slice(executionActionStart, executionPostStart);
   assert.doesNotMatch(executionAction, /GITHUB_TOKEN:/);
-  assert.match(executionAction, /gemini_cli_version: '0\.52\.0'/);
+  assert.match(executionAction, GEMINI_ACTION_REFERENCE);
   assert.doesNotMatch(executeJob, /actions\/checkout@/);
   assert.doesNotMatch(executeJob, /git (?:add|commit|push)\b/);
 });

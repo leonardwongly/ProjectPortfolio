@@ -1,20 +1,96 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
-function parseIntegrationPort(rawValue = process.env.PLAYWRIGHT_PORT ?? '4173') {
-  const value = String(rawValue);
-  if (!/^\d+$/.test(value)) {
-    throw new Error('PLAYWRIGHT_PORT must be an integer in the range 1..65535');
-  }
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
-  const port = Number(value);
-  if (!Number.isSafeInteger(port) || port < 1 || port > 65535) {
+function parsePort(rawPort) {
+  const normalizedPort = String(rawPort ?? '');
+  const port = Number(normalizedPort);
+  if (!/^\d+$/.test(normalizedPort) || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error('PLAYWRIGHT_PORT must be an integer in the range 1..65535');
   }
   return port;
 }
 
-const integrationPort = parseIntegrationPort();
+const integrationPort = parsePort(process.env.PLAYWRIGHT_PORT ?? '4173');
 const integrationBaseURL = `http://127.0.0.1:${integrationPort}`;
+
+const STATIC_FILES = [
+  'case-study-agentforge.html',
+  'case-study-agentic.html',
+  'case-study-apple-calendar-mcp.html',
+  'index.html',
+  'offline.html',
+  'reading.html',
+  'work.html',
+  'manifest.json',
+  'pwabuilder-sw.js',
+  'robots.txt',
+  'sitemap.xml'
+];
+const STATIC_DIRECTORIES = ['book', 'css', 'favicon', 'fonts', 'images', 'js'];
+
+function copyDeploymentPath(sourcePath, targetPath) {
+  const sourceStat = fs.lstatSync(sourcePath);
+  if (sourceStat.isSymbolicLink()) {
+    throw new Error(`Refusing to stage symbolic link for Playwright: ${sourcePath}`);
+  }
+  if (sourceStat.isDirectory()) {
+    fs.mkdirSync(targetPath, { recursive: true });
+    fs.readdirSync(sourcePath, { withFileTypes: true }).forEach((entry) => {
+      copyDeploymentPath(
+        path.join(sourcePath, entry.name),
+        path.join(targetPath, entry.name)
+      );
+    });
+    return;
+  }
+  if (!sourceStat.isFile()) {
+    throw new Error(`Refusing to stage unsupported file type for Playwright: ${sourcePath}`);
+  }
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+  fs.copyFileSync(sourcePath, targetPath);
+}
+
+function stageStaticSite() {
+  const stagingRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-playwright-'));
+  [...STATIC_FILES, ...STATIC_DIRECTORIES].forEach((relativePath) => {
+    const sourcePath = path.join(projectRoot, relativePath);
+    if (!fs.existsSync(sourcePath)) {
+      throw new Error(`Playwright static artifact is missing: ${sourcePath}`);
+    }
+    copyDeploymentPath(sourcePath, path.join(stagingRoot, relativePath));
+  });
+  return stagingRoot;
+}
+
+function shellQuote(value) {
+  return `'${String(value).replaceAll("'", "'\\''")}'`;
+}
+
+const playwrightStaticRoot = stageStaticSite();
+
+function cleanupStagedSite() {
+  try {
+    fs.rmSync(playwrightStaticRoot, { force: true, maxRetries: 3, recursive: true, retryDelay: 100 });
+  } catch {
+    // Process shutdown must not fail because an OS temporary directory could
+    // not be removed. The directory is uniquely created for this process.
+  }
+}
+
+process.once('exit', cleanupStagedSite);
+
+const webServerCommand = [
+  'python3 -m http.server',
+  String(integrationPort),
+  '--bind 127.0.0.1',
+  '--directory',
+  shellQuote(playwrightStaticRoot)
+].join(' ');
 
 export default defineConfig({
   testDir: './tests/integration',
@@ -30,9 +106,11 @@ export default defineConfig({
     serviceWorkers: 'block'
   },
   webServer: {
-    command: `python3 -m http.server ${integrationPort} --bind 127.0.0.1`,
+    command: webServerCommand,
     url: `${integrationBaseURL}/index.html`,
-    reuseExistingServer: !process.env.CI,
+    // A pre-existing listener may serve arbitrary content. Always force
+    // Playwright to own the loopback port instead of silently reusing it.
+    reuseExistingServer: false,
     timeout: 120_000
   },
   projects: [
@@ -52,4 +130,10 @@ export default defineConfig({
   ]
 });
 
-export { parseIntegrationPort };
+export {
+  integrationBaseURL,
+  parsePort,
+  parsePort as parseIntegrationPort,
+  playwrightStaticRoot,
+  webServerCommand
+};

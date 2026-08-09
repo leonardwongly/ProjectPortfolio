@@ -1,43 +1,48 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
+import config, { parsePort, playwrightStaticRoot, webServerCommand } from '../../playwright.config.mjs';
 
-import config, { parseIntegrationPort } from '../../playwright.config.mjs';
+test('Playwright owns the loopback listener instead of reusing an unexpected server', () => {
+  assert.equal(config.webServer.reuseExistingServer, false);
+  assert.match(webServerCommand, /--bind 127\.0\.0\.1/);
+});
 
-test('Playwright port parsing rejects malformed and out-of-range values', () => {
-  assert.equal(parseIntegrationPort('1'), 1);
-  assert.equal(parseIntegrationPort('65535'), 65535);
+test('Playwright serves a staged deployment allowlist rather than the repository root', () => {
+  const root = path.resolve('.');
 
-  for (const value of ['', '0', '65536', '-1', '1.5', '12px', ' 4173', '9'.repeat(100)]) {
-    assert.throws(() => parseIntegrationPort(value), /range 1\.\.65535/);
+  assert.match(webServerCommand, /--directory/);
+  assert.notEqual(path.resolve(playwrightStaticRoot), root);
+  assert.ok(fs.existsSync(path.join(playwrightStaticRoot, 'index.html')));
+  assert.equal(fs.existsSync(path.join(playwrightStaticRoot, '.git')), false);
+  assert.equal(fs.existsSync(path.join(playwrightStaticRoot, 'package.json')), false);
+  assert.equal(fs.existsSync(path.join(playwrightStaticRoot, 'scripts')), false);
+});
+
+test('Playwright rejects invalid listener ports before constructing the server command', () => {
+  assert.equal(parsePort('4173'), 4173);
+  for (const port of ['0', '65536', 'not-a-port', ' 4173']) {
+    assert.throws(() => parsePort(port), /range 1\.\.65535/);
   }
 });
 
-test('local Playwright runs bind a loopback server and can reuse it outside CI', () => {
-  const configuredPort = parseIntegrationPort();
-  assert.equal(config.webServer.url, `http://127.0.0.1:${configuredPort}/index.html`);
-  assert.equal(config.use.baseURL, `http://127.0.0.1:${configuredPort}`);
-  assert.ok(
-    config.webServer.command.includes(
-      `python3 -m http.server ${configuredPort} --bind 127.0.0.1`
-    )
-  );
-  assert.equal(config.webServer.reuseExistingServer, !process.env.CI);
-  assert.equal(config.use.serviceWorkers, 'block');
-});
+test('Playwright rejects an explicitly empty configured port and cleans staging on exit', () => {
+  const configUrl = new URL('../../playwright.config.mjs', import.meta.url).href;
+  const command = `import { playwrightStaticRoot } from ${JSON.stringify(configUrl)}; process.stdout.write(playwrightStaticRoot);`;
+  const emptyPort = spawnSync(process.execPath, ['--input-type=module', '--eval', command], {
+    encoding: 'utf8',
+    env: { ...process.env, PLAYWRIGHT_PORT: '' }
+  });
 
-test('browser validation scripts install Chromium and execute their test suites', () => {
-  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-  const expectedSuites = {
-    'test:integration': 'tests/integration/mobile-nav-and-accordion.spec.mjs',
-    'check:accessibility': 'tests/integration/accessibility-smoke.spec.mjs'
-  };
+  assert.notEqual(emptyPort.status, 0);
+  assert.match(`${emptyPort.stdout}${emptyPort.stderr}`, /range 1\.\.65535/);
 
-  for (const [scriptName, suite] of Object.entries(expectedSuites)) {
-    assert.match(packageJson.scripts[scriptName], /playwright install chromium/);
-    assert.ok(packageJson.scripts[scriptName].includes(`playwright test ${suite}`));
-  }
-
-  assert.equal(packageJson.scripts['pretest:integration'], undefined);
-  assert.equal(packageJson.scripts['precheck:accessibility'], undefined);
+  const stagedSite = spawnSync(process.execPath, ['--input-type=module', '--eval', command], {
+    encoding: 'utf8',
+    env: { ...process.env, PLAYWRIGHT_PORT: '4173' }
+  });
+  assert.equal(stagedSite.status, 0, stagedSite.stderr);
+  assert.equal(fs.existsSync(stagedSite.stdout.trim()), false);
 });

@@ -259,6 +259,7 @@ function makeSiteBuildFixture() {
   for (const directory of ['data', 'partials', 'src']) {
     fs.cpSync(path.join(projectRoot, directory), path.join(rootDir, directory), { recursive: true });
   }
+  fs.mkdirSync(path.join(rootDir, '.well-known'));
 
   const reading = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/reading.json'), 'utf8'));
   new Set(reading.map((entry) => entry.cover).filter(Boolean)).forEach((cover) => {
@@ -275,7 +276,8 @@ function makeSiteBuildFixture() {
       'reading.html',
       'offline.html',
       ...caseStudies.map((study) => study.slug),
-      '_headers'
+      '_headers',
+      '.well-known/http-message-signatures-directory'
     ]
   };
 }

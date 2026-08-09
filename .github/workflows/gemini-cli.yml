@@ -262,6 +262,7 @@ jobs:
               --repo "${REPOSITORY}"
           fi
 
+      # Do not checkout repository refs in the credentialed model job. The model only writes response.md.
       - name: 'Run Gemini planning'
         id: 'run_gemini'
         uses: 'google-github-actions/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions/run-gemini-cli@v0.1.22
@@ -279,8 +280,6 @@ jobs:
           OTLP_GOOGLE_CLOUD_PROJECT: '${{ vars.OTLP_GOOGLE_CLOUD_PROJECT }}'
           SERVICE_ACCOUNT_EMAIL: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
         with:
-          # Pinned stable release; never use a mutable npm tag such as latest.
-          gemini_cli_version: '0.52.0'
           gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
           gcp_workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
           gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
@@ -541,6 +540,7 @@ jobs:
             echo "comment_progress_command=${COMMENT_PROGRESS_COMMAND}"
           } >> "${GITHUB_OUTPUT}"
 
+      # Do not checkout repository refs in the credentialed model job. The model only writes response.md.
       - name: 'Run Gemini execution'
         id: 'run_gemini'
         uses: 'google-github-actions/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions/run-gemini-cli@v0.1.22
@@ -558,8 +558,6 @@ jobs:
           OTLP_GOOGLE_CLOUD_PROJECT: '${{ vars.OTLP_GOOGLE_CLOUD_PROJECT }}'
           SERVICE_ACCOUNT_EMAIL: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
         with:
-          # Pinned stable release; never use a mutable npm tag such as latest.
-          gemini_cli_version: '0.52.0'
           gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
           gcp_workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
           gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'

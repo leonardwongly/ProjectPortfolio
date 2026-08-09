@@ -9,6 +9,7 @@ import {
   ensureHttpsUrl,
   ensureVendorPath,
   fetchVendorFiles,
+  getDryRunExitCode,
   parseArgs,
   persistVendorRefresh,
   runVendorRefresh,
@@ -118,6 +119,19 @@ test('parseArgs defaults to dry-run and validates known flags', () => {
   assert.throws(() => parseArgs(['--bogus']), /Unknown argument/);
   assert.throws(() => parseArgs(['--timeout-ms', '60001']), /must not exceed 60000ms/);
   assert.throws(() => parseArgs(['--timeout-ms', '999999999999999999999']), /must not exceed 60000ms/);
+});
+
+test('fail-on-drift makes a changed vendored file fail the dry-run check', () => {
+  const beforeDate = new Date().toISOString().slice(0, 10);
+  const options = parseArgs(['--fail-on-drift']);
+  const afterDate = new Date().toISOString().slice(0, 10);
+  assert.equal(options.failOnDrift, true);
+  assert.equal(options.write, false);
+  assert.equal(options.timeoutMs, 15000);
+  assert.equal([beforeDate, afterDate].includes(options.today), true);
+  assert.equal(getDryRunExitCode({ changedFiles: [], failOnDrift: true }), 0);
+  assert.equal(getDryRunExitCode({ changedFiles: [{ path: 'js/vendor/workbox/test-file.js' }], failOnDrift: true }), 1);
+  assert.equal(getDryRunExitCode({ changedFiles: [{ path: 'js/vendor/workbox/test-file.js' }], failOnDrift: false }), 0);
 });
 
 
@@ -320,9 +334,10 @@ test('fetchVendorFiles rejects a sibling source directory with the same string p
 });
 
 test('vendor refresh dry-run exit decision fails only when upstream drift exists', () => {
-  assert.equal(vendorRefreshExitCode({ write: false, summary: [{ changed: true }] }), 1);
-  assert.equal(vendorRefreshExitCode({ write: false, summary: [{ changed: false }] }), 0);
-  assert.equal(vendorRefreshExitCode({ write: true, summary: [{ changed: true }] }), 0);
+  assert.equal(vendorRefreshExitCode({ write: false, summary: [{ changed: true }] }, false), 0);
+  assert.equal(vendorRefreshExitCode({ write: false, summary: [{ changed: true }] }, true), 1);
+  assert.equal(vendorRefreshExitCode({ write: false, summary: [{ changed: false }] }, true), 0);
+  assert.equal(vendorRefreshExitCode({ write: true, summary: [{ changed: true }] }, true), 0);
 });
 
 test('refresh comparison rejects unsafe, oversized, and replaced current files', (t) => {

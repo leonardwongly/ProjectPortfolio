@@ -105,6 +105,11 @@ function parseArgs(argv = process.argv.slice(2)) {
       continue;
     }
 
+    if (arg === '--fail-on-drift') {
+      options.failOnDrift = true;
+      continue;
+    }
+
     if (arg === '--timeout-ms') {
       const nextValue = argv[index + 1];
       if (!nextValue || !/^\d+$/.test(nextValue)) {
@@ -861,11 +866,21 @@ async function runVendorRefresh(options = {}, dependencies = {}) {
     : executeRefresh();
 }
 
-function vendorRefreshExitCode(result) {
+function vendorRefreshExitCode(result, failOnDrift = false) {
   if (!result || !Array.isArray(result.summary)) {
     fail('Invalid vendor refresh result');
   }
-  return !result.write && result.summary.some((entry) => entry.changed) ? 1 : 0;
+  return getDryRunExitCode({
+    changedFiles: result.summary.filter((entry) => entry.changed),
+    failOnDrift: !result.write && failOnDrift
+  });
+}
+
+function getDryRunExitCode({ changedFiles, failOnDrift }) {
+  if (!Array.isArray(changedFiles)) {
+    fail('changedFiles must be an array');
+  }
+  return failOnDrift && changedFiles.length > 0 ? 1 : 0;
 }
 
 async function main() {
@@ -882,7 +897,7 @@ async function main() {
     changedFiles.forEach((entry) => {
       console.log(`- ${entry.path} <= ${entry.upstreamUrl}`);
     });
-    process.exitCode = vendorRefreshExitCode(result);
+    process.exitCode = vendorRefreshExitCode(result, options.failOnDrift);
     return;
   }
 
@@ -900,6 +915,7 @@ export {
   ensureHttpsUrl,
   ensureVendorPath,
   fetchVendorFiles,
+  getDryRunExitCode,
   parseArgs,
   persistVendorRefresh,
   runVendorRefresh,
