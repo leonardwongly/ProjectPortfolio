@@ -1,20 +1,20 @@
 # Security Assessment - 2026-05-28
 
 > **Historical assessment notice (updated 2026-08-09).** This document records a
-> dated baseline and is not a current statement that the site is static-only.
-> The repository now includes Cloudflare Pages Functions, an x402-protected
-> `POST /api/scan` endpoint, OAuth Protected Resource Metadata, and additional
-> agent-discovery documents. Use the current security review and the focused
-> regression suites for those surfaces; keep this baseline for historical
-> remediation traceability.
+> dated baseline and is not production-readiness evidence. This branch is a
+> static portfolio with a static data catalog and a public Web Bot Auth
+> verification-key directory; it does not claim transactional agent,
+> authentication, payment, or protocol services. No production deployment or
+> external readiness scan was performed for this repository assessment. Keep
+> this baseline for historical remediation traceability.
 
 ## Executive Summary
 
-At the time of this baseline, ProjectPortfolio was primarily a static portfolio/PWA. The current branch also contains Cloudflare Pages Functions and machine-readable payment/authentication discovery, so the original static-only scope must not be used as a current assurance statement. The static controls remain useful: generated HTML is produced from structured JSON, untrusted display data is escaped, URLs and asset paths are validated, strict CSP/security headers are generated, service-worker update messages are schema/origin checked, vendored Workbox files are hash-governed, GitHub Actions are SHA-pinned with minimal permissions, and dependency audit results are clean only to the extent verified by the available advisory cache.
+At the time of this baseline, ProjectPortfolio was primarily a static portfolio/PWA. The current branch remains a static portfolio, with a machine-readable catalog for existing static data and a public verification key for outbound Web Bot Auth signatures. The original static-only scope still must not be treated as production assurance. The static controls remain useful: generated HTML is produced from structured JSON, untrusted display data is escaped, URLs and asset paths are validated, strict CSP/security headers are generated, service-worker update messages are schema/origin checked, vendored Workbox files are hash-governed, GitHub Actions are SHA-pinned with minimal permissions, and dependency audit results are clean only to the extent verified by the available advisory cache.
 
 No critical or high-severity exploitable vulnerability was identified in first-party application code. I did not find hardcoded secrets, backdoor accounts, hidden administrative functionality, obfuscated first-party code, unauthorized persistence, covert command-and-control behavior, suspicious telemetry, credential exfiltration logic, insecure deserialization, direct RCE vectors, CSRF-relevant state-changing endpoints, SQL/database injection surfaces, or authentication/authorization bypass paths.
 
-The original findings were operational and supply-chain oriented. The current review additionally covers payment facilitator and OAuth configuration trust, bounded request parsing, discovery-to-route consistency, CI credential boundaries, and filesystem-safe generation. Those current findings and their residual proof gaps are reported separately rather than silently folded into this historical baseline.
+The original findings were operational and supply-chain oriented. The current review additionally covers static-catalog consistency, Web Bot Auth signature construction, CI credential boundaries, and filesystem-safe generation. Those current findings and their residual proof gaps are reported separately rather than silently folded into this historical baseline.
 
 The main findings in this baseline were operational and supply-chain oriented:
 

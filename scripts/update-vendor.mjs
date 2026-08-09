@@ -866,13 +866,13 @@ async function runVendorRefresh(options = {}, dependencies = {}) {
     : executeRefresh();
 }
 
-function vendorRefreshExitCode(result) {
+function vendorRefreshExitCode(result, failOnDrift = false) {
   if (!result || !Array.isArray(result.summary)) {
     fail('Invalid vendor refresh result');
   }
   return getDryRunExitCode({
     changedFiles: result.summary.filter((entry) => entry.changed),
-    failOnDrift: !result.write
+    failOnDrift: !result.write && failOnDrift
   });
 }
 
@@ -897,7 +897,7 @@ async function main() {
     changedFiles.forEach((entry) => {
       console.log(`- ${entry.path} <= ${entry.upstreamUrl}`);
     });
-    process.exitCode = vendorRefreshExitCode(result);
+    process.exitCode = vendorRefreshExitCode(result, options.failOnDrift);
     return;
   }
 

@@ -114,6 +114,28 @@ test('hashes the exact byte range for ArrayBuffer views', () => {
   assert.equal(headers['content-digest'], `sha-256=:${expectedDigest}:`);
 });
 
+test('emits each signature field once after HTTP header normalization', () => {
+  const { privateKey } = generateKeyPairSync('ed25519');
+  const headers = signWebBotAuthRequest({
+    url: 'https://example.com/resource',
+    headers: {
+      'signature-agent': 'untrusted input',
+      'signature-input': 'untrusted input',
+      signature: 'untrusted input'
+    },
+    privateJwk: privateKey.export({ format: 'jwk' }),
+    created: Math.floor(Date.now() / 1000)
+  });
+  const normalized = new Headers(headers);
+
+  assert.equal(normalized.get('signature-agent'), '"https://leonardwong.tech"');
+  assert.match(normalized.get('signature-input'), /^sig1=/);
+  assert.match(normalized.get('signature'), /^sig1=:/);
+  assert.equal([...normalized.keys()].filter((name) => name === 'signature-agent').length, 1);
+  assert.equal([...normalized.keys()].filter((name) => name === 'signature-input').length, 1);
+  assert.equal([...normalized.keys()].filter((name) => name === 'signature').length, 1);
+});
+
 test('rejects unsafe targets, components, and stale timestamps', () => {
   const { privateKey } = generateKeyPairSync('ed25519');
   const privateJwk = privateKey.export({ format: 'jwk' });
@@ -126,6 +148,7 @@ test('rejects unsafe targets, components, and stale timestamps', () => {
   assert.throws(() => sign({ url: 'https://user:password@example.com/resource' }), /without credentials/);
   assert.throws(() => sign({ url: 'https://example.com/resource#fragment' }), /without credentials/);
   assert.throws(() => sign({ components: ['@method', 'x\n-injected'] }), /valid HTTP signature components/);
+  assert.throws(() => sign({ components: ['@method', '@path'] }), /supported derived HTTP signature components/);
   assert.throws(() => sign({ created: Math.floor(Date.now() / 1000) - 301 }), /freshness window/);
   assert.throws(() => sign({ agent: 'https://agent.example\nInjected: value' }), /control characters/);
 });

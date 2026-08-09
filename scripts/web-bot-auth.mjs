@@ -7,6 +7,7 @@ const DEFAULT_MAX_AGE_SECONDS = 300;
 const CLOCK_SKEW_SECONDS = 30;
 const COMPONENT_PATTERN = /^(?:@[A-Za-z0-9-]+|[!#$%&'*+.^_`|~0-9A-Za-z-]+)$/u;
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/u;
+const SUPPORTED_DERIVED_COMPONENTS = new Set(['@method', '@target-uri', '@authority']);
 
 function quote(value) {
   const text = String(value).replaceAll('\\', '\\\\').replaceAll('"', '\\"');
@@ -28,6 +29,9 @@ function signatureBase({ method, url, headers, components, signatureParams }) {
     if (component === '@method') return `"@method": ${method}`;
     if (component === '@target-uri') return `"@target-uri": ${url}`;
     if (component === '@authority') return `"@authority": ${new URL(url).host}`;
+    if (component.startsWith('@')) {
+      throw new Error(`Unsupported derived HTTP signature component: ${component}`);
+    }
     return `"${component}": ${headers.get(component) ?? ''}`;
   });
   values.push(`"@signature-params": ${signatureParams}`);
@@ -88,6 +92,9 @@ function validateComponents(components) {
   const normalized = components.map((component) => component.toLowerCase());
   if (new Set(normalized).size !== normalized.length) {
     throw new Error('components must not contain duplicates');
+  }
+  if (normalized.some((component) => component.startsWith('@') && !SUPPORTED_DERIVED_COMPONENTS.has(component))) {
+    throw new Error('components must use only supported derived HTTP signature components');
   }
   return normalized;
 }
@@ -165,9 +172,12 @@ export function signWebBotAuthRequest({
   });
   const base = signatureBase({ method, url: targetUrl, headers: normalized, components: signedComponents, signatureParams });
   const signature = signBytes(null, Buffer.from(base, 'utf8'), loadPrivateKey(privateJwk)).toString('base64');
+  const outputHeaders = Object.fromEntries(
+    [...normalized].filter(([name]) => !['signature-agent', 'signature-input', 'signature'].includes(name))
+  );
 
   return {
-    ...Object.fromEntries(normalized),
+    ...outputHeaders,
     'Signature-Agent': signatureAgent,
     'Signature-Input': `sig1=${signatureParams}`,
     Signature: `sig1=:${signature}:`

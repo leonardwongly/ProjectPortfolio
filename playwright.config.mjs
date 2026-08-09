@@ -15,7 +15,7 @@ function parsePort(rawPort) {
   return port;
 }
 
-const integrationPort = parsePort(process.env.PLAYWRIGHT_PORT || '4173');
+const integrationPort = parsePort(process.env.PLAYWRIGHT_PORT ?? '4173');
 const integrationBaseURL = `http://127.0.0.1:${integrationPort}`;
 
 const STATIC_FILES = [
@@ -72,6 +72,18 @@ function shellQuote(value) {
 }
 
 const playwrightStaticRoot = stageStaticSite();
+
+function cleanupStagedSite() {
+  try {
+    fs.rmSync(playwrightStaticRoot, { force: true, maxRetries: 3, recursive: true, retryDelay: 100 });
+  } catch {
+    // Process shutdown must not fail because an OS temporary directory could
+    // not be removed. The directory is uniquely created for this process.
+  }
+}
+
+process.once('exit', cleanupStagedSite);
+
 const webServerCommand = [
   'python3 -m http.server',
   String(integrationPort),

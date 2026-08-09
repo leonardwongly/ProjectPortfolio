@@ -26,6 +26,7 @@ const GENERATED_HTML_FILES = [
 ];
 
 const HEADERS_FILE = '_headers';
+const GEMINI_ACTION_REFERENCE = /^        uses: 'google-github-actions\/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions\/run-gemini-cli@v0\.1\.22$/m;
 
 test('discovery catalog advertises only static data files that the site serves', () => {
   const catalog = JSON.parse(fs.readFileSync('.well-known/openapi.json', 'utf8'));
@@ -95,8 +96,7 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   const planningPostStart = planJob.indexOf("- name: 'Post validated planning response'");
   const planningAction = planJob.slice(planningActionStart, planningPostStart);
   assert.doesNotMatch(planningAction, /GITHUB_TOKEN:/);
-  assert.match(planningAction, /google-github-actions\/run-gemini-cli@[a-f0-9]{40}/);
-  assert.match(planningAction, /ratchet:google-github-actions\/run-gemini-cli@v0\.1\.22/);
+  assert.match(planningAction, GEMINI_ACTION_REFERENCE);
   assert.doesNotMatch(planJob, /actions\/checkout@/);
   assert.match(planJob, /Write Safety.*planning job MUST NOT run `git add`, `git commit`, `git push`/s);
   assert.ok(
@@ -126,8 +126,7 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   const executionPostStart = executeJob.indexOf("- name: 'Validate and publish implementation guidance'");
   const executionAction = executeJob.slice(executionActionStart, executionPostStart);
   assert.doesNotMatch(executionAction, /GITHUB_TOKEN:/);
-  assert.match(executionAction, /google-github-actions\/run-gemini-cli@[a-f0-9]{40}/);
-  assert.match(executionAction, /ratchet:google-github-actions\/run-gemini-cli@v0\.1\.22/);
+  assert.match(executionAction, GEMINI_ACTION_REFERENCE);
   assert.doesNotMatch(executeJob, /actions\/checkout@/);
   assert.doesNotMatch(executeJob, /git (?:add|commit|push)\b/);
 });
