@@ -48,7 +48,8 @@ function makeGovernanceFixture(t) {
 }
 
 test('vendored dependency governance validates digests, freshness, and inventory', () => {
-  const result = validateVendorGovernance(loadManifest(), { today: '2026-07-01' });
+  const manifest = loadManifest();
+  const result = validateVendorGovernance(manifest, { today: manifest.last_reviewed });
 
   assert.equal(result.reviewAgeDays, 0);
   assert.deepEqual(result.declaredFiles, result.actualFiles);
@@ -110,11 +111,11 @@ test('vendor manifest loading is bounded, no-follow, regular-only, and snapshot-
   );
 });
 
-test('vendored dependency governance rejects stale reviews', () => {
-  const manifest = loadManifest();
+test('vendored dependency governance rejects stale reviews', (t) => {
+  const { manifest, rootDir } = makeGovernanceFixture(t);
 
   assert.throws(
-    () => validateVendorGovernance(manifest, { today: '2026-08-16' }),
+    () => validateVendorGovernance(manifest, { rootDir, today: '2026-08-16' }),
     /review age is \d+ day\(s\), exceeding 45 day\(s\)/
   );
 });
