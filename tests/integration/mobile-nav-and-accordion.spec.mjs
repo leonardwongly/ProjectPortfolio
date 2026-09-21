@@ -1,4 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { routeLoopbackHttpsRequests } from './local-http-compat.mjs';
+
+test.beforeEach(async ({ page }) => {
+  await routeLoopbackHttpsRequests(page);
+});
 
 function isMobileProject(testInfo) {
   return testInfo.project.name.startsWith('mobile-');
@@ -141,6 +146,12 @@ async function installServiceWorkerHarness(page, {
     initialWaitingWorker: hasWaitingWorker,
     initialReadyState: readyState
   });
+}
+
+async function gotoCommunitySection(page) {
+  await page.goto('/index.html#community');
+  await expect(page.locator('#community')).toBeVisible();
+  await page.locator('#community').scrollIntoViewIfNeeded();
 }
 
 test.describe('mobile navigation', () => {
@@ -457,6 +468,25 @@ test.describe('command palette', () => {
     await expect(opener).toBeFocused();
   });
 
+  test('can close empty search results and restore access to the page', async ({ page }, testInfo) => {
+    await page.goto('/index.html');
+    if (isMobileProject(testInfo)) {
+      await page.locator('.navbar-toggler').click();
+    }
+    const opener = page.locator('[data-cmdk-open]').first();
+    await opener.click();
+    await page.locator('#cmdkInput').fill('zzzz-no-command');
+    await page.locator('main').evaluate((element) => {
+      element.querySelector('a').focus();
+    });
+    await expect(page.locator('#cmdkInput')).toBeFocused();
+    await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeHidden();
+    await expect(opener).toBeFocused();
+    await opener.click();
+    await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
+  });
+
   test('does not leave focus inside the hidden dialog after shortcut close', async ({ page }) => {
     await page.goto('/index.html');
 
@@ -519,6 +549,33 @@ test.describe('command palette', () => {
 });
 
 test.describe('portfolio evidence hierarchy', () => {
+  test('hero content is readable without waiting for scroll observation', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.IntersectionObserver = class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      };
+    });
+    await page.goto('/index.html');
+    await expect(page.locator('.hero-section h1')).toBeVisible();
+    await expect(page.locator('.hero-section')).toHaveCSS('opacity', '1');
+    await expect(page.locator('.hero-section')).toHaveCSS('filter', 'none');
+  });
+
+  test('section navigation leaves the destination below the fixed header', async ({ page }, testInfo) => {
+    await page.goto('/index.html');
+    if (isMobileProject(testInfo)) {
+      await page.locator('.navbar-toggler').click();
+    }
+    await page.locator('#navbarCollapse .nav-link[href$="#skills"]').click();
+    await expect.poll(async () => page.evaluate(() => {
+      const target = document.getElementById('skills').getBoundingClientRect();
+      const nav = document.querySelector('.navbar').getBoundingClientRect();
+      return target.top >= nav.bottom - 1 && target.top < window.innerHeight;
+    })).toBe(true);
+  });
+
   test('home presents three flagship projects and linked proof points', async ({ page }) => {
     await page.goto('/index.html');
 
@@ -550,7 +607,7 @@ test.describe('portfolio evidence hierarchy', () => {
 
 test.describe('accordion behavior', () => {
   test('accordion panel expands and collapses via trigger button', async ({ page }) => {
-    await page.goto('/index.html');
+    await gotoCommunitySection(page);
 
     const cdcButton = page.locator('button[aria-controls="collapseCDC"]');
     const cdcPanel = page.locator('#collapseCDC');
@@ -571,7 +628,7 @@ test.describe('accordion behavior', () => {
   });
 
   test('opening second panel collapses the first panel', async ({ page }) => {
-    await page.goto('/index.html');
+    await gotoCommunitySection(page);
 
     const cdcButton = page.locator('button[aria-controls="collapseCDC"]');
     const smuButton = page.locator('button[aria-controls="collapseSMU"]');
@@ -594,7 +651,7 @@ test.describe('accordion behavior', () => {
   });
 
   test('recovers from corrupt state and forged listener markers without duplicate ownership', async ({ page }) => {
-    await page.goto('/index.html');
+    await gotoCommunitySection(page);
 
     const cdcButton = page.locator('button[aria-controls="collapseCDC"]');
     const cdcPanel = page.locator('#collapseCDC');
@@ -665,6 +722,20 @@ test.describe('reading controls', () => {
 
     await expect(inactiveYear).toHaveAttribute('aria-pressed', 'true');
     await expect(activeYear).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('clears all filters from an empty result while preserving list view', async ({ page }) => {
+    await page.goto('/reading.html?year=2022&tag=Data&view=list&q=zzzz-no-book');
+    await expect(page.locator('[data-reading-empty]')).toBeVisible();
+    await page.getByRole('button', { name: 'Clear filters', exact: true }).click();
+    await expect(page.locator('#readingSearch')).toHaveValue('');
+    await expect(page.locator('#readingSearch')).toBeFocused();
+    await expect(page.locator('[data-reading-empty]')).toBeHidden();
+    await expect(page.locator('[data-reading-item][hidden]')).toHaveCount(0);
+    await expect(page.locator('[data-reading-grid]')).toHaveAttribute('data-view', 'list');
+    await expect(page.locator('[data-filter-group="year"][data-filter-value="All"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-filter-group="tag"][data-filter-value="All"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page).toHaveURL(/reading\.html\?view=list$/);
   });
 
   test('typing a search does not persist free-form text into the URL', async ({ page }) => {

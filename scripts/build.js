@@ -1012,13 +1012,14 @@ function renderActionLinks(actions, fieldPath, className = 'hero-actions') {
       const href = safeHref(action.href, `${fieldPath}[${index}].href`);
       const target = linkShouldOpenInNewTab(href) ? ' target="_blank" rel="noopener noreferrer"' : '';
       const variant = action.variant === 'primary' ? 'btn-primary' : 'btn-ghost';
+      const linkClass = className === 'hero-actions' && index > 1 ? 'hero-secondary' : `btn ${variant}`;
       const telemetry = [
         'data-telemetry-event="portfolio_action_clicked"',
         `data-telemetry-surface="${escapeHtml(slugForTelemetry(className))}"`,
         `data-telemetry-action="${escapeHtml(slugForTelemetry(action.label))}"`,
         `data-telemetry-destination="${escapeHtml(telemetryDestinationType(href))}"`
       ].join(' ');
-      return `<a class="btn ${variant}" href="${escapeHtml(href)}"${target} ${telemetry}>${escapeHtml(action.label)}</a>`;
+      return `<a class="${linkClass}" href="${escapeHtml(href)}"${target} ${telemetry}>${escapeHtml(action.label)}</a>`;
     })
     .join('');
 
@@ -1215,11 +1216,11 @@ function renderProjectCards(items, { includeStatus = false } = {}) {
           ${status}
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
+          <span class="block-label">Purpose</span>
           <p>${escapeHtml(project.problem)}</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
+          <span class="block-label">Delivered</span>
           <p>${escapeHtml(project.impact)}</p>
         </div>
         ${capabilities}
@@ -1315,6 +1316,15 @@ function renderCaseStudy(study, allStudies) {
         <div><dt>Source</dt><dd><a href="${escapeHtml(repositoryUrl)}" target="_blank" rel="noopener noreferrer">View repository</a></dd></div>
       </dl>
     </div>
+    <div class="case-overview">
+      <p><strong>Delivered</strong> ${escapeHtml(study.outcomes[0])}</p>
+      <a href="#evidence">Review validation evidence</a>
+    </div>
+    <nav class="case-contents" aria-label="On this page">
+      <a href="#challenge">Challenge</a><a href="#architecture">Architecture</a>
+      <a href="#ownership">My role</a><a href="#decisions">Decisions</a>
+      <a href="#evidence">Evidence</a><a href="#tradeoffs">Limitations</a>
+    </nav>
   </header>
 
   <section class="case-section" id="challenge">
@@ -1808,6 +1818,7 @@ function renderReadingGrid(reading, { rootDir = projectRoot } = {}) {
       <p class="reading-share-status" data-reading-share-status role="status" aria-live="polite"></p>
     </div>
     <p class="reading-result-count" data-reading-count role="status" aria-live="polite"></p>
+    <button type="button" class="btn btn-ghost reading-reset" data-reading-reset>Clear filters</button>
   </div>
 
   <div class="reading-grid" data-reading-grid data-view="grid">

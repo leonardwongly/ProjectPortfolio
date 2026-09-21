@@ -3,10 +3,10 @@
  * Builds a print-optimized resume from structured data and exports PDF/DOCX artifacts.
  *
  * Sources:
- *   - data/resume.json        (resume-only: title, contact, summary, AI highlights, order)
- *   - data/profile.json       (education, publication — shared with the website)
- *   - data/experience.json    (work history — shared with the website)
- *   - data/skills.json        (skills, AI-first — shared with the website)
+ *   - data/resume.json        (resume-only content, editorial collections, headings and order)
+ *   - data/profile.json       (default education, publication — shared with the website)
+ *   - data/experience.json    (default work history — shared with the website)
+ *   - data/skills.json        (default skills — shared with the website)
  *   - data/certifications.json(credentials — shared with the website)
  *
  * Output:
@@ -98,7 +98,7 @@ function loadResumeData({ rootDir = projectRoot } = {}) {
 // --- Validation: fail fast on malformed resume and shared website data ----
 
 const RESUME_TEXT_MAX = 1000;
-const SECTION_KEYS = ['summary', 'ai_highlights', 'skills', 'experience', 'education', 'publication', 'certifications'];
+const SECTION_KEYS = ['summary', 'ai_highlights', 'skills', 'experience', 'education', 'earlier_experience', 'publication', 'certifications', 'languages'];
 
 function fail(field, reason) {
   throw new Error(`Invalid data at ${field}: ${reason}`);
@@ -145,9 +145,74 @@ function assertHttpsUrl(value, field) {
   return url.toString();
 }
 
+function validateResumeCollections(resume) {
+  // Reuse the website collection contracts without replacing or mutating shared data.
+  for (const [key, validator] of [
+    ['skills', validateSkillsData],
+    ['experience', validateExperienceData],
+    ['earlier_experience', validateExperienceData],
+    ['certifications', validateCertificationData]
+  ]) {
+    if (resume[key] === undefined) continue;
+    try {
+      validator(resume[key]);
+    } catch (error) {
+      fail(`resume.${key}`, error.message);
+    }
+  }
+  for (const key of ['experience', 'earlier_experience']) {
+    resume[key]?.forEach((role, i) => {
+      if (role.tech !== undefined) assertArray(role.tech, `resume.${key}[${i}].tech`, { max: 30 });
+    });
+  }
+  resume.certifications?.forEach((cert, i) => {
+    if (cert.link) assertHttpsUrl(cert.link, `resume.certifications[${i}].link`);
+  });
+
+  if (resume.education !== undefined) {
+    assertArray(resume.education, 'resume.education', { min: 1, max: 20 }).forEach((entry, i) => {
+      const field = `resume.education[${i}]`;
+      assertObject(entry, field);
+      assertAllowedKeys(entry, field, ['institution', 'credential', 'dates']);
+      assertString(entry.institution, `${field}.institution`, { max: 160 });
+      assertString(entry.credential, `${field}.credential`, { max: 180 });
+      assertString(entry.dates, `${field}.dates`, { max: 80 });
+    });
+  }
+  if (resume.publication !== undefined) {
+    const pub = assertObject(resume.publication, 'resume.publication');
+    assertAllowedKeys(pub, 'resume.publication', ['title', 'venue', 'date', 'note', 'authors', 'links']);
+    for (const [key, max] of [['title', 260], ['venue', 120], ['date', 80], ['authors', 260]]) {
+      assertString(pub[key], `resume.publication.${key}`, { max });
+    }
+    if (pub.note !== undefined) assertString(pub.note, 'resume.publication.note', { max: 220 });
+    assertArray(pub.links, 'resume.publication.links', { min: 1, max: 8 }).forEach((link, i) => {
+      const field = `resume.publication.links[${i}]`;
+      assertObject(link, field);
+      assertAllowedKeys(link, field, ['label', 'url']);
+      assertString(link.label, `${field}.label`, { max: 80 });
+      assertString(link.url, `${field}.url`, { max: 2048 });
+      if (/[\u0000-\u001f\u007f]/.test(link.url)) fail(`${field}.url`, 'URL contains ASCII control characters');
+      assertHttpsUrl(link.url, `${field}.url`);
+    });
+  }
+  if (resume.languages !== undefined) {
+    assertArray(resume.languages, 'resume.languages', { min: 1, max: 20 }).forEach((entry, i) => {
+      const field = `resume.languages[${i}]`;
+      assertObject(entry, field);
+      assertAllowedKeys(entry, field, ['name', 'proficiency']);
+      assertString(entry.name, `${field}.name`, { max: 80 });
+      assertString(entry.proficiency, `${field}.proficiency`, { max: 120 });
+    });
+  }
+}
+
 function validateResumeData(resume) {
   assertObject(resume, 'resume');
-  assertAllowedKeys(resume, 'resume', ['name', 'title', 'location', 'contact', 'summary', 'ai_highlights', 'section_order']);
+  assertAllowedKeys(resume, 'resume', [
+    'name', 'title', 'location', 'contact', 'summary', 'ai_highlights', 'section_order', 'section_headings',
+    'skills', 'experience', 'earlier_experience', 'education', 'publication', 'certifications', 'languages'
+  ]);
   assertString(resume.name, 'resume.name', { max: 120 });
   assertString(resume.title, 'resume.title', { max: 200 });
   assertString(resume.location, 'resume.location', { required: false, max: 120 });
@@ -191,6 +256,14 @@ function validateResumeData(resume) {
       seenSections.add(value);
     });
   }
+  if (resume.section_headings !== undefined) {
+    const headings = assertObject(resume.section_headings, 'resume.section_headings');
+    assertAllowedKeys(headings, 'resume.section_headings', SECTION_KEYS);
+    for (const [key, heading] of Object.entries(headings)) {
+      assertString(heading, `resume.section_headings.${key}`, { max: 120 });
+    }
+  }
+  validateResumeCollections(resume);
 
   return resume;
 }
@@ -254,6 +327,10 @@ function highlightAiText(text) {
 
 function renderContact(resume) {
   const parts = [];
+  const location = String(resume.location ?? '').trim();
+  if (location) {
+    parts.push(`<span>${escapeHtml(location)}</span>`);
+  }
   const email = String(resume.contact?.email ?? '').trim();
   if (email) {
     parts.push(`<a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a>`);
@@ -272,33 +349,34 @@ function renderContact(resume) {
   return parts.join('<span class="sep" aria-hidden="true">·</span>');
 }
 
-function renderSummary(resume) {
+function renderSummary(resume, heading) {
   if (!resume.summary) return '';
   return `
-  <section class="block">
+  <section class="block">${heading ? `
+    <h2 class="block__head">${escapeHtml(heading)}</h2>` : ''}
     <p class="summary">${highlightAiText(resume.summary)}</p>
   </section>`;
 }
 
-function renderAiHighlights(resume) {
+function renderAiHighlights(resume, heading) {
   const block = resume.ai_highlights;
   if (!block || !Array.isArray(block.items) || block.items.length === 0) return '';
   const items = block.items
     .map((item) => `<li>${highlightAiText(item)}</li>`)
     .join('');
   return `
-  <section class="block ai-callout" aria-label="${escapeHtml(block.heading || 'AI & Agentic')}">
-    <h2 class="ai-callout__head">${escapeHtml(block.heading || 'AI & Agentic Highlights')}</h2>
+  <section class="block ai-callout" aria-label="${escapeHtml(heading || block.heading || 'AI & Agentic')}">
+    <h2 class="ai-callout__head">${escapeHtml(heading || block.heading || 'AI & Agentic Highlights')}</h2>
     <ul class="ai-callout__list">${items}</ul>
   </section>`;
 }
 
-function renderSkills(skills) {
+function renderSkills(skills, heading = 'Skills', separator = ' · ') {
   if (!Array.isArray(skills) || skills.length === 0) return '';
   const rows = skills
     .map((group) => {
       const isAi = AI_PATTERN.test(group.category);
-      const items = (group.items || []).map((item) => escapeHtml(item)).join(' · ');
+      const items = (group.items || []).map((item) => escapeHtml(item)).join(separator);
       return `
       <div class="skill-row${isAi ? ' skill-row--ai' : ''}">
         <span class="skill-row__cat">${escapeHtml(group.category)}</span>
@@ -308,12 +386,12 @@ function renderSkills(skills) {
     .join('');
   return `
   <section class="block">
-    <h2 class="block__head">Skills</h2>
+    <h2 class="block__head">${escapeHtml(heading)}</h2>
     <div class="skills">${rows}</div>
   </section>`;
 }
 
-function renderExperience(experience) {
+function renderExperience(experience, heading = 'Experience') {
   if (!Array.isArray(experience) || experience.length === 0) return '';
   const entries = experience
     .map((role) => {
@@ -327,7 +405,7 @@ function renderExperience(experience) {
           <span class="role__org">${escapeHtml(role.org)}</span>
           <span class="role__dates">${escapeHtml(role.dates)}</span>
         </div>
-        <p class="role__title">${escapeHtml(role.role)}</p>
+        <p class="role__title">${escapeHtml(role.role).replaceAll('\n', '<br />')}</p>
         <ul class="role__bullets">${bullets}</ul>
         ${tech ? `<p class="role__tech"><span>Tech:</span> ${tech}</p>` : ''}
       </article>`;
@@ -335,12 +413,12 @@ function renderExperience(experience) {
     .join('');
   return `
   <section class="block">
-    <h2 class="block__head">Experience</h2>
+    <h2 class="block__head">${escapeHtml(heading)}</h2>
     ${entries}
   </section>`;
 }
 
-function renderEducation(profile) {
+function renderEducation(profile, heading = 'Education') {
   const education = profile.education || [];
   if (education.length === 0) return '';
   const rows = education
@@ -355,37 +433,55 @@ function renderEducation(profile) {
     .join('');
   return `
   <section class="block">
-    <h2 class="block__head">Education</h2>
+    <h2 class="block__head">${escapeHtml(heading)}</h2>
     <div class="edu">${rows}</div>
   </section>`;
 }
 
-function renderPublication(profile) {
+function renderPublication(profile, heading = 'Publication', editorial = false) {
   const pub = profile.publication;
   if (!pub || !pub.title) return '';
+  if (editorial) {
+    const href = safeHttpsHref(pub.links[0].url);
+    const title = href ? `<a href="${escapeHtml(href)}">${escapeHtml(pub.title)}</a>` : escapeHtml(pub.title);
+    return `
+  <section class="block">
+    <h2 class="block__head">${escapeHtml(heading)}</h2>
+    <p class="pub__title">${title} - ${escapeHtml(pub.venue)} ${escapeHtml(pub.date)}; ${escapeHtml(pub.authors)}${pub.note ? `; ${escapeHtml(pub.note)}` : ''}</p>
+  </section>`;
+  }
   const meta = [pub.venue, pub.date].filter(Boolean).map((value) => escapeHtml(value)).join(' · ');
   return `
   <section class="block">
-    <h2 class="block__head">Publication</h2>
+    <h2 class="block__head">${escapeHtml(heading)}</h2>
     <p class="pub__title">${escapeHtml(pub.title)}</p>
     ${meta ? `<p class="pub__meta">${meta}</p>` : ''}
     ${pub.authors ? `<p class="pub__authors">${escapeHtml(pub.authors)}</p>` : ''}
   </section>`;
 }
 
-function renderCertifications(certifications) {
+function renderCertifications(certifications, heading = 'Certifications', editorial = false) {
   if (!Array.isArray(certifications) || certifications.length === 0) return '';
-  // AI / responsible-AI credentials first, preserving original order within each group.
+  // Shared defaults remain AI-first; resume-specific credentials retain document order.
   const ai = [];
   const rest = [];
   certifications.forEach((cert) => {
     (AI_PATTERN.test(cert.title) ? ai : rest).push(cert);
   });
-  const ordered = [...ai, ...rest];
+  const ordered = editorial ? certifications : [...ai, ...rest];
   const items = ordered
     .map((cert) => {
       const isAi = AI_PATTERN.test(cert.title);
-      const date = escapeHtml(stripIssuedPrefix(cert.issued));
+      const date = escapeHtml(editorial ? cert.issued : stripIssuedPrefix(cert.issued));
+      if (editorial) {
+        const href = safeHttpsHref(cert.link);
+        const title = href ? `<a href="${escapeHtml(href)}">${escapeHtml(cert.title)}</a>` : escapeHtml(cert.title);
+        return `
+      <li class="cert${isAi ? ' cert--ai' : ''}">
+        <span class="cert__name">${escapeHtml(cert.issuer)} - ${title}</span>
+        <span class="cert__meta">${date}</span>
+      </li>`;
+      }
       return `
       <li class="cert${isAi ? ' cert--ai' : ''}">
         <span class="cert__name">${escapeHtml(cert.title)}</span>
@@ -395,28 +491,43 @@ function renderCertifications(certifications) {
     .join('');
   return `
   <section class="block">
-    <h2 class="block__head">Certifications</h2>
+    <h2 class="block__head">${escapeHtml(heading)}</h2>
     <ul class="certs">${items}</ul>
   </section>`;
 }
 
+function renderLanguages(languages, heading = 'Languages') {
+  if (!Array.isArray(languages) || languages.length === 0) return '';
+  return `
+  <section class="block">
+    <h2 class="block__head">${escapeHtml(heading)}</h2>
+    ${languages.map((entry) => `<p>${escapeHtml(entry.name)} - ${escapeHtml(entry.proficiency)}</p>`).join('')}
+  </section>`;
+}
+
 const SECTION_RENDERERS = {
-  summary: (data) => renderSummary(data.resume),
-  ai_highlights: (data) => renderAiHighlights(data.resume),
-  skills: (data) => renderSkills(data.skills),
-  experience: (data) => renderExperience(data.experience),
-  education: (data) => renderEducation(data.profile),
-  publication: (data) => renderPublication(data.profile),
-  certifications: (data) => renderCertifications(data.certifications)
+  summary: (data, heading) => renderSummary(data.resume, heading),
+  ai_highlights: (data, heading) => renderAiHighlights(data.resume, heading),
+  skills: (data, heading) => renderSkills(data.resume.skills ?? data.skills, heading, data.resume.skills ? ', ' : ' · '),
+  experience: (data, heading) => renderExperience(data.resume.experience ?? data.experience, heading),
+  education: (data, heading) => renderEducation({ education: data.resume.education ?? data.profile.education }, heading),
+  earlier_experience: (data, heading) => renderExperience(data.resume.earlier_experience, heading ?? 'Earlier Experience'),
+  publication: (data, heading) => renderPublication({ publication: data.resume.publication ?? data.profile.publication }, heading, data.resume.publication !== undefined),
+  certifications: (data, heading) => renderCertifications(data.resume.certifications ?? data.certifications, heading, data.resume.certifications !== undefined),
+  languages: (data, heading) => renderLanguages(data.resume.languages ?? data.profile.languages, heading)
 };
 
 function renderResumeHtml(data) {
   const { resume } = data;
+  // Validate every resume-only field, including collections omitted from section_order.
+  // Shared sources are validated by validateResumeSources at build/freshness boundaries;
+  // keeping that separate also permits small in-memory rendering fixtures.
+  validateResumeData(resume);
   const order = Array.isArray(resume.section_order) && resume.section_order.length
     ? resume.section_order
     : Object.keys(SECTION_RENDERERS);
   const body = order
-    .map((key) => (SECTION_RENDERERS[key] ? SECTION_RENDERERS[key](data) : ''))
+    .map((key) => (SECTION_RENDERERS[key] ? SECTION_RENDERERS[key](data, resume.section_headings?.[key]) : ''))
     .filter(Boolean)
     .join('\n');
 

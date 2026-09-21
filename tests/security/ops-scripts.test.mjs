@@ -28,6 +28,7 @@ function writePerformanceFixture(rootDir, overrides = {}) {
     'case-study-apple-calendar-mcp.html',
     'reading.html',
     'offline.html',
+    'css/bootstrap.min.css',
     'css/custom.css',
     'css/case-study.css',
     'js/main.js',

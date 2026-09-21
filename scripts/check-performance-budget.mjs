@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { gzipSync } from 'node:zlib';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import assetPaths from './lib/asset-paths.cjs';
@@ -24,6 +25,7 @@ const FILE_BUDGETS = [
   { path: 'case-study-apple-calendar-mcp.html', maxBytes: 48 * KiB },
   { path: 'reading.html', maxBytes: 140 * KiB },
   { path: 'offline.html', maxBytes: 20 * KiB },
+  { path: 'css/bootstrap.min.css', maxBytes: 235 * KiB, maxGzipBytes: 32 * KiB },
   { path: 'css/custom.css', maxBytes: 50 * KiB },
   { path: 'css/case-study.css', maxBytes: 8 * KiB },
   { path: 'js/main.js', maxBytes: 32 * KiB },
@@ -248,6 +250,11 @@ function checkPerformanceBudget({ rootDir = projectRoot, openSync = fs.openSync 
   FILE_BUDGETS.forEach((budget) => {
     const size = fileSize(budget.path, { rootDir });
     report.push(`${budget.path}: ${formatBytes(size)} / ${formatBytes(budget.maxBytes)}`);
+    if (budget.maxGzipBytes) {
+      const compressedSize = gzipSync(fs.readFileSync(path.join(rootDir, budget.path))).length;
+      report.push(`${budget.path} (gzip): ${formatBytes(compressedSize)} / ${formatBytes(budget.maxGzipBytes)}`);
+      if (compressedSize > budget.maxGzipBytes) failures.push(`${budget.path} gzip exceeds ${formatBytes(budget.maxGzipBytes)}`);
+    }
     if (size > budget.maxBytes) {
       failures.push(`${budget.path} is ${formatBytes(size)}, above ${formatBytes(budget.maxBytes)}`);
     }

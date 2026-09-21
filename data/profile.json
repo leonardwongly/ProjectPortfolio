@@ -25,10 +25,10 @@
   },
   "hero": {
     "eyebrow": "AI Software Engineer · Agentic Development",
-    "headline": "Building governed AI systems where deterministic controls manage risk.",
-    "lead": "AI Software Engineer at NCS Group, serving Public Service Commission Singapore as an IT vendor. I build agentic workflows and data-heavy platforms that keep security, explainability, and human accountability inside the delivery loop.",
+    "headline": "Building AI systems with clear human control.",
+    "lead": "I build agentic workflows and data platforms with security, explainability, and human accountability built in.",
     "actions": [
-      { "label": "View Flagship Work", "href": "#work", "variant": "primary" },
+      { "label": "View work", "href": "#work", "variant": "primary" },
       { "label": "Download Resume", "href": "docs/resume.pdf", "variant": "ghost" },
       { "label": "Connect on LinkedIn", "href": "https://linkedin.leonardwong.tech", "variant": "ghost" }
     ],

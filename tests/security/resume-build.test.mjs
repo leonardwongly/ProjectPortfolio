@@ -344,6 +344,174 @@ test('rendered resume escapes fields and the default AI heading exactly once', (
   assert.doesNotMatch(defaultHeadingHtml, /AI &amp;amp; Agentic Highlights/);
 });
 
+test('resume contact preserves and escapes the optional location', () => {
+  const resume = validResume();
+  const contact = () => renderResumeHtml(minimalData(resume)).match(/<p class="contact">(.*?)<\/p>/)[1];
+  assert.match(contact(), /<span>Singapore<\/span>/);
+  resume.location = '<img src=x onerror=alert(1)> & Singapore';
+  assert.match(contact(), /&lt;img src=x onerror=alert\(1\)&gt; &amp; Singapore/);
+  assert.doesNotMatch(contact(), /<img/);
+  delete resume.location;
+  assert.match(contact(), /^<a href="mailto:me@example.com">/);
+});
+
+function editorialResume() {
+  return {
+    ...validResume(),
+    section_order: ['summary', 'experience', 'education', 'earlier_experience', 'skills', 'publication', 'certifications', 'languages'],
+    section_headings: { summary: 'Professional summary', skills: 'Technical skills' },
+    skills: [{ category: 'Resume skills', items: ['Resume tool'] }],
+    experience: [{ org: 'Resume employer', role: 'Resume role', dates: '2022 - Present', impact_bullets: ['Resume contribution'] }],
+    earlier_experience: [{ org: 'Earlier employer', role: 'Earlier role', dates: '2021', impact_bullets: ['Earlier contribution'] }],
+    education: [{ institution: 'Resume university', credential: 'Resume degree', dates: '2022' }],
+    publication: {
+      title: 'Resume paper', venue: 'Resume conference', date: '2022', authors: 'co-author',
+      note: 'nominated for Best Paper Award.', links: [{ label: 'Paper', url: 'https://example.com/paper' }]
+    },
+    certifications: [
+      { title: 'First credential', issuer: 'Resume issuer', issued: '2026', link: 'https://example.com/cert' },
+      { title: 'AI second credential', issuer: 'Resume issuer', issued: '2025' }
+    ],
+    languages: [{ name: 'English and Chinese', proficiency: 'native or bilingual proficiency.' }]
+  };
+}
+
+function resumeText(html) {
+  return html.split('<body>')[1].replace(/<\/?(?:strong|a)\b[^>]*>/g, '').replace(/<[^>]*>/g, ' ')
+    .replaceAll('&amp;', '&').replaceAll('&lt;', '<').replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"').replaceAll('&#39;', "'").replace(/\s+/g, ' ').trim();
+}
+
+test('authoritative resume preserves approved content and document section order', () => {
+  const data = loadResumeData();
+  const html = renderResumeHtml(data);
+  const text = resumeText(html);
+  // Hardcoded approved-content contract: never derive expectations from generated artifacts.
+  const phrases = [
+    'LEONARD WONG', 'Software Engineer | Applied AI & Enterprise Applications',
+    'Software engineer with 4+ years at NCS across enterprise application development, API integration and HR systems delivery.',
+    'NCS Pte. Ltd. | Singapore', 'Jan 2022 - Present',
+    'AI Software Engineer | Apr 2026 - Present', 'Software Engineer | Jan 2022 - Mar 2026',
+    'Selected contributions across NCS assignments', 'Application engineering & software delivery',
+    'API integration & internal HR operations', 'HR leave management | Business analysis & rollout',
+    '53 overseas missions, with deployment completed for 23 missions.',
+    'five Excel configuration sheets per mission',
+    'HireWise-AI | AI agents & agentic workflows (prototype)',
+    'optional LangGraph orchestration, agent routing and SQLite checkpointing.',
+    'Leadership: NCS Young Leaders; Brand Ambassador.',
+    'BSc Information Systems (Cyber Security)', 'Diploma in Business Informatics with Merit',
+    'Research Assistant', 'Dec 2021', 'Evaluated 88 IS216 projects',
+    'Alpha Ori Technologies', 'May - Jul 2020', '150M+ rows containing 3B+ data points',
+    'OSM Thome', 'May - Oct 2018', 'Formerly Thome Ship Management', '160+ emails/hour', '230+ vessels',
+    'Rightspot', 'Jul - Oct 2016', '250 applicants and 500+ companies.',
+    'Project-based tools:', 'Claude Code, Codex, Kiro CLI; reusable prompts/skills and output validation.',
+    'nominated for Best Paper Award.', 'AIxTech (Certificate of Completion)',
+    'Professional Scrum Master I (PSM I)', 'English and Chinese - native or bilingual proficiency.'
+  ];
+  for (const phrase of phrases) assert.ok(text.includes(phrase), `Missing approved phrase: ${phrase}`);
+  const headings = [...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/g)].map((match) => match[1].replaceAll('&amp;', '&'));
+  assert.deepEqual(headings, [
+    'PROFESSIONAL SUMMARY', 'PROFESSIONAL EXPERIENCE', 'EDUCATION', 'EARLIER EXPERIENCE',
+    'TECHNICAL SKILLS', 'PUBLICATION', 'CERTIFICATIONS & PROFESSIONAL DEVELOPMENT', 'Languages'
+  ]);
+  assert.equal(data.resume.experience.length, 1);
+  assert.equal(data.resume.earlier_experience.length, 4);
+  assert.equal(data.resume.skills.length, 7);
+  assert.equal(data.resume.certifications.length, 16);
+  assert.equal(data.resume.ai_highlights, undefined);
+  assert.doesNotMatch(text, /AI & Agentic Highlights|AI Software Engineer specializing in agentic development/);
+  for (const href of [
+    'https://github.com/leonardwongly', 'https://www.linkedin.com/in/leonardwongly/',
+    'https://arxiv.org/abs/2204.12416',
+    'https://lumino.aisingapore.org/certificates/verify/58f67b67-8a57-42bc-860a-4b62cb5828f9'
+  ]) assert.ok(html.includes(`href="${href}"`), `Missing source hyperlink: ${href}`);
+});
+
+test('resume editorial collections take precedence without changing shared sources', () => {
+  const sourcePaths = ['profile', 'experience', 'skills', 'certifications'].map((name) => path.join(projectRoot, 'data', `${name}.json`));
+  const sourceBytes = sourcePaths.map((file) => fs.readFileSync(file));
+  const data = loadResumeData();
+  data.resume = editorialResume();
+  const before = structuredClone(data);
+  assert.doesNotThrow(() => validateResumeSources(data));
+  const html = renderResumeHtml(data);
+  const text = resumeText(html);
+  for (const phrase of ['Resume skills', 'Resume tool', 'Resume employer', 'Resume role', 'Resume university',
+    'Resume degree', 'Resume paper', 'Resume conference', 'nominated for Best Paper Award.',
+    'First credential', 'Earlier employer', 'Earlier contribution', 'English and Chinese']) {
+    assert.ok(text.includes(phrase), `Missing override: ${phrase}`);
+  }
+  assert.doesNotMatch(text, /NCS Pte|Singapore Management University|XSS for the Masses/);
+  assert.ok(text.indexOf('First credential') < text.indexOf('AI second credential'), 'editorial certification order is not AI-sorted');
+  assert.match(html, /href="https:\/\/example.com\/paper"/);
+  assert.match(html, /href="https:\/\/example.com\/cert"/);
+  assert.deepEqual(data, before, 'rendering and validation do not mutate shared or resume data');
+  sourcePaths.forEach((file, i) => assert.deepEqual(fs.readFileSync(file), sourceBytes[i]));
+
+  // Each absent override independently falls back to its original shared collection.
+  for (const key of ['skills', 'experience', 'education', 'publication', 'certifications']) {
+    const fallback = structuredClone(data);
+    delete fallback.resume[key];
+    fallback.resume.section_order = [key];
+    const sharedOnly = structuredClone(fallback);
+    sharedOnly.resume = { ...validResume(), section_order: [key], section_headings: fallback.resume.section_headings };
+    assert.equal(renderResumeHtml(fallback), renderResumeHtml(sharedOnly), `${key} falls back independently`);
+  }
+});
+
+test('resume editorial fields and headings are escaped before rendering', () => {
+  const resume = editorialResume();
+  const payload = '<img src=x onerror="alert(1)"> & content';
+  resume.section_headings.earlier_experience = payload;
+  resume.skills[0].category = payload;
+  resume.skills[0].items = [payload];
+  for (const key of ['experience', 'earlier_experience']) {
+    Object.assign(resume[key][0], { org: payload, role: payload, dates: payload, impact_bullets: [payload], tech: [payload] });
+  }
+  Object.assign(resume.education[0], { institution: payload, credential: payload, dates: payload });
+  Object.assign(resume.publication, { title: payload, venue: payload, date: payload, authors: payload, note: payload });
+  Object.assign(resume.certifications[0], { title: payload, issuer: payload, issued: payload });
+  Object.assign(resume.languages[0], { name: payload, proficiency: payload });
+  assert.doesNotThrow(() => validateResumeData(resume));
+  const html = renderResumeHtml(minimalData(resume));
+  assert.doesNotMatch(html, /<img src=x|&amp;lt;img/);
+  assert.ok((html.match(/&lt;img src=x onerror=&quot;alert\(1\)&quot;&gt; &amp; content/g) || []).length >= 20);
+});
+
+test('resume editorial fields reject invalid shapes even when their sections are hidden', () => {
+  const cases = [
+    ['skills', null], ['skills', []], ['skills', [{ category: 'Tools', items: [42] }]],
+    ['experience', {}], ['experience', [{ org: 'Org', role: 'Role', dates: '2022', impact_bullets: ['x'], tech: false }]],
+    ['earlier_experience', []], ['earlier_experience', [{ org: 'Org', role: 'Role', dates: '2022', impact_bullets: ['x'], extra: true }]],
+    ['education', null], ['education', [{ institution: '', credential: 'Degree', dates: '2022' }]],
+    ['education', [{ institution: 'University', credential: 'Degree', dates: '2022', extra: true }]],
+    ['publication', null], ['publication', { ...editorialResume().publication, note: 42 }],
+    ['publication', { ...editorialResume().publication, links: [{ label: 'Paper', url: 'javascript:alert(1)' }] }],
+    ['publication', { ...editorialResume().publication, links: [{ label: 'Paper', url: 'https://example.com/\narticle' }] }],
+    ['publication', { ...editorialResume().publication, links: [] }],
+    ['publication', { ...editorialResume().publication, extra: true }],
+    ['certifications', []], ['certifications', [{ title: 'Credential', issuer: 'Issuer', issued: '2022', link: 'https://user:pass@example.com' }]],
+    ['languages', null], ['languages', []], ['languages', [{ name: 'English', proficiency: '' }]],
+    ['languages', [{ name: 'English', proficiency: 'x'.repeat(121) }]],
+    ['languages', [{ name: 'English', proficiency: 'Fluent', extra: true }]],
+    ['section_headings', []], ['section_headings', { bogus: 'Heading' }], ['section_headings', { summary: 42 }]
+  ];
+  for (const [key, value] of cases) {
+    const resume = editorialResume();
+    resume.section_order = ['summary'];
+    resume[key] = value;
+    const error = new RegExp(`resume\\.${key}`);
+    assert.throws(() => validateResumeData(resume), error, `${key}: validation`);
+    assert.throws(() => renderResumeHtml(minimalData(resume)), error, `${key}: render boundary`);
+  }
+  const missing = editorialResume();
+  delete missing.languages[0].name;
+  assert.throws(() => validateResumeData(missing), /resume\.languages\[0\]\.name/);
+  const oversized = editorialResume();
+  oversized.section_headings.summary = 'x'.repeat(121);
+  assert.throws(() => validateResumeData(oversized), /resume\.section_headings\.summary/);
+});
+
 test('computeResumeHtmlHash is deterministic and content-sensitive', () => {
   const data = minimalData(validResume());
   const first = computeResumeHtmlHash(renderResumeHtml(data));

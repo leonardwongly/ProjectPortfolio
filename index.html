@@ -10,8 +10,6 @@
     <link rel="stylesheet" href="css/custom.css"/>
     <link rel="preload" href="fonts/SF-Pro-Display-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="fonts/SF-Pro-Display-Semibold.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="images/leo-220.webp" as="image" type="image/webp" fetchpriority="high">
-    <link rel="preload" href="images/leo-220.jpeg" as="image" type="image/jpeg" fetchpriority="high">
 
     <!-- favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png" class="circle-img"/>
@@ -436,9 +434,12 @@
 
 <div class="cmdk" id="commandPalette" hidden role="dialog" aria-modal="true" aria-label="Command palette">
     <div class="cmdk__panel">
-        <input class="cmdk__input" id="cmdkInput" type="text" autocomplete="off" spellcheck="false"
-               placeholder="Jump to a section, page, or action…" aria-label="Filter commands"
-               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cmdkList"/>
+        <div class="cmdk__search-row">
+            <input class="cmdk__input" id="cmdkInput" type="text" autocomplete="off" spellcheck="false"
+                   placeholder="Jump to a section, page, or action…" aria-label="Filter commands"
+                   role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cmdkList"/>
+            <button class="cmdk__close" type="button" data-cmdk-close>Close</button>
+        </div>
         <ul class="cmdk__list" id="cmdkList" role="listbox" aria-label="Command results">
             <li role="presentation"><a class="cmdk__item" href="/index.html#home" role="option" aria-selected="false">home<span class="cmdk__hint">intro</span></a></li>
             <li role="presentation"><a class="cmdk__item" href="/index.html#work" role="option" aria-selected="false">flagship work<span class="cmdk__hint">three selected systems</span></a></li>
@@ -464,9 +465,9 @@
   <div class="hero-grid">
     <div class="hero-copy">
       <p class="eyebrow">AI Software Engineer · Agentic Development</p>
-      <h1>Building governed AI systems where deterministic controls manage risk.</h1>
-      <p class="lead">AI Software Engineer at NCS Group, serving Public Service Commission Singapore as an IT vendor. I build agentic workflows and data-heavy platforms that keep security, explainability, and human accountability inside the delivery loop.</p>
-      <div class="hero-actions"><a class="btn btn-primary" href="#work" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="view_flagship_work" data-telemetry-destination="section">View Flagship Work</a><a class="btn btn-ghost" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="download_resume" data-telemetry-destination="pdf">Download Resume</a><a class="btn btn-ghost" href="https://linkedin.leonardwong.tech/" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="connect_on_linkedin" data-telemetry-destination="external">Connect on LinkedIn</a></div>
+      <h1>Building AI systems with clear human control.</h1>
+      <p class="lead">I build agentic workflows and data platforms with security, explainability, and human accountability built in.</p>
+      <div class="hero-actions"><a class="btn btn-primary" href="#work" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="view_work" data-telemetry-destination="section">View work</a><a class="btn btn-ghost" href="docs/resume.pdf" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="download_resume" data-telemetry-destination="pdf">Download Resume</a><a class="hero-secondary" href="https://linkedin.leonardwong.tech/" target="_blank" rel="noopener noreferrer" data-telemetry-event="portfolio_action_clicked" data-telemetry-surface="hero_actions" data-telemetry-action="connect_on_linkedin" data-telemetry-destination="external">Connect on LinkedIn</a></div>
       <div class="hero-highlights">
 
         <a class="highlight-card" href="#experience">
@@ -514,12 +515,12 @@
 
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>High-risk and agent-assisted pull requests need change control that is deterministic and auditable, not dependent on manual review alone.</p>
+          <span class="block-label">Purpose</span>
+          <p>High-risk and AI-assisted pull requests need clear rules, evidence, and accountable reviewers.</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Built a GitHub-first PR governance service with policy-as-code rules, deterministic detectors, required evidence, reviewer routing, check runs, and durable Change Control Records — deterministic checks decide, AI explains, humans approve risk.</p>
+          <span class="block-label">Delivered</span>
+          <p>Built a GitHub PR governance service that applies deterministic policies and records evidence, reviews, and decisions.</p>
         </div>
 
         <div class="chip-row"><span class="chip">TypeScript</span><span class="chip">GitHub Apps</span><span class="chip">Policy as Code</span><span class="chip">CI/CD Governance</span></div>
@@ -532,12 +533,12 @@
 
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>Autonomous and human-in-the-loop work needs a governed control plane for goals, commitments, approvals, and long-running automations.</p>
+          <span class="block-label">Purpose</span>
+          <p>Long-running agent workflows need durable state and explicit human approvals.</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Built a TypeScript control plane (Next.js dashboard/API plus a worker process) around a bounded execution loop with risk classification, durable worker jobs, and Postgres-backed state.</p>
+          <span class="block-label">Delivered</span>
+          <p>Built a TypeScript control plane with risk classification, background workers, and Postgres-backed state.</p>
         </div>
 
         <div class="chip-row"><span class="chip">TypeScript</span><span class="chip">Next.js</span><span class="chip">PostgreSQL</span><span class="chip">Background Workers</span></div>
@@ -550,12 +551,12 @@
 
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>AI assistants and command-line workflows lacked a safe, local way to read and manage Apple Calendar on macOS.</p>
+          <span class="block-label">Purpose</span>
+          <p>AI assistants need a safe, local way to work with Apple Calendar.</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Built a Swift/EventKit tool exposing calendar list, search, create, update, and delete over the MCP protocol and a CLI with JSON and table output.</p>
+          <span class="block-label">Delivered</span>
+          <p>Built a Swift/EventKit server and CLI for calendar search and editing through MCP.</p>
         </div>
 
         <div class="chip-row"><span class="chip">Swift</span><span class="chip">EventKit</span><span class="chip">MCP</span><span class="chip">macOS</span></div>

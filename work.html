@@ -88,9 +88,12 @@
 
 <div class="cmdk" id="commandPalette" hidden role="dialog" aria-modal="true" aria-label="Command palette">
     <div class="cmdk__panel">
-        <input class="cmdk__input" id="cmdkInput" type="text" autocomplete="off" spellcheck="false"
-               placeholder="Jump to a section, page, or action…" aria-label="Filter commands"
-               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cmdkList"/>
+        <div class="cmdk__search-row">
+            <input class="cmdk__input" id="cmdkInput" type="text" autocomplete="off" spellcheck="false"
+                   placeholder="Jump to a section, page, or action…" aria-label="Filter commands"
+                   role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cmdkList"/>
+            <button class="cmdk__close" type="button" data-cmdk-close>Close</button>
+        </div>
         <ul class="cmdk__list" id="cmdkList" role="listbox" aria-label="Command results">
             <li role="presentation"><a class="cmdk__item" href="/index.html#home" role="option" aria-selected="false">home<span class="cmdk__hint">intro</span></a></li>
             <li role="presentation"><a class="cmdk__item" href="/index.html#work" role="option" aria-selected="false">flagship work<span class="cmdk__hint">three selected systems</span></a></li>
@@ -131,12 +134,12 @@
           <p class="project-status"><span>Status</span>active</p>
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>High-risk and agent-assisted pull requests need change control that is deterministic and auditable, not dependent on manual review alone.</p>
+          <span class="block-label">Purpose</span>
+          <p>High-risk and AI-assisted pull requests need clear rules, evidence, and accountable reviewers.</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Built a GitHub-first PR governance service with policy-as-code rules, deterministic detectors, required evidence, reviewer routing, check runs, and durable Change Control Records — deterministic checks decide, AI explains, humans approve risk.</p>
+          <span class="block-label">Delivered</span>
+          <p>Built a GitHub PR governance service that applies deterministic policies and records evidence, reviews, and decisions.</p>
         </div>
         <div class="capability-row" aria-label="Capabilities"><span>Agentic AI</span><span>Security Governance</span><span>Platform Engineering</span></div>
         <div class="chip-row"><span class="chip">TypeScript</span><span class="chip">GitHub Apps</span><span class="chip">Policy as Code</span><span class="chip">CI/CD Governance</span></div>
@@ -149,12 +152,12 @@
           <p class="project-status"><span>Status</span>active</p>
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>Autonomous and human-in-the-loop work needs a governed control plane for goals, commitments, approvals, and long-running automations.</p>
+          <span class="block-label">Purpose</span>
+          <p>Long-running agent workflows need durable state and explicit human approvals.</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Built a TypeScript control plane (Next.js dashboard/API plus a worker process) around a bounded execution loop with risk classification, durable worker jobs, and Postgres-backed state.</p>
+          <span class="block-label">Delivered</span>
+          <p>Built a TypeScript control plane with risk classification, background workers, and Postgres-backed state.</p>
         </div>
         <div class="capability-row" aria-label="Capabilities"><span>Agentic AI</span><span>Platform Engineering</span><span>Data Systems</span></div>
         <div class="chip-row"><span class="chip">TypeScript</span><span class="chip">Next.js</span><span class="chip">PostgreSQL</span><span class="chip">Background Workers</span></div>
@@ -167,12 +170,12 @@
           <p class="project-status"><span>Status</span>active</p>
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>AI assistants and command-line workflows lacked a safe, local way to read and manage Apple Calendar on macOS.</p>
+          <span class="block-label">Purpose</span>
+          <p>AI assistants need a safe, local way to work with Apple Calendar.</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Built a Swift/EventKit tool exposing calendar list, search, create, update, and delete over the MCP protocol and a CLI with JSON and table output.</p>
+          <span class="block-label">Delivered</span>
+          <p>Built a Swift/EventKit server and CLI for calendar search and editing through MCP.</p>
         </div>
         <div class="capability-row" aria-label="Capabilities"><span>Developer Tooling</span><span>Local-First Software</span><span>Safe Automation</span></div>
         <div class="chip-row"><span class="chip">Swift</span><span class="chip">EventKit</span><span class="chip">MCP</span><span class="chip">macOS</span></div>
@@ -185,12 +188,12 @@
           <p class="project-status"><span>Status</span>active</p>
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>Autonomous agents struggle with ambiguous, real-world tasks that require judgment, prioritization, and end-to-end ownership.</p>
+          <span class="block-label">Purpose</span>
+          <p>Autonomous agents need guidance for ambiguous tasks that require judgment and ownership.</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Authored a Codex skill providing a human-inspired operating model for autonomous task ownership, on-the-fly skill creation, validation, and transparent communication that it is an AI system.</p>
+          <span class="block-label">Delivered</span>
+          <p>Authored a Codex skill for prioritization, validation, and transparent task delivery.</p>
         </div>
         <div class="capability-row" aria-label="Capabilities"><span>Agentic AI</span><span>Responsible AI</span><span>Developer Tooling</span></div>
         <div class="chip-row"><span class="chip">AI Agents</span><span class="chip">Codex</span><span class="chip">Responsible AI</span></div>
@@ -203,11 +206,11 @@
           <p class="project-status"><span>Status</span>maintained</p>
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
+          <span class="block-label">Purpose</span>
           <p>Finding official Apple firmware (IPSW/OTA) downloads across devices was fragmented and manual.</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
+          <span class="block-label">Delivered</span>
           <p>Built a site on the ipsw.me API surfacing iOS, iPadOS, tvOS, and watchOS firmware downloads with a custom design.</p>
         </div>
         <div class="capability-row" aria-label="Capabilities"><span>Platform Engineering</span><span>API Integration</span><span>Public Web Product</span></div>
@@ -221,11 +224,11 @@
           <p class="project-status"><span>Status</span>completed</p>
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
+          <span class="block-label">Purpose</span>
           <p>Upcoming price increases across Singapore were hard to track in one place.</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
+          <span class="block-label">Delivered</span>
           <p>Built a lightweight web app that aggregates and publishes updates on upcoming Singapore price hikes.</p>
         </div>
         <div class="capability-row" aria-label="Capabilities"><span>Data Aggregation</span><span>Public Web Product</span><span>JavaScript</span></div>
@@ -239,12 +242,12 @@
           <p class="project-status"><span>Status</span>active</p>
         </header>
         <div class="featured-block">
-          <span class="block-label">Problem</span>
-          <p>A personal site is the easiest place to cut corners: hand-edited HTML, unvetted scripts, no tests. I wanted the opposite — a portfolio that demonstrates the same secure-delivery and AI-governance practices I apply to client work, on a codebase anyone can inspect.</p>
+          <span class="block-label">Purpose</span>
+          <p>A personal portfolio needs the same content checks and secure delivery discipline as client work.</p>
         </div>
         <div class="featured-block">
-          <span class="block-label">Impact</span>
-          <p>Built a static site generated from validated JSON by a single Node build and guarded by a fourteen-step release gate spanning security, content-parity, performance, telemetry, link-health, dependency, vendor, and accessibility checks. Inline scripts are CSP-hashed, vendored libraries are manifest- and hash-pinned, and an AI assistant can draft changes but only a human-approved plan can execute — deterministic checks decide, humans own the risk.</p>
+          <span class="block-label">Delivered</span>
+          <p>Built a JSON-driven static site with automated content, security, performance, and accessibility checks.</p>
         </div>
         <div class="capability-row" aria-label="Capabilities"><span>Secure Delivery</span><span>Policy as Code</span><span>Static Site Generation</span></div>
         <div class="chip-row"><span class="chip">Node.js</span><span class="chip">Static Site Generation</span><span class="chip">GitHub Actions</span><span class="chip">Content-Security-Policy</span><span class="chip">Policy as Code</span></div>

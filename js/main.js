@@ -1,5 +1,4 @@
 const REVEAL_SELECTORS = [
-  '.hero-section',
   '.section-header',
   '.featured-card',
   '.skill-card',
@@ -22,8 +21,6 @@ const TELEMETRY_ALLOWED_EVENTS = new Set([
   'reading_share_clicked',
   'reading_share_completed'
 ]);
-const REVEAL_DELAY_CLASS_PREFIX = 'reveal-delay-';
-const MAX_REVEAL_DELAY_CLASS = 8;
 const SW_UPDATE_EVENT_TYPE = 'SKIP_WAITING';
 const interactiveControlsWithListeners = new WeakSet();
 let serviceWorkerInitializationStarted = false;
@@ -32,6 +29,7 @@ function initializeSite() {
   initNavActive();
   initNavCollapse();
   initAccordionState();
+  initHashNavigation();
   initThemeToggle();
   initCommandPalette();
   initRevealOnScroll();
@@ -47,6 +45,69 @@ if (document.readyState === 'loading') {
   initializeSite();
 }
 
+function initHashNavigation() {
+  const { location } = window;
+
+  function navigate(hash, event) {
+    if (!hash || hash === '#') {
+      return;
+    }
+
+    let target;
+    try {
+      target = document.getElementById(decodeURIComponent(hash.slice(1)));
+    } catch {
+      return;
+    }
+    if (!target) {
+      return;
+    }
+
+    if (event) {
+      event.preventDefault();
+      if (location.hash !== hash) {
+        window.history.pushState({}, '', hash);
+      }
+      initNavActive();
+    }
+
+    const targetSection = target.closest('.section-block');
+    if (targetSection) {
+      document.querySelectorAll('.section-block').forEach((section) => {
+        if (section === targetSection ||
+            (section.compareDocumentPosition(targetSection) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+          section.style.contentVisibility = 'visible';
+        }
+      });
+    }
+
+    // Wait two frames for content-visibility layout.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const navbarHeight = document.querySelector('.navbar')?.getBoundingClientRect().height || 0;
+        const targetTop = target.getBoundingClientRect().top + window.scrollY;
+        const top = Math.max(0, targetTop - navbarHeight - 8);
+        window.scrollTo({ top, behavior: 'auto' });
+      });
+    });
+  }
+
+  function handleHash() {
+    navigate(location.hash);
+  }
+
+  document.querySelectorAll('a[href*="#"]').forEach((link) => {
+    const url = new URL(link.href, location.href);
+    if (url.origin !== location.origin || url.pathname !== location.pathname || !url.hash) {
+      return;
+    }
+    link.addEventListener('click', (event) => navigate(url.hash, event));
+  });
+
+  window.addEventListener('hashchange', handleHash);
+  handleHash();
+}
+
 function initCommandPalette() {
   const palette = document.getElementById('commandPalette');
   const input = document.getElementById('cmdkInput');
@@ -59,6 +120,7 @@ function initCommandPalette() {
   const items = Array.from(list.querySelectorAll('.cmdk__item'));
   const openers = Array.from(document.querySelectorAll('[data-cmdk-open]'));
   let lastFocused = null;
+  let backgroundElements = [];
 
   items.forEach((item, index) => {
     if (!item.id) {
@@ -156,6 +218,9 @@ function initCommandPalette() {
     input.value = '';
     filter();
     input.focus();
+    backgroundElements = Array.from(document.body.children)
+      .filter((element) => !element.contains(palette) && !element.inert);
+    backgroundElements.forEach((element) => { element.inert = true; });
   };
 
   const close = () => {
@@ -163,6 +228,8 @@ function initCommandPalette() {
       return;
     }
     palette.hidden = true;
+    backgroundElements.forEach((element) => { element.inert = false; });
+    backgroundElements = [];
     input.setAttribute('aria-expanded', 'false');
     input.removeAttribute('aria-activedescendant');
     input.removeAttribute('aria-describedby');
@@ -174,6 +241,7 @@ function initCommandPalette() {
   };
 
   openers.forEach((opener) => opener.addEventListener('click', open));
+  palette.querySelector('[data-cmdk-close]')?.addEventListener('click', close);
 
   document.addEventListener('keydown', (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -491,26 +559,11 @@ function initRevealOnScroll() {
   const collected = [];
   const seen = new Set();
 
-  const clearRevealDelayClass = (element) => {
-    for (let step = 0; step <= MAX_REVEAL_DELAY_CLASS; step += 1) {
-      element.classList.remove(`${REVEAL_DELAY_CLASS_PREFIX}${step}`);
-    }
-  };
-
-  const applyRevealDelayClass = (element, step) => {
-    const boundedStep = Math.min(Math.max(step, 0), MAX_REVEAL_DELAY_CLASS);
-    clearRevealDelayClass(element);
-    element.classList.add(`${REVEAL_DELAY_CLASS_PREFIX}${boundedStep}`);
-  };
-
   REVEAL_SELECTORS.forEach((selector) => {
-    document.querySelectorAll(selector).forEach((element, position) => {
+    document.querySelectorAll(selector).forEach((element) => {
       if (!seen.has(element)) {
         seen.add(element);
         element.classList.add('reveal-on-scroll');
-        if (!element.dataset.animateAutoOrder) {
-          element.dataset.animateAutoOrder = String(position);
-        }
         collected.push(element);
       }
     });
@@ -524,7 +577,6 @@ function initRevealOnScroll() {
   const applyImmediate = () => {
     collected.forEach((element) => {
       element.classList.add('is-visible');
-      clearRevealDelayClass(element);
     });
   };
 
@@ -532,15 +584,6 @@ function initRevealOnScroll() {
     applyImmediate();
     return;
   }
-
-  collected.forEach((element, index) => {
-    const hasCustomOrder = element.hasAttribute('data-animate-order');
-    const sourceOrder = hasCustomOrder ? element.dataset.animateOrder : element.dataset.animateAutoOrder;
-    const parsedOrder = Number.parseInt(sourceOrder ?? index, 10);
-    const normalizedOrder = Number.isFinite(parsedOrder) ? Math.max(parsedOrder, 0) : index;
-    const delayStep = hasCustomOrder ? normalizedOrder : Math.min(normalizedOrder, MAX_REVEAL_DELAY_CLASS);
-    applyRevealDelayClass(element, delayStep);
-  });
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -994,6 +1037,23 @@ function initReadingFilters() {
       updateAddressBarDebounced();
     });
   }
+
+  section.querySelectorAll('[data-reading-reset]').forEach((button) => {
+    button.addEventListener('click', () => {
+      activeYear = 'All';
+      activeTag = 'All';
+      query = '';
+      if (searchInput) {
+        searchInput.value = '';
+      }
+      setActiveFilterButton('year', activeYear);
+      setActiveFilterButton('tag', activeTag);
+      setShareStatus('');
+      updateFilters();
+      updateAddressBar();
+      searchInput?.focus();
+    });
+  });
 
   viewButtons.forEach((button) => {
     button.addEventListener('click', () => {

@@ -84,8 +84,10 @@ function cleanupStagedSite() {
 
 process.once('exit', cleanupStagedSite);
 
+// WebKit resource bursts can exceed Python's default backlog of five connections.
 const webServerCommand = [
-  'python3 -m http.server',
+  'python3 -c',
+  shellQuote('import runpy, socketserver; socketserver.TCPServer.request_queue_size = 128; runpy.run_module("http.server", run_name="__main__")'),
   String(integrationPort),
   '--bind 127.0.0.1',
   '--directory',
@@ -114,6 +116,16 @@ export default defineConfig({
     timeout: 120_000
   },
   projects: [
+    {
+      name: 'mobile-webkit',
+      testMatch: /(?:mobile-nav-and-accordion|accessibility-smoke)\.spec\.mjs/,
+      use: {
+        ...devices['iPhone 13'],
+        // The local test server is HTTP while production upgrades requests to HTTPS.
+        // Bypass CSP only for this local WebKit interaction lane so the page assets load.
+        bypassCSP: true
+      }
+    },
     {
       name: 'mobile-chromium',
       use: {

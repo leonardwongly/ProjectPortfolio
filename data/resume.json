@@ -1,33 +1,234 @@
 {
-  "name": "Leonard Wong",
-  "title": "AI Software Engineer · Agentic Development · LLM Applications",
+  "name": "LEONARD WONG",
+  "title": "Software Engineer | Applied AI & Enterprise Applications",
   "location": "Singapore",
   "contact": {
     "email": "me@leonardwong.tech",
     "phone": "+65 8754 5096",
     "links": [
       { "label": "leonardwong.tech", "url": "https://leonardwong.tech" },
-      { "label": "github.leonardwong.tech", "url": "https://github.leonardwong.tech/" },
-      { "label": "linkedin.leonardwong.tech", "url": "https://linkedin.leonardwong.tech" }
+      { "label": "github.com/leonardwongly", "url": "https://github.com/leonardwongly" },
+      { "label": "linkedin.com/in/leonardwongly", "url": "https://www.linkedin.com/in/leonardwongly/" }
     ]
   },
-  "summary": "AI Software Engineer specializing in agentic development — building LLM-powered applications and tool-using workflows on a foundation of secure, data-driven platform delivery. AI Singapore LLM Application Developer; NUS-ISS Responsible & Explainable AI and AI + Cybersecurity.",
-  "ai_highlights": {
-    "heading": "AI & Agentic Highlights",
-    "items": [
-      "Agentic development: designing LLM-driven, tool-using agent workflows with retrieval (RAG), function calling, and prompt engineering.",
-      "LLM application development through the AI Singapore LLM Application Developer Programme (2026).",
-      "Responsible & Explainable AI — NUS-ISS graduate certificates covering model transparency and governance.",
-      "AI + Cybersecurity — applying security rigor (SAST/DAST, OWASP) to AI-enabled systems (NUS-ISS, 2025)."
-    ]
+  "summary": "Software engineer with 4+ years at NCS across enterprise application development, API integration and HR systems delivery. Experience spans feature development, UAT, production deployments and application support. Coordinated requirements and rollout activities for a 53-mission HR programme, with 23 mission deployments completed, and contributed to an multi-agent recruitment prototype.",
+  "experience": [
+    {
+      "org": "NCS Pte. Ltd. | Singapore",
+      "role": "AI Software Engineer | Apr 2026 - Present\nSoftware Engineer | Jan 2022 - Mar 2026",
+      "dates": "Jan 2022 - Present",
+      "impact_bullets": [
+        "Selected contributions across NCS assignments",
+        "Application engineering & software delivery",
+        "Delivered feature enhancements and defect fixes for an internal enterprise application, supporting ongoing maintenance and day-to-day use.",
+        "Authored test scripts and conducted user acceptance testing (UAT) to check application changes against user needs before release.",
+        "Deployed application releases to UAT and production servers; resolved user-reported issues, answered queries and provided post-release application support.",
+        "API integration & internal HR operations",
+        "Worked on an API endpoint for an existing public-sector website, intended to support the existing and replacement platforms in parallel during system migration.",
+        "Maintained internal HR SharePoint lists supporting officer onboarding and offboarding.",
+        "HR leave management | Business analysis & rollout",
+        "Coordinated business analysis and rollout activities for an HR leave-management programme spanning 53 overseas missions, with deployment completed for 23 missions.",
+        "Gathered mission-specific employee data, public holidays, leave types, balances, entitlements and approval workflows for locally recruited staff (LRS).",
+        "Consolidated staff data and leave requirements into five Excel configuration sheets per mission and submitted these to the vendor for system setup.",
+        "Conducted system demonstrations to support mission buy-in; coordinated testing and end-to-end walkthroughs so mission representatives could guide LRS onboarding.",
+        "Supported go-live through manual account resets, then assisted missions with issue resolution, LRS onboarding/offboarding and ongoing guidance on system use.",
+        "HireWise-AI | AI agents & agentic workflows (prototype)",
+        "Contributed to agentic application development in Python/FastAPI, combining LLM-powered AI agents, rule-based matching and human-review workflows for recruitment.",
+        "Prototype workflows coordinate job analysis, resume extraction, matching and review escalation, with optional LangGraph orchestration, agent routing and SQLite checkpointing.",
+        "Leadership: NCS Young Leaders; Brand Ambassador."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "Singapore Management University",
+      "credential": "BSc Information Systems (Cyber Security)",
+      "dates": "2017 - 2022"
+    },
+    {
+      "institution": "Nanyang Polytechnic",
+      "credential": "Diploma in Business Informatics with Merit",
+      "dates": "2014 - 2017"
+    }
+  ],
+  "earlier_experience": [
+    {
+      "org": "Singapore Management University",
+      "role": "Research Assistant",
+      "dates": "Dec 2021",
+      "impact_bullets": [
+        "Evaluated 88 IS216 projects using OWASP ZAP, commercial DAST tools and static analysis; findings supported peer-reviewed research on security in web programming education."
+      ]
+    },
+    {
+      "org": "Alpha Ori Technologies",
+      "role": "Maritime Tech Solutions Intern",
+      "dates": "May - Jul 2020",
+      "impact_bullets": [
+        "Automated conversion of 150M+ rows containing 3B+ data points into AWS DynamoDB using C#/.NET, JSON and ETL workflows.",
+        "Built API proof-of-concepts for 3 vendors and implemented data sorting and voyage analysis to evaluate technical fit and operational trends."
+      ]
+    },
+    {
+      "org": "OSM Thome",
+      "role": "IT Intern",
+      "dates": "May - Oct 2018",
+      "impact_bullets": [
+        "Formerly Thome Ship Management",
+        "Built an analytics portal presenting 15 decision data points, a ship-agency workflow supporting 160+ emails/hour, and API enrichments covering 230+ vessels."
+      ]
+    },
+    {
+      "org": "Rightspot",
+      "role": "Intern",
+      "dates": "Jul - Oct 2016",
+      "impact_bullets": [
+        "Resolved 20+ bugs in 2 weeks; built applicant-status and job-listing dashboards covering 250 applicants and 500+ companies."
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "category": "Languages & frameworks:",
+      "items": ["C#/.NET", "ASP.NET", "Python", "SQL."]
+    },
+    {
+      "category": "Data & integration:",
+      "items": ["API integration", "ETL", "AWS DynamoDB."]
+    },
+    {
+      "category": "AI & agentic systems:",
+      "items": ["Prompt engineering", "tool calling", "multi-agent orchestration", "human review."]
+    },
+    {
+      "category": "Delivery & security:",
+      "items": ["UAT", "test scripting", "UAT/production deployments", "application support", "OWASP ZAP", "static and dynamic analysis."]
+    },
+    {
+      "category": "Business analysis:",
+      "items": ["Requirements elicitation", "workflow mapping", "vendor coordination", "user training", "Excel", "SharePoint."]
+    },
+    {
+      "category": "Project-based tools:",
+      "items": ["TypeScript/Node.js", "Next.js/React", "PostgreSQL/Prisma", "Docker", "GitHub Actions", "Vitest", "Playwright."]
+    },
+    {
+      "category": "Agentic development:",
+      "items": ["Claude Code", "Codex", "Kiro CLI; reusable prompts/skills and output validation."]
+    }
+  ],
+  "publication": {
+    "title": "XSS for the Masses: Integrating Security in a Web Programming Course using a Security Scanner",
+    "venue": "ITiCSE",
+    "date": "2022",
+    "authors": "co-author",
+    "note": "nominated for Best Paper Award.",
+    "links": [{ "label": "Publication", "url": "https://arxiv.org/abs/2204.12416" }]
+  },
+  "certifications": [
+    {
+      "title": "AIxTech (Certificate of Completion)",
+      "issuer": "AI Singapore",
+      "issued": "2026",
+      "link": "https://lumino.aisingapore.org/certificates/verify/58f67b67-8a57-42bc-860a-4b62cb5828f9"
+    },
+    {
+      "title": "Certificate of Completion: LLM Application Developer Programme",
+      "issuer": "AI Singapore",
+      "issued": "Feb 2026"
+    },
+    {
+      "title": "AI and Cybersecurity",
+      "issuer": "NUS-ISS",
+      "issued": "Jun 2025"
+    },
+    {
+      "title": "Explainable and Responsible Artificial Intelligence",
+      "issuer": "NUS-ISS",
+      "issued": "May 2025"
+    },
+    {
+      "title": "Graduate Certificate in Designing and Managing Products and Platforms",
+      "issuer": "NUS-ISS",
+      "issued": "Mar 2025"
+    },
+    {
+      "title": "Service Design",
+      "issuer": "NUS-ISS",
+      "issued": "Jun 2024"
+    },
+    {
+      "title": "Architecting Platforms as a Business",
+      "issuer": "NUS-ISS",
+      "issued": "May 2024"
+    },
+    {
+      "title": "Digital Product Strategy",
+      "issuer": "NUS-ISS",
+      "issued": "May 2024"
+    },
+    {
+      "title": "Certification in Managing Digital Products",
+      "issuer": "Singapore Computer Society",
+      "issued": "Mar 2024"
+    },
+    {
+      "title": "Managing Digital Products",
+      "issuer": "NUS-ISS",
+      "issued": "Mar 2024"
+    },
+    {
+      "title": "Graduate Certificate of Architecting Scalable Systems",
+      "issuer": "NUS-ISS",
+      "issued": "Feb 2024"
+    },
+    {
+      "title": "Platform Engineering",
+      "issuer": "NUS-ISS",
+      "issued": "Dec 2022"
+    },
+    {
+      "title": "Cloud Native Solution Design",
+      "issuer": "NUS-ISS",
+      "issued": "Nov 2022"
+    },
+    {
+      "title": "Architecting Software Solutions",
+      "issuer": "NUS-ISS",
+      "issued": "Aug 2022"
+    },
+    {
+      "title": "DevOps Engineering and Automation",
+      "issuer": "NUS-ISS",
+      "issued": "Mar 2022"
+    },
+    {
+      "title": "Professional Scrum Master I (PSM I)",
+      "issuer": "Scrum.org",
+      "issued": "Feb 2022"
+    }
+  ],
+  "languages": [
+    { "name": "English and Chinese", "proficiency": "native or bilingual proficiency." }
+  ],
+  "section_headings": {
+    "summary": "PROFESSIONAL SUMMARY",
+    "experience": "PROFESSIONAL EXPERIENCE",
+    "education": "EDUCATION",
+    "earlier_experience": "EARLIER EXPERIENCE",
+    "skills": "TECHNICAL SKILLS",
+    "publication": "PUBLICATION",
+    "certifications": "CERTIFICATIONS & PROFESSIONAL DEVELOPMENT",
+    "languages": "Languages"
   },
   "section_order": [
     "summary",
-    "ai_highlights",
-    "skills",
     "experience",
     "education",
+    "earlier_experience",
+    "skills",
     "publication",
-    "certifications"
+    "certifications",
+    "languages"
   ]
 }
