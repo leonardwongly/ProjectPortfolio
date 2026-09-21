@@ -5,9 +5,11 @@ This file tracks locally vendored browser dependencies that are committed under 
 ## Review policy
 
 - Cadence: monthly
-- Last reviewed: 2026-07-01
+- Last reviewed: 2026-09-21 (UTC)
 - Maximum review age: 45 days
 - Owner: repository maintainers
+
+Review evidence: checked the [Workbox 7.4.1 release notes](https://github.com/GoogleChrome/workbox/releases/tag/v7.4.1), confirmed it remains the latest npm release, and verified all five vendored files match their declared upstream CDN bytes. No vendored code or digest changed.
 
 ## Current inventory
 
