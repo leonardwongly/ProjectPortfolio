@@ -26,6 +26,8 @@ Runtime security headers are managed in the repository via `/Users/leonardwongly
 Run:
 
 ```bash
+npm run check:production
+npm run check:production:scripts
 curl -sSI https://leonardwong.tech/ | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
 curl -sSI https://leonardwong.tech/reading | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
 curl -sSI https://leonardwong.tech/offline | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
@@ -36,6 +38,17 @@ Expected:
 1. Each endpoint returns all required security headers listed above.
 2. `Content-Security-Policy` includes `style-src 'self'` and `frame-ancestors 'none'`.
 3. `Access-Control-Allow-Origin` for HTML responses is `https://leonardwong.tech`.
+
+The production script check compares script elements on all eight published HTML
+pages, including the service documentation served at `/.well-known/service-doc`
+from `.well-known/service-doc.html`, with the committed pages. Only
+`/js/main.js`, `/js/site.js`, and the homepage's committed JSON-LD script are
+approved; `/offline` and the service documentation have no approved scripts.
+It fails on injected or changed scripts,
+including edge-injected WebMCP or analytics scripts. A failure requires review of
+the Cloudflare Pages project, zone integrations, deployment version, and audit
+logs before adding any new script to the approved source. Do not approve an
+unknown live script by changing the inventory to match production.
 
 ## CSP Monitoring
 

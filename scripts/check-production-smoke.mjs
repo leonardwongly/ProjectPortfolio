@@ -14,6 +14,7 @@ const MAX_TIMEOUT_MS = 60000;
 const MAX_ATTEMPTS = 10;
 const MAX_RETRY_DELAY_MS = 60000;
 const MAX_RESPONSE_BODY_BYTES = 1024 * 1024;
+const MIN_HSTS_MAX_AGE_SECONDS = 31536000;
 
 const PAGE_CHECKS = [
   {
@@ -30,6 +31,7 @@ const PAGE_CHECKS = [
     marker: /Project Archive/i,
     headers: [
       'content-security-policy',
+      'strict-transport-security',
       'x-content-type-options'
     ]
   },
@@ -38,6 +40,7 @@ const PAGE_CHECKS = [
     marker: /AgentForge Merge Guard/i,
     headers: [
       'content-security-policy',
+      'strict-transport-security',
       'x-content-type-options'
     ]
   },
@@ -46,6 +49,7 @@ const PAGE_CHECKS = [
     marker: /Reading/i,
     headers: [
       'content-security-policy',
+      'strict-transport-security',
       'x-content-type-options'
     ]
   },
@@ -54,6 +58,7 @@ const PAGE_CHECKS = [
     marker: /Offline/i,
     headers: [
       'content-security-policy',
+      'strict-transport-security',
       'x-content-type-options'
     ]
   }
@@ -259,6 +264,117 @@ async function fetchTextWithTimeout(url, {
   }
 }
 
+function validateContentSecurityPolicy(value) {
+  if (typeof value !== 'string' || !value.trim() || /[,\u0000-\u001f\u007f]/.test(value)) {
+    return 'content-security-policy is malformed or contains multiple policies';
+  }
+
+  const directives = new Map();
+  for (const rawDirective of value.split(';')) {
+    const directive = rawDirective.trim();
+    if (!directive) continue;
+    const [name, ...sources] = directive.split(/\s+/);
+    const normalizedName = name.toLowerCase();
+    if (!/^[a-z][a-z0-9-]*$/.test(normalizedName) || directives.has(normalizedName)) {
+      return 'content-security-policy contains an invalid or duplicate directive';
+    }
+    if (sources.length === 0 && !['upgrade-insecure-requests', 'block-all-mixed-content'].includes(normalizedName)) {
+      return `content-security-policy ${normalizedName} has no value`;
+    }
+    if (sources.length > 0 && ['upgrade-insecure-requests', 'block-all-mixed-content'].includes(normalizedName)) {
+      return `content-security-policy ${normalizedName} must not have a value`;
+    }
+    directives.set(normalizedName, sources);
+  }
+
+  const isExactSource = (name, allowed) => {
+    const sources = directives.get(name);
+    return sources?.length === 1 && allowed.includes(sources[0].toLowerCase());
+  };
+  const hasOnlySources = (name, allowed) => {
+    const sources = directives.get(name);
+    return sources?.length > 0 && sources.every((source) => allowed.includes(source.toLowerCase()));
+  };
+  if (!isExactSource('default-src', ["'self'", "'none'"])) {
+    return "content-security-policy default-src must be 'self' or 'none'";
+  }
+
+  const isRestrictedScriptSource = (source) => {
+    if (source.toLowerCase() === "'self'") return true;
+    const match = /^'sha(256|384|512)-([A-Za-z0-9+/]+={0,2})'$/.exec(source);
+    if (!match) return false;
+    const digest = Buffer.from(match[2], 'base64');
+    return digest.length === Number(match[1]) / 8 && digest.toString('base64') === match[2];
+  };
+  for (const name of ['script-src', 'script-src-elem']) {
+    const sources = directives.get(name);
+    if (name === 'script-src-elem' && !sources) continue;
+    if (!sources?.some((source) => source.toLowerCase() === "'self'") ||
+        !sources.every(isRestrictedScriptSource)) {
+      return `content-security-policy ${name} must allow only 'self' and script hashes`;
+    }
+  }
+  if (directives.has('script-src-attr') && !isExactSource('script-src-attr', ["'none'"])) {
+    return "content-security-policy script-src-attr must be 'none'";
+  }
+  if (!isExactSource('object-src', ["'none'"]) || !isExactSource('frame-ancestors', ["'none'"])) {
+    return "content-security-policy must block object embedding and framing with 'none'";
+  }
+  if (!isExactSource('base-uri', ["'self'", "'none'"]) ||
+      !isExactSource('form-action', ["'self'", "'none'"])) {
+    return "content-security-policy must restrict base-uri and form-action to 'self' or 'none'";
+  }
+  for (const [name, allowed] of [
+    ['style-src', ["'self'"]],
+    ['img-src', ["'self'", 'data:']],
+    ['font-src', ["'self'"]],
+    ['connect-src', ["'self'"]],
+    ['worker-src', ["'self'"]],
+    ['manifest-src', ["'self'"]],
+    ['frame-src', ["'none'"]]
+  ]) {
+    if (directives.has(name) && !hasOnlySources(name, allowed)) {
+      return `content-security-policy ${name} contains an unapproved source`;
+    }
+  }
+  if (!directives.has('upgrade-insecure-requests')) {
+    return 'content-security-policy must include upgrade-insecure-requests';
+  }
+  return null;
+}
+
+function validateStrictTransportSecurity(value) {
+  if (typeof value !== 'string' || !value.trim() || /[,\u0000-\u001f\u007f]/.test(value)) {
+    return 'strict-transport-security is malformed';
+  }
+
+  const directives = new Map();
+  for (const rawDirective of value.split(';')) {
+    const directive = rawDirective.trim();
+    if (!directive) continue;
+    const match = /^([a-z][a-z0-9-]*)(?:\s*=\s*(\S+))?$/i.exec(directive);
+    if (!match || directives.has(match[1].toLowerCase())) {
+      return 'strict-transport-security contains an invalid or duplicate directive';
+    }
+    directives.set(match[1].toLowerCase(), match[2]);
+  }
+
+  const maxAgeValue = directives.get('max-age');
+  const maxAge = /^"(\d+)"$/.exec(maxAgeValue || '')?.[1] ?? maxAgeValue;
+  if (!/^\d+$/.test(maxAge || '') ||
+      !Number.isSafeInteger(Number(maxAge)) ||
+      Number(maxAge) < MIN_HSTS_MAX_AGE_SECONDS) {
+    return `strict-transport-security max-age must be at least ${MIN_HSTS_MAX_AGE_SECONDS}`;
+  }
+  if (!directives.has('includesubdomains') || directives.get('includesubdomains') !== undefined) {
+    return 'strict-transport-security must include includeSubDomains';
+  }
+  if (directives.has('preload') && directives.get('preload') !== undefined) {
+    return 'strict-transport-security preload must not have a value';
+  }
+  return null;
+}
+
 function validatePage({ url, response, body, check }) {
   const findings = [];
 
@@ -271,6 +387,17 @@ function validatePage({ url, response, body, check }) {
       findings.push(`${url}: missing ${header} header`);
     }
   });
+
+  const csp = response.headers.get('content-security-policy');
+  if (csp) {
+    const error = validateContentSecurityPolicy(csp);
+    if (error) findings.push(`${url}: ${error}`);
+  }
+  const hsts = response.headers.get('strict-transport-security');
+  if (hsts) {
+    const error = validateStrictTransportSecurity(hsts);
+    if (error) findings.push(`${url}: ${error}`);
+  }
 
   if (response.headers.get('x-content-type-options')?.toLowerCase() !== 'nosniff') {
     findings.push(`${url}: x-content-type-options must be nosniff`);
@@ -398,6 +525,7 @@ export {
   MAX_RESPONSE_BODY_BYTES,
   MAX_RETRY_DELAY_MS,
   MAX_TIMEOUT_MS,
+  MIN_HSTS_MAX_AGE_SECONDS,
   PAGE_CHECKS,
   fetchTextWithTimeout,
   normalizeProductionOrigin,
@@ -407,5 +535,7 @@ export {
   readBoundedResponseBody,
   requestProductionPage,
   runProductionSmoke,
+  validateContentSecurityPolicy,
+  validateStrictTransportSecurity,
   validatePage
 };

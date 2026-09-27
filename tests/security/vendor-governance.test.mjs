@@ -4,10 +4,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   loadManifest,
   MAX_VENDOR_MANIFEST_BYTES,
+  validatePinnedBootstrapCss,
   validateVendorGovernance
 } from '../../scripts/check-vendor-governance.mjs';
 
@@ -53,6 +55,27 @@ test('vendored dependency governance validates digests, freshness, and inventory
 
   assert.equal(result.reviewAgeDays, 0);
   assert.deepEqual(result.declaredFiles, result.actualFiles);
+});
+
+test('pinned Bootstrap CSS matches the reviewed distribution bytes', () => {
+  assert.equal(validatePinnedBootstrapCss(), 'css/bootstrap.min.css');
+});
+
+test('pinned Bootstrap CSS rejects modified bytes and symbolic links', (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap-css-governance-'));
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  const sourcePath = fileURLToPath(new URL('../../css/bootstrap.min.css', import.meta.url));
+  const cssPath = path.join(rootDir, 'css', 'bootstrap.min.css');
+  fs.mkdirSync(path.dirname(cssPath), { recursive: true });
+  fs.copyFileSync(sourcePath, cssPath);
+  assert.equal(validatePinnedBootstrapCss(rootDir), 'css/bootstrap.min.css');
+
+  fs.appendFileSync(cssPath, '/* unexpected change */');
+  assert.throws(() => validatePinnedBootstrapCss(rootDir), /Pinned CSS hash mismatch/);
+
+  fs.unlinkSync(cssPath);
+  fs.symlinkSync(sourcePath, cssPath);
+  assert.throws(() => validatePinnedBootstrapCss(rootDir), /symbolic link/);
 });
 
 test('vendor manifest loading is bounded, no-follow, regular-only, and snapshot-stable', (t) => {

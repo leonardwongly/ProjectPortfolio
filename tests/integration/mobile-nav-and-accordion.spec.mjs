@@ -433,7 +433,10 @@ test.describe('command palette', () => {
     await page.goto('/index.html');
 
     if (isMobileProject(testInfo)) {
-      await page.locator('.navbar-toggler').click();
+      const toggle = page.locator('.navbar-toggler');
+      await expect(toggle).toHaveAttribute('data-interactive-ready', 'true');
+      await toggle.click();
+      await expect(page.locator('#navbarCollapse')).toHaveClass(/\bshow\b/);
     }
 
     const opener = page.locator('[data-cmdk-open]').first();
@@ -459,6 +462,7 @@ test.describe('command palette', () => {
 
   test('does not leave focus inside the hidden dialog after shortcut close', async ({ page }) => {
     await page.goto('/index.html');
+    await expect(page.locator('.navbar-toggler')).toHaveAttribute('data-interactive-ready', 'true');
 
     const palette = page.locator('#commandPalette');
     await page.keyboard.press('Control+K');

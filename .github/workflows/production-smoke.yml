@@ -29,11 +29,20 @@ jobs:
           cache: npm
 
       - name: Install Node dependencies
+        id: install
         run: npm ci --ignore-scripts
 
       - name: Check production pages and headers
         run: npm run check:production
         env:
           SMOKE_ATTEMPTS: '6'
+          SMOKE_RETRY_DELAY_MS: '10000'
+          SMOKE_TIMEOUT_MS: '10000'
+
+      - name: Check production script inventory
+        if: ${{ always() && steps.install.outcome == 'success' }}
+        run: npm run check:production:scripts
+        env:
+          SMOKE_ATTEMPTS: '3'
           SMOKE_RETRY_DELAY_MS: '10000'
           SMOKE_TIMEOUT_MS: '10000'
