@@ -1,8 +1,10 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import safeInput from './lib/safe-input.cjs';
+import { loadManifest, validateVendorGovernance } from './check-vendor-governance.mjs';
 
 const { readStableFileNoFollow } = safeInput;
 
@@ -14,6 +16,11 @@ const RUNTIME_FILES = [
   'js/main.js',
   'js/site.js'
 ];
+const SERVICE_WORKER_FILE = 'pwabuilder-sw.js';
+// Review every service-worker change for new network, message, and import behavior before
+// updating this digest. The worker's one navigation fetch has a narrow scanner exception;
+// this pin remains a change-review gate, not proof of safety.
+const REVIEWED_SERVICE_WORKER_SHA256 = 'a6b5d4b8a232f0c29b1a882d5d3e83a5201ea305d58e80b173590a68cb8b058d';
 
 const MAX_RUNTIME_SOURCE_BYTES = 512 * 1024;
 const MAX_RUNTIME_TOKENS = 100000;
@@ -483,7 +490,55 @@ function inspectAllowedSetMutation(tokens) {
   return findings;
 }
 
-function inspectRuntimeSource(source) {
+function isInterceptedRequestFetch(tokens, index) {
+  const directRequestFetch = tokens[index].type === 'identifier' &&
+    tokens[index].value === 'fetch' &&
+    tokens[index - 2]?.value === 'return' &&
+    tokens[index - 1]?.value === 'await' &&
+    tokens[index + 1]?.value === '(' &&
+    tokens[index + 2]?.value === 'event' &&
+    tokens[index + 3]?.value === '.' &&
+    tokens[index + 4]?.value === 'request' &&
+    tokens[index + 5]?.value === ')';
+  if (!directRequestFetch) return false;
+
+  for (let listener = 0; listener < tokens.length - 11; listener += 1) {
+    if (
+      tokens[listener].value !== 'self' ||
+      tokens[listener + 1].value !== '.' ||
+      tokens[listener + 2].value !== 'addEventListener' ||
+      tokens[listener + 3].value !== '(' ||
+      tokens[listener + 4].type !== 'string' ||
+      tokens[listener + 4].value !== 'fetch' ||
+      tokens[listener + 5].value !== ',' ||
+      tokens[listener + 6].value !== '(' ||
+      tokens[listener + 7].value !== 'event' ||
+      tokens[listener + 8].value !== ')' ||
+      tokens[listener + 9].value !== '=' ||
+      tokens[listener + 10].value !== '>' ||
+      tokens[listener + 11].value !== '{'
+    ) continue;
+    const listenerEnd = findMatchingToken(tokens, listener + 11, '{', '}');
+    if (listenerEnd === -1 || index >= listenerEnd) continue;
+
+    for (let branch = listener + 12; branch < listenerEnd; branch += 1) {
+      if (tokens[branch].value !== 'if' || tokens[branch + 1]?.value !== '(') continue;
+      const conditionEnd = findMatchingToken(tokens, branch + 1, '(', ')');
+      if (conditionEnd === -1 || tokens[conditionEnd + 1]?.value !== '{') continue;
+      const condition = tokens.slice(branch + 2, conditionEnd);
+      if (
+        condition.length !== 9 ||
+        condition.slice(0, 8).map((token) => token.value).join(' ') !== 'event . request . mode = = =' ||
+        condition[8].type !== 'string' || condition[8].value !== 'navigate'
+      ) continue;
+      const branchEnd = findMatchingToken(tokens, conditionEnd + 1, '{', '}');
+      if (branchEnd !== -1 && index > conditionEnd + 1 && index < branchEnd) return true;
+    }
+  }
+  return false;
+}
+
+function inspectRuntimeSource(source, { allowInterceptedRequestFetch = false } = {}) {
   if (typeof source !== 'string') throw new TypeError('runtime source must be a string');
   if (Buffer.byteLength(source, 'utf8') > MAX_RUNTIME_SOURCE_BYTES) {
     throw new Error(`runtime source exceeds ${MAX_RUNTIME_SOURCE_BYTES} byte limit`);
@@ -492,6 +547,7 @@ function inspectRuntimeSource(source) {
   const tokens = tokenizeJavaScript(source);
   const findings = [];
   const detectedAdapters = new Set();
+  let interceptedRequestFetches = 0;
   tokens.forEach((token, index) => {
     let identifier = token.type === 'identifier' ? token.value.toLowerCase() : null;
     if (
@@ -502,8 +558,33 @@ function inspectRuntimeSource(source) {
       identifier = token.value.toLowerCase();
     }
     const reason = identifier ? DISALLOWED_RUNTIME_IDENTIFIERS.get(identifier) : null;
-    if (reason) detectedAdapters.add(reason);
+    if (reason) {
+      if (
+        allowInterceptedRequestFetch &&
+        identifier === 'fetch' &&
+        isInterceptedRequestFetch(tokens, index) &&
+        interceptedRequestFetches === 0
+      ) {
+        interceptedRequestFetches += 1;
+      } else {
+        detectedAdapters.add(reason);
+      }
+    }
   });
+  if (allowInterceptedRequestFetch && interceptedRequestFetches !== 1) {
+    findings.push('service worker must have exactly one direct fetch(event.request) navigation fallback');
+  }
+  if (allowInterceptedRequestFetch) {
+    for (let index = 0; index < tokens.length - 3; index += 1) {
+      if (
+        tokens[index].type === 'identifier' && tokens[index].value === 'event' &&
+        tokens[index + 1].value === '.' && tokens[index + 2].value === 'request' &&
+        tokens[index + 3].value === '='
+      ) {
+        findings.push('service worker must not replace the intercepted event request');
+      }
+    }
+  }
   const networkGlobalAliases = new Set(NETWORK_GLOBAL_IDENTIFIERS);
   let globalAliasesChanged = true;
   while (globalAliasesChanged) {
@@ -605,6 +686,8 @@ function readStableRuntimeSource(rootDir, file, { openSync = fs.openSync } = {})
 function collectTelemetryPolicyFindings({
   rootDir = projectRoot,
   runtimeFiles = RUNTIME_FILES,
+  serviceWorkerFile = SERVICE_WORKER_FILE,
+  verifyVendoredScripts = true,
   openSync = fs.openSync
 } = {}) {
   const findings = [];
@@ -619,6 +702,36 @@ function collectTelemetryPolicyFindings({
     }
   });
 
+  if (serviceWorkerFile) {
+    try {
+      const source = readStableFileNoFollow(path.resolve(rootDir, serviceWorkerFile), {
+        label: 'service worker source',
+        rootDir: path.resolve(rootDir),
+        maxBytes: MAX_RUNTIME_SOURCE_BYTES,
+        minBytes: 1,
+        openSync
+      });
+      inspectRuntimeSource(source.toString('utf8'), { allowInterceptedRequestFetch: true }).forEach((finding) => {
+        findings.push(`${serviceWorkerFile}: ${finding}`);
+      });
+      const digest = crypto.createHash('sha256').update(source).digest('hex');
+      if (digest !== REVIEWED_SERVICE_WORKER_SHA256) {
+        findings.push(`${serviceWorkerFile}: source changed since security review; inspect the worker before updating its reviewed SHA-256`);
+      }
+    } catch (error) {
+      findings.push(`${serviceWorkerFile}: service worker source validation failed: ${error?.message || 'invalid source'}`);
+    }
+  }
+
+  if (verifyVendoredScripts) {
+    try {
+      const manifest = loadManifest(path.join(rootDir, 'docs/security/vendor-dependencies.json'), { rootDir });
+      validateVendorGovernance(manifest, { rootDir });
+    } catch (error) {
+      findings.push(`js/vendor: vendor integrity validation failed: ${error?.message || 'invalid vendor files'}`);
+    }
+  }
+
   return findings;
 }
 
@@ -629,7 +742,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     findings.forEach((finding) => console.error(`- ${finding}`));
     process.exitCode = 1;
   } else {
-    console.log('Telemetry policy OK: no external runtime analytics adapters are enabled.');
+    console.log('Telemetry policy OK: page adapters, reviewed service worker, and vendored script integrity validated.');
   }
 }
 
