@@ -19,6 +19,12 @@ const vendorRoot = path.join(projectRoot, 'js', 'vendor');
 const manifestPath = path.join(projectRoot, 'docs', 'security', 'vendor-dependencies.json');
 const MAX_VENDOR_MANIFEST_BYTES = 256 * 1024;
 const MAX_VENDOR_FILE_BYTES = 5 * 1024 * 1024;
+// Bootstrap 5.3.8 dist/css/bootstrap.min.css with its sourceMappingURL footer removed.
+// Keep this separate from the Workbox manifest: update-vendor.mjs only manages js/vendor/.
+const PINNED_BOOTSTRAP_CSS = Object.freeze({
+  path: 'css/bootstrap.min.css',
+  sha256: '8f8173cb2d8f867274aeb0cb15328e60f490c7f272351e51a55f1dabb486e4ff'
+});
 const require = createRequire(import.meta.url);
 const { readStableFileNoFollow } = require('./lib/safe-input.cjs');
 
@@ -132,6 +138,15 @@ function readRegularFileNoFollow(filePath, fieldPath = filePath, options = {}) {
 
 function sha256File(filePath, options = {}) {
   return crypto.createHash('sha256').update(readRegularFileNoFollow(filePath, filePath, options)).digest('hex');
+}
+
+function validatePinnedBootstrapCss(rootDir = projectRoot) {
+  const absolutePath = path.join(path.resolve(rootDir), PINNED_BOOTSTRAP_CSS.path);
+  const actualSha = sha256File(absolutePath, { rootDir, maxBytes: MAX_VENDOR_FILE_BYTES });
+  if (actualSha !== PINNED_BOOTSTRAP_CSS.sha256) {
+    fail(`Pinned CSS hash mismatch for ${PINNED_BOOTSTRAP_CSS.path}: expected ${PINNED_BOOTSTRAP_CSS.sha256}, found ${actualSha}`);
+  }
+  return PINNED_BOOTSTRAP_CSS.path;
 }
 
 function collectVendoredFiles(rootDir = vendorRoot, baseDir = projectRoot) {
@@ -338,12 +353,13 @@ function validateVendorGovernance(manifest, options = {}) {
 
 async function main() {
   const result = validateVendorGovernance(loadManifest());
+  const pinnedCssPath = validatePinnedBootstrapCss();
   console.log(
-    `Vendor governance OK: ${result.declaredFiles.length} file(s) validated; review age ${result.reviewAgeDays} day(s).`
+    `Vendor governance OK: ${result.declaredFiles.length} Workbox file(s) and ${pinnedCssPath} validated; review age ${result.reviewAgeDays} day(s).`
   );
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
     console.error(error.message);
     process.exitCode = 1;
@@ -359,5 +375,6 @@ export {
   MAX_VENDOR_MANIFEST_BYTES,
   readRegularFileNoFollow,
   sha256File,
+  validatePinnedBootstrapCss,
   validateVendorGovernance
 };
