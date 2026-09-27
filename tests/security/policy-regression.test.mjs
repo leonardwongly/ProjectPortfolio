@@ -238,6 +238,28 @@ test('frame ancestor protection is delivered through enforceable headers', () =>
   assert.match(headersContent, /frame-ancestors 'none'/);
 });
 
+test('every generated HTML page has a CSP on its clean URL', () => {
+  const rules = fs.readFileSync('src/_headers.template', 'utf8')
+    .trim()
+    .split(/\n\s*\n/)
+    .map((block) => {
+      const [route, ...headers] = block.split('\n');
+      return { route, headers: headers.join('\n') };
+    });
+
+  for (const file of GENERATED_HTML_FILES) {
+    const cleanUrl = file === 'index.html' ? '/' : `/${file.slice(0, -'.html'.length)}`;
+    const matchingRule = rules.find(({ route, headers }) => {
+      const matches = route === cleanUrl ||
+        (route.endsWith('*') && cleanUrl.startsWith(route.slice(0, -1)));
+      return matches && /\bContent-Security-Policy:/.test(headers);
+    });
+
+    assert.ok(matchingRule, `${cleanUrl} must receive an HTTP Content-Security-Policy header`);
+    assert.match(matchingRule.headers, /frame-ancestors 'none'/);
+  }
+});
+
 test('generated index CSP hashes match inline scripts in both HTML and runtime headers', () => {
   const sourceContent = fs.readFileSync('src/index.html', 'utf8');
   const generatedContent = fs.readFileSync('index.html', 'utf8');
