@@ -30,13 +30,20 @@ ${indentedStep}
 `;
 }
 
-function collectFixtureFindings(t, content) {
+function workflowWithPermissions(permissions, jobPermissions = '') {
+  return workflowWithStep('run: printf safe')
+    .replace('permissions: {}', `permissions: ${permissions}`)
+    .replace('    runs-on: ubuntu-latest',
+      `    runs-on: ubuntu-latest${jobPermissions ? `\n    permissions: ${jobPermissions}` : ''}`);
+}
+
+function collectFixtureFindings(t, content, fileName = 'adversarial.yml') {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'workflow-hygiene-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
 
   const workflowDirectory = path.join(root, '.github', 'workflows');
   fs.mkdirSync(workflowDirectory, { recursive: true });
-  fs.writeFileSync(path.join(workflowDirectory, 'adversarial.yml'), content);
+  fs.writeFileSync(path.join(workflowDirectory, fileName), content);
 
   return collectWorkflowHygieneFindings({ cwd: root });
 }
@@ -363,6 +370,95 @@ jobs: {}
       assertFinding(collectFixtureFindings(t, fixture.content), fixture.expected);
     });
   }
+});
+
+test('workflow and job token permissions reject privilege escalation', async (t) => {
+  const cases = [
+    {
+      name: 'workflow write-all is rejected',
+      content: workflowWithPermissions('write-all'),
+      expected: 'workflow permissions must be an explicit scope map'
+    },
+    {
+      name: 'workflow read-all is rejected as unnecessarily broad',
+      content: workflowWithPermissions('read-all'),
+      expected: 'workflow permissions must be an explicit scope map'
+    },
+    {
+      name: 'workflow content write is rejected',
+      content: workflowWithPermissions('{ contents: write }'),
+      expected: 'workflow permissions grant unapproved write access'
+    },
+    {
+      name: 'workflow issue write is restricted to a job',
+      content: workflowWithPermissions('{ issues: write }'),
+      expected: 'workflow permissions grant unapproved write access'
+    },
+    {
+      name: 'unknown workflow scope is rejected',
+      content: workflowWithPermissions('{ administration: write }'),
+      expected: 'workflow permissions contain an unapproved scope'
+    },
+    {
+      name: 'invalid workflow access is rejected',
+      content: workflowWithPermissions('{ contents: maybe }'),
+      expected: 'workflow permissions require read, write, or none access'
+    },
+    {
+      name: 'job write-all override is rejected',
+      content: workflowWithPermissions('{}', 'write-all'),
+      expected: 'job permissions must be an explicit scope map'
+    },
+    {
+      name: 'job content write override is rejected',
+      content: workflowWithPermissions('{}', '{ contents: write }'),
+      expected: 'job permissions grant unapproved write access'
+    },
+    {
+      name: 'job issue write is rejected outside approved workflow jobs',
+      content: workflowWithPermissions('{}', '{ issues: write }'),
+      expected: 'job permissions grant unapproved write access'
+    },
+    {
+      name: 'unknown job scope is rejected',
+      content: workflowWithPermissions('{}', '{ mystery: read }'),
+      expected: 'job permissions contain an unapproved scope'
+    },
+    {
+      name: 'invalid job access is rejected',
+      content: workflowWithPermissions('{}', '{ contents: yes }'),
+      expected: 'job permissions require read, write, or none access'
+    }
+  ];
+
+  for (const fixture of cases) {
+    await t.test(fixture.name, (t) => {
+      assertFinding(collectFixtureFindings(t, fixture.content), fixture.expected);
+    });
+  }
+});
+
+test('approved workflow and job grants remain accepted', (t) => {
+  const readOnly = workflowWithPermissions('{ contents: read }',
+    '{ contents: read, issues: none }');
+  assert.deepEqual(collectFixtureFindings(t, readOnly), []);
+
+  const codeql = workflowWithPermissions('{ contents: read, security-events: write }',
+    '{ contents: read, security-events: write }').replace('  check:', '  analyze:');
+  assert.deepEqual(collectFixtureFindings(t, codeql, 'codeql.yml'), []);
+
+  const gemini = workflowWithPermissions('{ contents: read }',
+    '{ contents: read, id-token: write, issues: write, pull-requests: write }')
+    .replace('  check:', '  gemini-cli-plan:');
+  assert.deepEqual(collectFixtureFindings(t, gemini, 'gemini-cli.yml'), []);
+});
+
+test('a write grant approved for one job does not authorize another job', (t) => {
+  const content = workflowWithPermissions('{ contents: read }',
+    '{ contents: read, id-token: write }').replace('  check:', '  gemini-cli-execute:');
+  const findings = collectFixtureFindings(t, content, 'gemini-cli.yml');
+  assert.equal(findings.length, 1);
+  assert.match(findings[0], /job permissions grant unapproved write access/);
 });
 
 test('immutable references and explicit safe controls remain accepted', (t) => {

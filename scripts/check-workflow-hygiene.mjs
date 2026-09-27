@@ -9,6 +9,22 @@ const { readStableFileNoFollow } = require('./lib/safe-input.cjs');
 
 const WORKFLOW_DIR = '.github/workflows';
 const MAX_WORKFLOW_BYTES = 1024 * 1024;
+// Expand this policy only when a workflow demonstrates a need for another token scope.
+const ALLOWED_PERMISSION_SCOPES = new Set([
+  'actions', 'contents', 'id-token', 'issues', 'pull-requests', 'security-events'
+]);
+const APPROVED_WRITE_GRANTS = new Map([
+  ['.github/workflows/codeql.yml', {
+    workflow: new Set(['security-events']),
+    jobs: new Map([['analyze', new Set(['security-events'])]])
+  }],
+  ['.github/workflows/gemini-cli.yml', {
+    jobs: new Map([
+      ['gemini-cli-plan', new Set(['id-token', 'issues', 'pull-requests'])],
+      ['gemini-cli-execute', new Set(['issues', 'pull-requests'])]
+    ])
+  }]
+]);
 const REMOTE_ACTION_WITH_SHA = /^([^@\s]+)@([0-9a-f]{40})$/i;
 const IMMUTABLE_DOCKER_REFERENCE = /^docker:\/\/[^@\s]+@sha256:[0-9a-f]{64}$/i;
 const RATCHET_COMMENT = /(?:^|\s)ratchet:([^@\s]+)@([^\s]+)/;
@@ -293,6 +309,41 @@ function eventNode(node, eventName, document) {
   }
 
   return null;
+}
+
+function validatePermissionsPair(filePath, content, pair, document, findings, level, jobName) {
+  const permissions = resolveNode(pair.value, document);
+  const approvedWrites = level === 'workflow'
+    ? APPROVED_WRITE_GRANTS.get(filePath)?.workflow
+    : APPROVED_WRITE_GRANTS.get(filePath)?.jobs?.get(jobName);
+  if (!isMap(permissions)) {
+    addLineFinding(
+      findings, filePath, content, [pair.value, pair.key],
+      `${level} permissions must be an explicit scope map`
+    );
+    return;
+  }
+
+  permissions.items.forEach((permission) => {
+    const scope = scalarValue(permission.key, document);
+    const access = scalarValue(permission.value, document);
+    if (!ALLOWED_PERMISSION_SCOPES.has(scope)) {
+      addLineFinding(
+        findings, filePath, content, [permission.key],
+        `${level} permissions contain an unapproved scope`
+      );
+    } else if (access !== 'read' && access !== 'write' && access !== 'none') {
+      addLineFinding(
+        findings, filePath, content, [permission.value, permission.key],
+        `${level} permissions require read, write, or none access`
+      );
+    } else if (access === 'write' && !approvedWrites?.has(scope)) {
+      addLineFinding(
+        findings, filePath, content, [permission.value, permission.key],
+        `${level} permissions grant unapproved write access`
+      );
+    }
+  });
 }
 
 function validateUsesPair(filePath, content, pair, document, findings) {
@@ -1264,6 +1315,14 @@ function validateJobs(filePath, content, root, document, findings) {
     const job = resolveNode(jobPair.value, document);
     if (!isMap(job)) return;
 
+    const permissionsPair = findMapPair(job, 'permissions', document);
+    if (permissionsPair) {
+      validatePermissionsPair(
+        filePath, content, permissionsPair, document, findings,
+        'job', scalarValue(jobPair.key, document)
+      );
+    }
+
     const reusableWorkflowPair = findMapPair(job, 'uses', document);
     if (reusableWorkflowPair) {
       validateUsesPair(filePath, content, reusableWorkflowPair, document, findings);
@@ -1312,8 +1371,11 @@ function collectWorkflowHygieneFindings({ cwd = process.cwd() } = {}) {
       );
     }
 
-    if (!findMapPair(root, 'permissions', document)) {
+    const permissionsPair = findMapPair(root, 'permissions', document);
+    if (!permissionsPair) {
       findings.push(`${filePath}: missing top-level permissions block`);
+    } else {
+      validatePermissionsPair(filePath, content, permissionsPair, document, findings, 'workflow');
     }
 
     validateJobs(filePath, content, root, document, findings);
