@@ -24,6 +24,7 @@
     "check:links:preflight": "node scripts/check-link-health.mjs --preflight-only --strict",
     "check:performance": "node scripts/check-performance-budget.mjs",
     "check:production": "node scripts/check-production-smoke.mjs",
+    "check:production:scripts": "node scripts/check-production-scripts.mjs",
     "check:reading": "node scripts/audit-reading-metadata.mjs",
     "check:resume": "node scripts/check-resume-freshness.mjs",
     "check:telemetry": "node scripts/check-telemetry-policy.mjs",
