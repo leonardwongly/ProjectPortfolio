@@ -7,10 +7,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: playwright-integration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   nav-and-accordion:
     name: Nav + Accordion Integration
-    if: ${{ github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

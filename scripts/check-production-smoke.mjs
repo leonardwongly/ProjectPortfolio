@@ -54,6 +54,16 @@ const PAGE_CHECKS = [
     ]
   },
   {
+    path: '/.well-known/service-doc',
+    marker: /Service Documentation/i,
+    headers: [
+      'content-security-policy',
+      'strict-transport-security',
+      'x-content-type-options'
+    ],
+    noScripts: true
+  },
+  {
     path: '/offline',
     marker: /Offline/i,
     headers: [
@@ -309,6 +319,7 @@ function validateContentSecurityPolicy(value) {
   for (const name of ['script-src', 'script-src-elem']) {
     const sources = directives.get(name);
     if (name === 'script-src-elem' && !sources) continue;
+    if (isExactSource(name, ["'none'"])) continue;
     if (!sources?.some((source) => source.toLowerCase() === "'self'") ||
         !sources.every(isRestrictedScriptSource)) {
       return `content-security-policy ${name} must allow only 'self' and script hashes`;
@@ -392,6 +403,10 @@ function validatePage({ url, response, body, check }) {
   if (csp) {
     const error = validateContentSecurityPolicy(csp);
     if (error) findings.push(`${url}: ${error}`);
+    if (check.noScripts && (!/(?:^|;)\s*script-src\s+'none'\s*(?:;|$)/i.test(csp) ||
+        /(?:^|;)\s*script-src-elem\s+(?!'none'\s*(?:;|$))/i.test(csp))) {
+      findings.push(`${url}: service documentation must use script-src 'none'`);
+    }
   }
   const hsts = response.headers.get('strict-transport-security');
   if (hsts) {

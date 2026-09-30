@@ -9,3 +9,4 @@ node_modules/
 artifacts/
 test-results/
 playwright-report/
+.well-known/deployment.json

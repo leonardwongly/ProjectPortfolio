@@ -11,7 +11,7 @@ const WORKFLOW_DIR = '.github/workflows';
 const MAX_WORKFLOW_BYTES = 1024 * 1024;
 // Expand this policy only when a workflow demonstrates a need for another token scope.
 const ALLOWED_PERMISSION_SCOPES = new Set([
-  'actions', 'contents', 'id-token', 'issues', 'pull-requests', 'security-events'
+  'actions', 'checks', 'contents', 'id-token', 'issues', 'pull-requests', 'security-events'
 ]);
 const APPROVED_WRITE_GRANTS = new Map([
   ['.github/workflows/codeql.yml', {

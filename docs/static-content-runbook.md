@@ -29,7 +29,7 @@ See `docs/content-source-inventory.md` before adding new public claims. New clai
    ```bash
    npm run validate:full
    ```
-6. For navigation, accordion, service-worker, or responsive changes, run `npm install` once, then `npm run test:integration`.
+6. For navigation, accordion, service-worker, or responsive changes, run `npm ci --ignore-scripts` with Node 24 once, then `npm run test:integration`.
 
 ## Safety Checks
 
@@ -75,9 +75,9 @@ The build workflow uses Node 24 LTS, regenerates static pages, checks that gener
 - `Cloudflare Pages`
 - `CodeQL`
 
-Draft pull requests intentionally skip the Playwright integration workflow. Mark a PR ready for review only when local validation has passed and generated files are committed.
+Draft pull requests run the bounded Playwright integration workflow. Full Validation runs when a non-draft PR opens, reopens, receives another push, or becomes ready for review. Superseded runs are cancelled. Mark a PR ready for review only when local validation has passed and generated files are committed.
 
-The Gemini assistant workflow separates planning from execution. Planning can inspect repository context and post comments, but cannot mint the GitHub App token or use git write commands. Execution runs in a separate job only after a trusted collaborator submits an exact `plan#<uuid> approved` command that references a prior `github-actions[bot]` plan comment.
+The Gemini assistant workflow separates planning from implementation guidance. Both model jobs can write only `response.md`; deterministic steps publish validated comments. The approved-plan job runs only after a trusted collaborator submits an exact `plan#<uuid> approved` command that references a prior `github-actions[bot]` plan comment. It emits a handoff and makes no repository edits. Each model session is capped at eight turns. A local implementation owner must apply the handoff on an isolated branch and run the gates in [the SDLC pilot runbook](sdlc-pilot.md).
 
 ## Release Checklist
 
@@ -99,4 +99,4 @@ The Gemini assistant workflow separates planning from execution. Planning can in
 
 ## Rollback
 
-This is a static site. Roll back by reverting the offending commit or redeploying the last known-good Cloudflare Pages deployment. For content-only regressions, revert the changed `data/` file and rerun `npm run build` so generated pages and `_headers` stay consistent.
+Rollback requires owner approval. Record the exact known-good SHA and Cloudflare deployment ID, confirm their source and production checks, then roll back by reverting the offending commit or redeploying the last known-good Cloudflare Pages deployment. For content-only regressions, revert the changed `data/` file and rerun `npm run build` so generated pages and `_headers` stay consistent.

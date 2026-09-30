@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import fs from 'node:fs';
 
 import {
   validateContentSecurityPolicy,
@@ -9,6 +10,21 @@ import {
 
 const CSP = "default-src 'self'; script-src 'self' 'sha256-RBh5ZtcP26aZFp/EGYy/BT1gSD595lvp8sWO2T9xesI='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content";
 const HSTS = 'max-age=31536000; includeSubDomains; preload';
+
+test('extensionless service documentation receives and requires a script-free response CSP', () => {
+  const policy = CSP.replace(/script-src [^;]+/, "script-src 'none'");
+  const template = fs.readFileSync(new URL('../../src/_headers.template', import.meta.url), 'utf8');
+  assert.match(template, /\/\.well-known\/service-doc\n\s+Content-Security-Policy: [^\n]+script-src 'none'/);
+  const validate = (csp) => validatePage({
+    url: 'https://public.example/.well-known/service-doc',
+    response: { status: 200, headers: new Headers({ 'content-security-policy': csp, 'strict-transport-security': HSTS, 'x-content-type-options': 'nosniff' }) },
+    body: '<h1>Service Documentation</h1>',
+    check: { marker: /Service Documentation/, headers: ['content-security-policy'], noScripts: true }
+  });
+  assert.deepEqual(validate(policy), []);
+  assert.match(validate(CSP).join('\n'), /script-src 'none'/);
+  assert.match(validate(`${policy}; script-src-elem 'self'`).join('\n'), /script-src 'none'/);
+});
 
 test('production CSP accepts the deployed policy and a restrictive minimum', () => {
   assert.equal(validateContentSecurityPolicy(CSP), null);

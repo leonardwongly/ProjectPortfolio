@@ -122,11 +122,13 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   assert.match(executeJob, /Validate and publish implementation guidance/);
   assert.match(executeJob, /no file-read, shell, GitHub, Git, comment, or token-backed tools/);
   assert.match(executeJob, /Never attempt to commit, push, create branches, create pull requests, or post comments/);
-  const executionActionStart = executeJob.indexOf("- name: 'Run Gemini execution'");
+  const executionActionStart = executeJob.indexOf("- name: 'Generate implementation handoff'");
   const executionPostStart = executeJob.indexOf("- name: 'Validate and publish implementation guidance'");
   const executionAction = executeJob.slice(executionActionStart, executionPostStart);
   assert.doesNotMatch(executionAction, /GITHUB_TOKEN:/);
   assert.match(executionAction, GEMINI_ACTION_REFERENCE);
+  assert.match(executionAction, /"maxSessionTurns": 8/);
+  assert.match(executionAction, /Implementation guidance only; no repository edits were made/);
   assert.doesNotMatch(executeJob, /actions\/checkout@/);
   assert.doesNotMatch(executeJob, /git (?:add|commit|push)\b/);
 });
