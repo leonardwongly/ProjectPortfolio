@@ -10,7 +10,7 @@
       ],
       "service-doc": [
         {
-          "href": "https://leonardwong.tech/.well-known/service-doc.html",
+          "href": "https://leonardwong.tech/.well-known/service-doc",
           "type": "text/html"
         }
       ],

@@ -289,7 +289,7 @@ jobs:
           use_gemini_code_assist: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
           settings: |-
             {
-              "maxSessionTurns": 50,
+              "maxSessionTurns": 8,
               "coreTools": ["write_file"],
               "telemetry": {
                 "enabled": false,
@@ -401,7 +401,7 @@ jobs:
       contents: 'read'
       pull-requests: 'write'
       issues: 'write'
-    # Execution is isolated from planning and only accepts explicit approvals
+    # Implementation guidance is isolated from planning and only accepts explicit approvals
     # from trusted collaborators on comments/reviews.
     if: |-
       (
@@ -541,7 +541,7 @@ jobs:
           } >> "${GITHUB_OUTPUT}"
 
       # Do not checkout repository refs in the credentialed model job. The model only writes response.md.
-      - name: 'Run Gemini execution'
+      - name: 'Generate implementation handoff'
         id: 'run_gemini'
         uses: 'google-github-actions/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions/run-gemini-cli@v0.1.22
         env:
@@ -567,7 +567,7 @@ jobs:
           use_gemini_code_assist: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
           settings: |-
             {
-              "maxSessionTurns": 50,
+              "maxSessionTurns": 8,
               "coreTools": ["write_file"],
               "telemetry": {
                 "enabled": false,
@@ -591,10 +591,10 @@ jobs:
             - **Comment Command**: '${{ env.COMMENT_COMMAND }}'
             - **Comment Progress Command**: '${{ env.COMMENT_PROGRESS_COMMAND }}'
 
-            ## Plan Execution Instructions
+            ## Implementation Handoff Instructions
 
             - The user has approved the plan. The approved plan is in the `PLAN_TEXT` variable.
-            - Describe the proposed implementation and validation steps in `response.md`.
+            - Start `response.md` with "Implementation guidance only; no repository edits were made." Then list requirements, acceptance criteria, affected paths, validation commands, and approval boundaries for a local implementation owner.
             - Do not inspect or modify repository files. The only permitted write is `response.md`.
             - Stop after writing `response.md`. A separate deterministic step posts it for human review.
 

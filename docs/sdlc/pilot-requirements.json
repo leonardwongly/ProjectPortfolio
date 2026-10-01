@@ -1,0 +1,24 @@
+{
+  "id": "projectportfolio-sdlc-pilot",
+  "goal": "Prepare a bounded ProjectPortfolio SDLC pilot for human review",
+  "scope": [
+    "Capture requirements and acceptance, hand off implementation on one isolated branch, and prepare a local draft PR packet",
+    "Run existing local preflight, regression, security, content and full validation gates with source-bound evidence",
+    "Validate every ready PR revision and draft browser behavior while cancelling superseded CI runs",
+    "Verify confirmed Cloudflare Pages deployment identity and exact published version before release sign-off"
+  ],
+  "exclusions": [
+    "No push, PR creation, merge, deploy, rollback, account or credential change, or new recurring trigger during this preparation",
+    "No Codex hooks changes, new paid provider, production script whitelist expansion, or branch-protection edits",
+    "Keep dependency PR180 separate and preserve primary checkout and existing weekly production smoke"
+  ],
+  "acceptance": [
+    { "id": "REQ", "description": "Validated requirements produce a reviewable handoff and draft PR packet without external writes", "gate": "local" },
+    { "id": "CI", "description": "Non-draft revision events rerun full validation and draft PRs run bounded browser regression", "gate": "local" },
+    { "id": "LOCAL", "description": "Generated artifacts, resume freshness, security coverage, hygiene and source policies pass locally", "gate": "local" },
+    { "id": "FULL", "description": "Full validation including dependency audit, vendor and browser/accessibility gates passes on the reviewed source", "gate": "full" },
+    { "id": "DEPLOY", "description": "Confirmed provider identity, exact SHA and immutable preview and production bytes pass deployment verification", "gate": "manual" },
+    { "id": "REVIEW", "description": "Independent review and owner acceptance approve the exact diff and resolve production injection and preview redirects", "gate": "manual" },
+    { "id": "RELEASE", "description": "Owner explicitly approves release and records known-good SHA/deployment and rollback evidence", "gate": "manual" }
+  ]
+}

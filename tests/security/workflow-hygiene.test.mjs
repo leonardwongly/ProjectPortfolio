@@ -439,8 +439,8 @@ test('workflow and job token permissions reject privilege escalation', async (t)
 });
 
 test('approved workflow and job grants remain accepted', (t) => {
-  const readOnly = workflowWithPermissions('{ contents: read }',
-    '{ contents: read, issues: none }');
+  const readOnly = workflowWithPermissions('{ contents: read, checks: read }',
+    '{ contents: read, checks: read, issues: none }');
   assert.deepEqual(collectFixtureFindings(t, readOnly), []);
 
   const codeql = workflowWithPermissions('{ contents: read, security-events: write }',

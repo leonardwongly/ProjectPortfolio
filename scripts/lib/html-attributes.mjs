@@ -82,7 +82,8 @@ function foldAsciiCase(source) {
 function scanHtmlAttributes(source, {
   attributeNames,
   maxAttributes = DEFAULT_MAX_ATTRIBUTES,
-  maxBytes = DEFAULT_MAX_HTML_BYTES
+  maxBytes = DEFAULT_MAX_HTML_BYTES,
+  onStyleElement = null
 } = {}) {
   if (typeof source !== 'string') throw new TypeError('HTML source must be a string');
   if (!Number.isSafeInteger(maxAttributes) || maxAttributes < 1) {
@@ -103,6 +104,7 @@ function scanHtmlAttributes(source, {
   const lowerSource = foldAsciiCase(source);
   let cursor = 0;
   let parsedAttributeCount = 0;
+  let svgDepth = 0;
 
   while (cursor < source.length) {
     const tagStart = source.indexOf('<', cursor);
@@ -126,6 +128,10 @@ function scanHtmlAttributes(source, {
     }
     while (/\s/.test(source[cursor] || '')) cursor += 1;
     if (source[cursor] === '!' || source[cursor] === '?' || !/[A-Za-z]/.test(source[cursor] || '')) {
+      if (onStyleElement && svgDepth > 0 && source.startsWith('![CDATA[', cursor)) {
+        findings.push('SVG CDATA is unsupported for style dependency inventory');
+        break;
+      }
       const declarationEnd = source.indexOf('>', cursor);
       cursor = declarationEnd === -1 ? source.length : declarationEnd + 1;
       continue;
@@ -135,13 +141,16 @@ function scanHtmlAttributes(source, {
     while (cursor < source.length && !/[\s/>]/.test(source[cursor])) cursor += 1;
     const tagName = source.slice(tagNameStart, cursor).toLowerCase();
     if (closingTag) {
+      if (onStyleElement && tagName === 'svg' && svgDepth > 0) svgDepth -= 1;
       const closingEnd = source.indexOf('>', cursor);
       cursor = closingEnd === -1 ? source.length : closingEnd + 1;
       continue;
     }
 
+    let selfClosing = false;
     while (cursor < source.length) {
       while (/\s/.test(source[cursor] || '') || source[cursor] === '/') {
+        if (source[cursor] === '/' && source[cursor + 1] === '>') selfClosing = true;
         cursor += 1;
       }
       if (source[cursor] === '>') {
@@ -192,10 +201,23 @@ function scanHtmlAttributes(source, {
       if (!wanted || wanted.has(name)) attributes.push({ name, tagName, value });
     }
 
+    if (onStyleElement && tagName === 'svg' && !selfClosing) svgDepth += 1;
+    if (onStyleElement && svgDepth > 0 && !selfClosing && ['foreignobject', 'desc', 'title'].includes(tagName)) {
+      // SVG HTML integration points need a full namespace-aware tree builder.
+      // Do not approximate their child styles and risk omitting dependencies.
+      findings.push('SVG HTML integration points are unsupported for style dependency inventory');
+      break;
+    }
     if (tagName === 'plaintext') {
       cursor = source.length;
-    } else if (RAW_TEXT_TAGS.has(tagName)) {
+    } else if (RAW_TEXT_TAGS.has(tagName) && !(onStyleElement && svgDepth > 0 && selfClosing)) {
       const closingStart = findRawTextClosingTag(lowerSource, tagName, cursor);
+      if (onStyleElement && tagName === 'style') {
+        if (closingStart === -1) findings.push('Unterminated style element');
+        else if (svgDepth > 0 && source.slice(cursor, closingStart).includes('<![CDATA[')) {
+          findings.push('SVG CDATA is unsupported for style dependency inventory');
+        } else onStyleElement({ start: cursor, end: closingStart, svg: svgDepth > 0 });
+      }
       cursor = closingStart === -1 ? source.length : closingStart;
     }
   }

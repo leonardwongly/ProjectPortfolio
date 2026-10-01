@@ -4,6 +4,8 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import test from 'node:test';
 
+import { PAGE_CHECKS, validatePage } from '../../scripts/check-production-smoke.mjs';
+
 const require = createRequire(import.meta.url);
 const { renderCspScriptHashesDirective } = require('../../scripts/build.js');
 
@@ -122,11 +124,13 @@ test('Gemini workflow keeps model sessions separate from GitHub and Git authorit
   assert.match(executeJob, /Validate and publish implementation guidance/);
   assert.match(executeJob, /no file-read, shell, GitHub, Git, comment, or token-backed tools/);
   assert.match(executeJob, /Never attempt to commit, push, create branches, create pull requests, or post comments/);
-  const executionActionStart = executeJob.indexOf("- name: 'Run Gemini execution'");
+  const executionActionStart = executeJob.indexOf("- name: 'Generate implementation handoff'");
   const executionPostStart = executeJob.indexOf("- name: 'Validate and publish implementation guidance'");
   const executionAction = executeJob.slice(executionActionStart, executionPostStart);
   assert.doesNotMatch(executionAction, /GITHUB_TOKEN:/);
   assert.match(executionAction, GEMINI_ACTION_REFERENCE);
+  assert.match(executionAction, /"maxSessionTurns": 8/);
+  assert.match(executionAction, /Implementation guidance only; no repository edits were made/);
   assert.doesNotMatch(executeJob, /actions\/checkout@/);
   assert.doesNotMatch(executeJob, /git (?:add|commit|push)\b/);
 });
@@ -257,6 +261,45 @@ test('every generated HTML page has a CSP on its clean URL', () => {
 
     assert.ok(matchingRule, `${cleanUrl} must receive an HTTP Content-Security-Policy header`);
     assert.match(matchingRule.headers, /frame-ancestors 'none'/);
+  }
+});
+
+test('service-doc discovery and direct HTML responses receive script-free CSP under matching rules', () => {
+  const catalog = JSON.parse(fs.readFileSync('.well-known/api-catalog', 'utf8'));
+  assert.equal(catalog.linkset[0]['service-doc'][0].href, 'https://leonardwong.tech/.well-known/service-doc');
+  for (const filename of ['src/_headers.template', HEADERS_FILE]) {
+    const content = fs.readFileSync(filename, 'utf8');
+    assert.match(content, /<\/\.well-known\/service-doc>; rel="service-doc"; type="text\/html"/);
+    assert.doesNotMatch(content, /<\/\.well-known\/service-doc\.html>; rel="service-doc"/);
+    const renderedContent = content.replaceAll('{{CSP_SCRIPT_HASHES}}',
+      renderCspScriptHashesDirective(fs.readFileSync('index.html', 'utf8')));
+    const rules = renderedContent.trim().split(/\n\s*\n/).map((block) => {
+      const [route, ...headers] = block.split('\n');
+      const pattern = route.split('*').map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
+      return { pattern: new RegExp(`^${pattern}$`), headers };
+    });
+    for (const route of ['/.well-known/service-doc', '/.well-known/service-doc.html']) {
+      const matchingHeaders = rules.filter(({ pattern }) => pattern.test(route)).flatMap(({ headers }) => headers);
+      const policies = matchingHeaders.filter((header) => /^\s+Content-Security-Policy:/.test(header))
+        .map((header) => header.slice(header.indexOf(':') + 1).trim());
+      assert.ok(policies.some((policy) => /script-src 'none';/.test(policy)), `${filename}: ${route}`);
+      // Cloudflare applies every matching rule and comma-joins duplicate values.
+      assert.deepEqual(validatePage({
+        url: `https://public.example${route}`,
+        response: { status: 200, headers: new Headers({
+          'content-security-policy': policies.join(', '),
+          'strict-transport-security': 'max-age=31536000; includeSubDomains',
+          'x-content-type-options': 'nosniff'
+        }) },
+        body: fs.readFileSync('.well-known/service-doc.html', 'utf8'),
+        check: PAGE_CHECKS.find(({ path }) => path === '/.well-known/service-doc')
+      }), [], `${filename}: ${route}`);
+      assert.equal(matchingHeaders.filter((header) => /^\s+Access-Control-Allow-Origin:/.test(header)).length, 1,
+        `${filename}: ${route} must receive a single CORS origin`);
+    }
+    assert.ok(rules.some(({ pattern, headers }) =>
+      pattern.test('/docs/resume.html') && headers.some((header) => /script-src 'self'/.test(header))
+    ), `${filename}: public HTML retains its generic CSP coverage`);
   }
 });
 

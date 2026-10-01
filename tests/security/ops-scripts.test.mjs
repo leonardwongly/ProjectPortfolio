@@ -777,7 +777,7 @@ test('production smoke arguments require an HTTPS public origin and positive bou
   assert.throws(() => parseArgs([], { SMOKE_RETRY_DELAY_MS: '-1' }), /positive integer/);
   assert.deepEqual(
     PAGE_CHECKS.map((check) => check.path),
-    ['/', '/work', '/case-study-agentforge', '/reading', '/offline']
+    ['/', '/work', '/case-study-agentforge', '/reading', '/.well-known/service-doc', '/offline']
   );
 });
 
@@ -856,6 +856,7 @@ test('production smoke validates public DNS and fetches every page at least once
     ['/work', 'Project Archive'],
     ['/case-study-agentforge', 'AgentForge Merge Guard'],
     ['/reading', 'Reading'],
+    ['/.well-known/service-doc', 'Service Documentation'],
     ['/offline', 'Offline']
   ]);
   const options = {
@@ -874,7 +875,7 @@ test('production smoke validates public DNS and fetches every page at least once
       return new Response(`<main>${marker}</main>`, {
         status: 200,
         headers: {
-          'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+          'content-security-policy': `default-src 'self'; script-src ${pathname === '/.well-known/service-doc' ? "'none'" : "'self'"}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`,
           'strict-transport-security': 'max-age=31536000; includeSubDomains',
           'x-content-type-options': 'nosniff'
         }
@@ -915,7 +916,7 @@ test('production smoke validates public DNS and fetches every page at least once
         {
           status: retryRequestCount <= PAGE_CHECKS.length ? 503 : 200,
           headers: {
-            'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+            'content-security-policy': `default-src 'self'; script-src ${pathname === '/.well-known/service-doc' ? "'none'" : "'self'"}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`,
             'strict-transport-security': 'max-age=31536000; includeSubDomains',
             'x-content-type-options': 'nosniff'
           }
@@ -939,6 +940,7 @@ test('production smoke default transport pins each approved DNS answer into the 
     ['/work', 'Project Archive'],
     ['/case-study-agentforge', 'AgentForge Merge Guard'],
     ['/reading', 'Reading'],
+    ['/.well-known/service-doc', 'Service Documentation'],
     ['/offline', 'Offline']
   ]);
   const findings = await runProductionSmoke({
@@ -973,7 +975,7 @@ test('production smoke default transport pins each approved DNS answer into the 
           response.statusCode = 200;
           response.statusMessage = 'OK';
           response.headers = {
-            'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+            'content-security-policy': `default-src 'self'; script-src ${pathname === '/.well-known/service-doc' ? "'none'" : "'self'"}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests`,
             'strict-transport-security': 'max-age=31536000; includeSubDomains',
             'x-content-type-options': 'nosniff'
           };

@@ -27,19 +27,26 @@ test('committed pages have the approved script inventory', () => {
   }
 });
 
-test('service documentation has no approved executable scripts', () => {
-  const pagePath = '/.well-known/service-doc';
-  const source = localPage(pagePath);
-  assert.deepEqual(extractScripts(source), []);
-  assert.deepEqual(validate(source, pagePath), []);
-  assert.match(
-    validate(`${source}<script src="/js/main.js" defer></script>`, pagePath)[0],
-    /script inventory differs/
-  );
-  assert.throws(
-    () => validate(`${source}<script>alert(1)</script>`, pagePath),
-    /Unapproved inline script/
-  );
+test('both service documentation routes have no approved executable scripts', () => {
+  const source = localPage('/.well-known/service-doc');
+  for (const pagePath of ['/.well-known/service-doc', '/.well-known/service-doc.html']) {
+    const validateServiceDoc = (html) => validateScripts({
+      html,
+      expectedHtml: source,
+      pageUrl: new URL(pagePath, ORIGIN).toString(),
+      origin: ORIGIN
+    });
+    assert.deepEqual(extractScripts(source), []);
+    assert.deepEqual(validateServiceDoc(source), []);
+    assert.match(
+      validateServiceDoc(`${source}<script src="/js/main.js" defer></script>`)[0],
+      /script inventory differs/
+    );
+    assert.throws(
+      () => validateServiceDoc(`${source}<script>alert(1)</script>`),
+      /Unapproved inline script/
+    );
+  }
 });
 
 test('live script injection, removal, and inline mutation fail the inventory', () => {

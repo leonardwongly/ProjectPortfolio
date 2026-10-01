@@ -14,6 +14,8 @@ const MAX_TIMEOUT_MS = 60000;
 const MAX_ATTEMPTS = 10;
 const MAX_RETRY_DELAY_MS = 60000;
 const MAX_RESPONSE_BODY_BYTES = 1024 * 1024;
+const MAX_CSP_BYTES = 16384;
+const MAX_CSP_POLICIES = 8;
 const MIN_HSTS_MAX_AGE_SECONDS = 31536000;
 
 const PAGE_CHECKS = [
@@ -52,6 +54,16 @@ const PAGE_CHECKS = [
       'strict-transport-security',
       'x-content-type-options'
     ]
+  },
+  {
+    path: '/.well-known/service-doc',
+    marker: /Service Documentation/i,
+    headers: [
+      'content-security-policy',
+      'strict-transport-security',
+      'x-content-type-options'
+    ],
+    noScripts: true
   },
   {
     path: '/offline',
@@ -264,11 +276,27 @@ async function fetchTextWithTimeout(url, {
   }
 }
 
-function validateContentSecurityPolicy(value) {
-  if (typeof value !== 'string' || !value.trim() || /[,\u0000-\u001f\u007f]/.test(value)) {
-    return 'content-security-policy is malformed or contains multiple policies';
+function validateContentSecurityPolicy(value, { noScripts = false } = {}) {
+  if (typeof value !== 'string' || !value.trim() ||
+      Buffer.byteLength(value, 'utf8') > MAX_CSP_BYTES || /[\u0000-\u001f\u007f]/.test(value)) {
+    return 'content-security-policy is malformed';
   }
 
+  // Cloudflare combines headers from matching _headers rules with commas. Browsers
+  // enforce every resulting policy, so each must satisfy this route's requirements.
+  const policies = value.split(',');
+  if (policies.length > MAX_CSP_POLICIES) {
+    return 'content-security-policy contains too many policies';
+  }
+  for (const policy of policies) {
+    if (!policy.trim()) return 'content-security-policy contains an empty policy';
+    const error = validateSingleContentSecurityPolicy(policy, { noScripts });
+    if (error) return error;
+  }
+  return null;
+}
+
+function validateSingleContentSecurityPolicy(value, { noScripts }) {
   const directives = new Map();
   for (const rawDirective of value.split(';')) {
     const directive = rawDirective.trim();
@@ -309,6 +337,7 @@ function validateContentSecurityPolicy(value) {
   for (const name of ['script-src', 'script-src-elem']) {
     const sources = directives.get(name);
     if (name === 'script-src-elem' && !sources) continue;
+    if (noScripts && isExactSource(name, ["'none'"])) continue;
     if (!sources?.some((source) => source.toLowerCase() === "'self'") ||
         !sources.every(isRestrictedScriptSource)) {
       return `content-security-policy ${name} must allow only 'self' and script hashes`;
@@ -390,8 +419,17 @@ function validatePage({ url, response, body, check }) {
 
   const csp = response.headers.get('content-security-policy');
   if (csp) {
-    const error = validateContentSecurityPolicy(csp);
+    const error = validateContentSecurityPolicy(csp, { noScripts: check.noScripts === true });
     if (error) findings.push(`${url}: ${error}`);
+    // A restrictive policy blocks scripts even when another matching header rule
+    // allows them, provided script-src-elem does not override it within that policy.
+    if (check.noScripts && !error && !csp.split(',').some((policy) => {
+      const elementSources = /(?:^|;)\s*script-src-elem\s+([^;]+)/i.exec(policy)?.[1];
+      return /(?:^|;)\s*script-src\s+'none'\s*(?:;|$)/i.test(policy) &&
+        (elementSources === undefined || elementSources.trim().toLowerCase() === "'none'");
+    })) {
+      findings.push(`${url}: service documentation must use script-src 'none'`);
+    }
   }
   const hsts = response.headers.get('strict-transport-security');
   if (hsts) {

@@ -2,24 +2,51 @@ name: Production Smoke
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+    inputs:
+      expected_sha:
+        description: 'Optional full approved release SHA; must still be current main'
+        required: false
+        type: string
+  # Pages reports actual deployment completion through its GitHub App check.
+  # A main push alone is not proof that the new version has been deployed.
+  check_run:
+    types: [completed]
   schedule:
     - cron: '42 4 * * 1'
 
 permissions:
   contents: read
+  checks: read
+
+concurrency:
+  group: production-smoke-${{ github.event.check_run.head_sha || github.sha }}
+  cancel-in-progress: false
 
 jobs:
   production-smoke:
     name: Production Smoke
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    if: >-
+      github.repository == 'leonardwongly/ProjectPortfolio' &&
+      github.event.repository.id == 319589008 &&
+      (github.event_name != 'check_run' ||
+       (github.event.check_run.name == 'Cloudflare Pages' &&
+        github.event.check_run.app.id == 85455 &&
+        github.event.check_run.check_suite.head_branch == 'main' &&
+        github.event.check_run.pull_requests[0] == null &&
+        github.event.check_run.status == 'completed' &&
+        github.event.check_run.conclusion == 'success')) &&
+      (github.event_name == 'check_run' || github.ref == 'refs/heads/main')
+    defaults:
+      run:
+        working-directory: tooling
     steps:
-      - name: Checkout
+      - name: Checkout trusted verification tooling from default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
         with:
+          ref: ${{ github.sha }}
+          path: tooling
           persist-credentials: false
 
       - name: Set up Node.js 24
@@ -27,22 +54,60 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+          cache-dependency-path: tooling/package-lock.json
 
       - name: Install Node dependencies
         id: install
         run: npm ci --ignore-scripts
 
-      - name: Check production pages and headers
+      - name: Resolve confirmed Cloudflare deployment identity
+        id: deployment
+        run: node scripts/resolve-production-deployment.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+
+      - name: Checkout verified deployed SHA as data
+        id: deployed
+        if: ${{ steps.deployment.outcome == 'success' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
+        with:
+          ref: ${{ steps.deployment.outputs.sha }}
+          path: deployed
+          persist-credentials: false
+
+      - name: Verify immutable deployment and production artifacts against exact SHA
+        if: ${{ always() && steps.deployed.outcome == 'success' }}
+        run: node scripts/verify-deployment-artifacts.mjs
+        env:
+          DEPLOYMENT_SHA: ${{ steps.deployment.outputs.sha }}
+          PREVIEW_ORIGIN: ${{ steps.deployment.outputs.preview_origin }}
+          DEPLOYMENT_ROOT: ../deployed
+          SMOKE_ATTEMPTS: '2'
+          SMOKE_RETRY_DELAY_MS: '5000'
+          SMOKE_TIMEOUT_MS: '5000'
+
+      - name: Check confirmed immutable deployment headers
+        if: ${{ always() && steps.deployed.outcome == 'success' }}
         run: npm run check:production
         env:
-          SMOKE_ATTEMPTS: '6'
-          SMOKE_RETRY_DELAY_MS: '10000'
-          SMOKE_TIMEOUT_MS: '10000'
+          SITE_ORIGIN: ${{ steps.deployment.outputs.preview_origin }}
+          SMOKE_ATTEMPTS: '2'
+          SMOKE_RETRY_DELAY_MS: '5000'
+          SMOKE_TIMEOUT_MS: '5000'
+
+      - name: Check production pages and headers
+        if: ${{ always() && steps.install.outcome == 'success' }}
+        run: npm run check:production
+        env:
+          SMOKE_ATTEMPTS: '2'
+          SMOKE_RETRY_DELAY_MS: '5000'
+          SMOKE_TIMEOUT_MS: '5000'
 
       - name: Check production script inventory
         if: ${{ always() && steps.install.outcome == 'success' }}
         run: npm run check:production:scripts
         env:
-          SMOKE_ATTEMPTS: '3'
-          SMOKE_RETRY_DELAY_MS: '10000'
-          SMOKE_TIMEOUT_MS: '10000'
+          SMOKE_ATTEMPTS: '2'
+          SMOKE_RETRY_DELAY_MS: '5000'
+          SMOKE_TIMEOUT_MS: '5000'
