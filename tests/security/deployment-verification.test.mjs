@@ -2,13 +2,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { execFileSync, spawnSync } from 'node:child_process';
 import test from 'node:test';
 import YAML from 'yaml';
+import { scanHtmlAttributes } from '../../scripts/lib/html-attributes.mjs';
 
 import { deploymentIdentity, githubJson, readEvent, resolveProductionDeployment,
   writeGithubOutputs } from '../../scripts/resolve-production-deployment.mjs';
-import { ARTIFACTS, MARKER_ROUTE, normalizePreviewOrigin, parseArgs, readTrackedArtifacts,
+import { ARTIFACTS, MARKER_ROUTE, MAX_ARTIFACT_BYTES, MAX_ARTIFACT_FILES,
+  MAX_ARTIFACT_TOTAL_BYTES, MAX_ARTIFACT_CONCURRENCY, MAX_VERIFICATION_MS,
+  normalizePreviewOrigin, parseArgs, readTrackedArtifacts,
   validateDeploymentMarker, verifyDeploymentArtifacts } from '../../scripts/verify-deployment-artifacts.mjs';
 
 const SHA = '21c9ede65bc727c2c3bbdd376d6338bf86445531';
@@ -42,6 +46,50 @@ function markerResponse(changes = {}) {
     bytes: Buffer.from(JSON.stringify({ schemaVersion: 1, repository: REPOSITORY.full_name,
       sha: SHA, branch: 'main', previewOrigin: PREVIEW, ...changes })) };
 }
+
+function artifactRepository(t, files = {}) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'deployment-graph-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const git = (...args) => execFileSync('git', ['-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', '-C', root, ...args], { encoding: 'utf8' });
+  const write = (filename, bytes) => {
+    fs.mkdirSync(path.dirname(path.join(root, filename)), { recursive: true });
+    fs.writeFileSync(path.join(root, filename), bytes);
+  };
+  const commit = () => {
+    git('add', '.'); git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.com', 'commit', '-qm', 'fixture');
+    return git('rev-parse', 'HEAD').trim();
+  };
+  git('init', '-q');
+  for (const filename of ARTIFACTS.values()) write(filename, filename);
+  for (const [filename, bytes] of Object.entries(files)) write(filename, bytes);
+  return { root, write, commit, sha: commit() };
+}
+
+const CRITICAL_FILES = {
+  'index.html': `<link rel="manifest" href="manifest.json"><link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/custom.css"><a href="docs/resume.pdf">Resume</a><a href="/work.html#projects">Work</a>
+    <img src="images/portrait.png" srcset="images/portrait.png 1x, images/portrait-2.png 2x">
+    <link rel="preload" href="https://leonardwong.tech/images/absolute.png" as="image">
+    <img srcset="data:image/png;base64,AAAA 1x, images/portrait-2.png 2x"><img srcset="images/portrait.png, images/portrait-2.png 2x">
+    <a href="https://external.example/">Outside</a><a href="mailto:hello@example.com">Contact</a><a href="#content">Content</a>
+    <img src="data:image/png;base64,AAAA"><style>.inline {background:url('images/portrait.png')}</style>`,
+  'work.html': '<link href="css/case-study.css"><a href="/">Home</a><img style="background: url(images/portrait.png)" src="images/portrait.png">',
+  'js/main.js': 'throw new Error("Candidate JavaScript must never execute during inventory");',
+  'css/bootstrap.min.css': 'body {color: black}',
+  'css/custom.css': '/* committed fonts */ @import "theme.css"; @font-face {src: url(../fonts/main.woff2)} .arrow {content: "\\276f"} .comment {content: "/* quoted content */"}',
+  'css/theme.css': '.badge {background: url("../images/icon.svg")}',
+  'css/case-study.css': '@import url("theme.css"); .diagram {background:url(https://external.example/image.png)}',
+  'images/icon.svg': '<svg><image href="portrait.png"/></svg>',
+  'images/portrait.png': Buffer.from([0, 1, 2, 3]),
+  'images/portrait-2.png': Buffer.from([4, 5, 6]),
+  'images/absolute.png': Buffer.from([7, 9]),
+  'fonts/main.woff2': Buffer.from([0, 9, 8, 7]),
+  'favicon/icon.png': Buffer.from([0, 5, 3]),
+  'docs/resume.pdf': Buffer.from('%PDF-1.7\ncommitted resume'),
+  'manifest.json': JSON.stringify({ start_url: '/', scope: '/', icons: [{ src: 'favicon/icon.png' }],
+    screenshots: [{ src: 'images/portrait.png' }], shortcuts: [{ url: '/work', icons: [{ src: 'favicon/icon.png' }] }] }),
+  'pwabuilder-sw.js': "importScripts('js/vendor/workbox-sw.js', 'js/site.js'); const offlineFallbackPage = 'offline.html';"
+};
 
 test('observed Cloudflare event binds exact SHA, app, project deployment, and immutable preview', async () => {
   assert.deepEqual(deploymentIdentity(checkFixture()), EXPECTED_IDENTITY);
@@ -184,11 +232,15 @@ test('artifact correspondence rejects old content, edge injection, redirects, an
 test('version markers reject stale SHA even when every published artifact is identical', async () => {
   const bytes = Buffer.from('identical published artifacts across two commits');
   for (const marker of [markerResponse({ sha: 'a'.repeat(40) }), { ...markerResponse(), status: 404 }]) {
+    let assetRequests = 0;
     const result = await verifyDeploymentArtifacts({ sha: SHA, previewOrigin: PREVIEW, attempts: 1,
       readArtifacts: () => new Map([['/', bytes]]),
-      requestImpl: async (url) => new URL(url).pathname === MARKER_ROUTE ? marker : { status: 200, bytes } });
+      requestImpl: async (url) => {
+        if (new URL(url).pathname === MARKER_ROUTE) return marker;
+        assetRequests += 1; return { status: 200, bytes };
+      } });
     assert.equal(result.findings.length, 2); assert.equal(result.evidence.length, 0);
-    assert.equal(result.production_alias_sha, null);
+    assert.equal(result.production_alias_sha, null); assert.equal(assetRequests, 0);
   }
 });
 
@@ -226,6 +278,209 @@ test('exact checkout artifacts come from the immutable Git tree and reject symli
   fs.rmSync(path.join(root, 'js/site.js')); fs.symlinkSync('../index.html', path.join(root, 'js/site.js'));
   git('add', '.'); git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.com', 'commit', '-qm', 'symlink');
   assert.throws(() => readTrackedArtifacts({ repositoryRoot: root, sha: git('rev-parse', 'HEAD').trim() }), /tracked regular file/);
+});
+
+test('committed dependency graph verifies CSS imports, srcsets, fonts, manifest icons, and resume bytes', async (t) => {
+  const fixture = artifactRepository(t, CRITICAL_FILES);
+  const expected = readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.sha });
+  for (const route of ['/css/bootstrap.min.css', '/css/case-study.css', '/css/theme.css', '/fonts/main.woff2',
+    '/manifest.json', '/favicon/icon.png', '/images/portrait.png', '/images/portrait-2.png', '/images/absolute.png', '/images/icon.svg', '/docs/resume.pdf']) {
+    assert.ok(expected.has(route), `Missing release-critical dependency ${route}`);
+  }
+  assert.ok(expected.has('/.well-known/service-doc'));
+  assert.equal(expected.has('/.well-known/service-doc.html'), false);
+  assert.equal(expected.has('/work.html'), false);
+  assert.ok([...expected.keys()].every((route) => route.startsWith('/')));
+  fixture.write('fonts/main.woff2', 'dirty checkout font');
+  assert.deepEqual(readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.sha }).get('/fonts/main.woff2'), CRITICAL_FILES['fonts/main.woff2']);
+  const requestImpl = async (url) => new URL(url).pathname === MARKER_ROUTE
+    ? markerResponse({ sha: fixture.sha }) : { status: 200, bytes: expected.get(new URL(url).pathname) };
+  const options = { sha: fixture.sha, previewOrigin: PREVIEW, attempts: 1, readArtifacts: () => expected, requestImpl };
+  assert.equal((await verifyDeploymentArtifacts(options)).findings.length, 0);
+  for (const stale of ['/css/bootstrap.min.css', '/fonts/main.woff2', '/docs/resume.pdf']) {
+    const failed = await verifyDeploymentArtifacts({ ...options, requestImpl: async (url) => new URL(url).pathname === stale
+      ? { status: 200, bytes: Buffer.from('stale release bytes') } : requestImpl(url) });
+    assert.equal(failed.findings.length, 2);
+    assert.ok(failed.findings.every((finding) => finding.includes(stale) && finding.includes('Deployed bytes differ')));
+    assert.equal(failed.production_alias_sha, null); assert.deepEqual(failed.evidence, []);
+  }
+});
+
+test('style inventory follows actual HTML and SVG elements through comments, attributes, and raw text', (t) => {
+  const fixture = artifactRepository(t, { ...CRITICAL_FILES,
+    'index.html': `<!-- <style> --> <script>const text = '<style>'; </script>
+      <div title="<style>" data-note='> <style>'></div><textarea><style></textarea>
+      <svg><style/><image href="images/portrait.png"/></svg>
+      <style title=">">.real {background:url('/images/html-style.png')}</style>
+      <style/>.html {background:url('/images/html-self-closing-style.png')}</style>`,
+    'images/icon.svg': `<svg><!-- <style> --><style/><style>.real {background:u&#114;l(svg-style.png)}</style>
+      <image href="portrait.png"/></svg>`,
+    'images/html-style.png': 'HTML style image',
+    'images/html-self-closing-style.png': 'HTML self-closing syntax still opens a style element',
+    'images/svg-style.png': 'SVG style image'
+  });
+  const expected = readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.sha });
+  for (const route of ['/images/html-style.png', '/images/html-self-closing-style.png', '/images/svg-style.png']) {
+    assert.ok(expected.has(route), `Missing actual style dependency ${route}`);
+  }
+  const spans = [];
+  const scanned = scanHtmlAttributes('<svg><style/><image href="actual.png"/></svg>', {
+    attributeNames: ['href'], onStyleElement: (span) => spans.push(span)
+  });
+  assert.deepEqual(spans, []); assert.deepEqual(scanned.findings, []);
+  assert.deepEqual(scanned.attributes.map(({ value }) => value), ['actual.png']);
+  // Strict style collection is opt-in; existing default scanner diagnostics stay unchanged.
+  assert.deepEqual(scanHtmlAttributes('<style>unterminated').findings, []);
+  for (const [html, pattern] of [
+    ['<!-- <style> --><style/>', /Unterminated style element/],
+    ['<svg><foreignObject><style/></foreignObject></svg>', /SVG HTML integration points/],
+    ['<svg><![CDATA[<style>]]></svg>', /SVG CDATA/],
+    ['<svg><style><![CDATA[body {color:black}]]></style></svg>', /SVG CDATA/]
+  ]) {
+    fixture.write('index.html', html);
+    assert.throws(() => readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.commit() }), pattern);
+  }
+});
+
+test('dependency graph fails closed on unsafe paths, malformed syntax, missing resources, and symlinks', (t) => {
+  const fixture = artifactRepository(t, CRITICAL_FILES);
+  const unsafe = ['../../outside.png', '%2e%2e/outside.png', '%252e%252e/outside.png', 'images%2fportrait.png',
+    'images/%5cportrait.png', '//attacker.example/file.png', 'http://external.example/file.png', 'https:images/portrait.png',
+    'https://leonardwong.tech/../escape.png', 'https://user:password@leonardwong.tech/images/portrait.png', 'https://[malformed',
+    'images//portrait.png', 'images/%zz.png', 'images/white space.png', 'images/unsupported+name.png', 'x'.repeat(2049)];
+  for (const reference of unsafe) {
+    fixture.write('index.html', `<img src="${reference}">`);
+    const sha = fixture.commit();
+    assert.throws(() => readTrackedArtifacts({ repositoryRoot: fixture.root, sha }), /dependency path|URL encoding|traversal/, reference);
+  }
+  for (const [html, pattern] of [
+    ['<img src="&#46;&#46;/escape.png">', /traversal/],
+    ['<base href="https://external.example/"><img src="image.png">', /base URL/],
+    ['<img src="missing.png">', /tracked regular file/],
+    ['<img src="unterminated>', /malformed/],
+    ['<img srcset="images/portrait.png nope">', /Malformed srcset/],
+    ['<img srcset="data:image/png;base64,AAAA 1x, missing.png 2x">', /tracked regular file/]
+  ]) {
+    fixture.write('index.html', html);
+    assert.throws(() => readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.commit() }), pattern);
+  }
+  fixture.write('index.html', CRITICAL_FILES['index.html']);
+  for (const [css, pattern] of [['@import "missing.css";', /tracked regular file/],
+    ['a {background: url("unfinished.png"}', /Malformed CSS URL/],
+    ['@import impossible;', /Unsupported CSS import/], ['a {background: u\\72l(image.png)}', /Escaped CSS syntax/]]) {
+    fixture.write('css/custom.css', css);
+    assert.throws(() => readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.commit() }), pattern);
+  }
+  fixture.write('css/custom.css', CRITICAL_FILES['css/custom.css']);
+  for (const manifest of ['[]', '{"icons": {}}', '{"icons": [null]}', '{"start_url": 42}']) {
+    fixture.write('manifest.json', manifest);
+    assert.throws(() => readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.commit() }), /Manifest|manifest|dependency path/);
+  }
+  fixture.write('manifest.json', CRITICAL_FILES['manifest.json']);
+  fixture.write('pwabuilder-sw.js', 'importScripts(computedPath);');
+  assert.throws(() => readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.commit() }), /static literal/);
+  fixture.write('pwabuilder-sw.js', "importScripts('js\\site.js');");
+  assert.throws(() => readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.commit() }), /static literal/);
+  fixture.write('pwabuilder-sw.js', "importScripts('js/site.js)");
+  assert.throws(() => readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.commit() }), /Unterminated/);
+  fixture.write('pwabuilder-sw.js', CRITICAL_FILES['pwabuilder-sw.js']);
+  fs.rmSync(path.join(fixture.root, 'fonts/main.woff2'));
+  fs.symlinkSync('../images/portrait.png', path.join(fixture.root, 'fonts/main.woff2'));
+  assert.throws(() => readTrackedArtifacts({ repositoryRoot: fixture.root, sha: fixture.commit() }), /tracked regular file/);
+});
+
+test('critical graph file, byte, reference, and source-work bounds fail instead of truncating inventory', () => {
+  const sourceGit = (extra, index) => {
+    const files = new Map([...ARTIFACTS.values()].map((file) => [file, { bytes: Buffer.from(file) }]));
+    for (const [file, entry] of extra) files.set(file, entry);
+    files.set('index.html', { bytes: Buffer.from(index) });
+    const entries = [...files].map(([file, entry], i) => ({ file, bytes: entry.bytes, size: entry.size ?? entry.bytes.length,
+      oid: i.toString(16).padStart(40, '0') }));
+    return (_command, args) => {
+      if (args.includes('rev-parse')) return `${SHA}\n`;
+      if (args.includes('ls-tree')) return entries.map((entry) => `100644 blob ${entry.oid} ${entry.size}\t${entry.file}\0`).join('');
+      return entries.find((entry) => entry.oid === args.at(-1)).bytes;
+    };
+  };
+  const many = Array.from({ length: MAX_ARTIFACT_FILES }, (_, i) => [`asset-${i}.png`, { bytes: Buffer.from('image') }]);
+  const html = many.map(([file]) => `<img src="${file}">`).join('');
+  assert.throws(() => readTrackedArtifacts({ repositoryRoot: '/tmp', sha: SHA, git: sourceGit(many, html) }), /artifact limit/);
+  assert.throws(() => readTrackedArtifacts({ repositoryRoot: '/tmp', sha: SHA,
+    git: sourceGit([['large.pdf', { bytes: Buffer.alloc(0), size: MAX_ARTIFACT_BYTES + 1 }]], '<a href="large.pdf">Resume</a>') }), /byte limit/);
+  const large = Buffer.alloc(MAX_ARTIFACT_BYTES);
+  const largeFiles = Array.from({ length: MAX_ARTIFACT_TOTAL_BYTES / MAX_ARTIFACT_BYTES + 1 }, (_, i) => [`asset-${i}.bin`, { bytes: large }]);
+  assert.throws(() => readTrackedArtifacts({ repositoryRoot: '/tmp', sha: SHA,
+    git: sourceGit(largeFiles, largeFiles.map(([file]) => `<img src="${file}">`).join('')) }), /total byte limit/);
+  assert.throws(() => readTrackedArtifacts({ repositoryRoot: '/tmp', sha: SHA,
+    git: sourceGit([], '<a href="https://external.example/">Outside</a>'.repeat(8193)) }), /reference limit/);
+  assert.throws(() => readTrackedArtifacts({ repositoryRoot: '/tmp', sha: SHA, now: () => 1, deadline: 0,
+    git: sourceGit([], '') }), /time limit/);
+});
+
+test('near-limit malformed resource inputs fail within a bounded subprocess instead of rescanning repeated openers', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'deployment-parser-bounds-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const file = path.join(root, 'candidate.txt');
+  const verifier = pathToFileURL(path.resolve('scripts/verify-deployment-artifacts.mjs')).href;
+  const runner = `
+    import fs from 'node:fs';
+    import { ARTIFACTS, readTrackedArtifacts } from ${JSON.stringify(verifier)};
+    const sha = ${JSON.stringify(SHA)};
+    const files = [...new Set(ARTIFACTS.values())].map((name, index) => ({ name,
+      oid: index.toString(16).padStart(40, '0'),
+      bytes: name === process.argv[2] ? fs.readFileSync(process.argv[1]) : Buffer.from(name) }));
+    const git = (_command, args) => {
+      if (args.includes('rev-parse')) return sha + '\\n';
+      if (args.includes('ls-tree')) return files.map((entry) =>
+        '100644 blob ' + entry.oid + ' ' + entry.bytes.length + '\\t' + entry.name + '\\0').join('');
+      return files.find((entry) => entry.oid === args.at(-1)).bytes;
+    };
+    try {
+      readTrackedArtifacts({ repositoryRoot: '/tmp', sha, git });
+      process.exitCode = 2;
+    } catch (error) { process.stdout.write(error.message); }
+  `;
+  const repeated = (token) => token.repeat(Math.floor(MAX_ARTIFACT_BYTES / token.length));
+  const cases = [
+    ['index.html', repeated('<style>'), /Unterminated style element/],
+    ['css/custom.css', repeated('/*x'), /Unterminated CSS comment/],
+    ['css/custom.css', repeated('url('), /Malformed CSS URL/],
+    ['css/custom.css', repeated('url("'), /Malformed CSS URL|Unterminated CSS/],
+    ['pwabuilder-sw.js', repeated('importScripts('), /static literal/],
+    ['pwabuilder-sw.js', "importScripts('" + repeated('importScripts(').slice(32), /Unterminated/],
+    ['index.html', '<img srcset="a' + ','.repeat(MAX_ARTIFACT_BYTES - 64) + 'b,">', /Invalid dependency path/]
+  ];
+  for (const [artifact, source, pattern] of cases) {
+    fs.writeFileSync(file, source);
+    const run = spawnSync(process.execPath, ['--input-type=module', '-e', runner, file, artifact],
+      { encoding: 'utf8', timeout: 1500, maxBuffer: 4096 });
+    assert.equal(run.error, undefined, `${artifact} malformed-input parser exceeded its 1500ms bound`);
+    assert.equal(run.status, 0, run.stderr);
+    assert.match(run.stdout, pattern);
+  }
+});
+
+test('artifact network verification limits parallel requests and fails when the overall deadline expires', async () => {
+  const expected = new Map(Array.from({ length: 24 }, (_, i) => [`/image-${i}.png`, Buffer.from(`image ${i}`)]));
+  let active = 0; let peak = 0;
+  const result = await verifyDeploymentArtifacts({ sha: SHA, previewOrigin: PREVIEW, attempts: 1,
+    readArtifacts: () => expected, requestImpl: async (url, options) => {
+      const route = new URL(url).pathname;
+      if (route === MARKER_ROUTE) return markerResponse();
+      active += 1; peak = Math.max(peak, active);
+      await new Promise((resolve) => setImmediate(resolve));
+      active -= 1;
+      assert.equal(options.maxBytes, expected.get(route).length);
+      assert.ok(options.timeoutMs <= 5000);
+      return { status: 200, bytes: expected.get(route) };
+    } });
+  assert.equal(result.findings.length, 0); assert.equal(peak, MAX_ARTIFACT_CONCURRENCY);
+  let elapsed = 0; let calls = 0; let sleeps = 0;
+  const expired = await verifyDeploymentArtifacts({ sha: SHA, previewOrigin: PREVIEW, attempts: 3,
+    now: () => elapsed, readArtifacts: () => expected, sleep: async () => { sleeps += 1; },
+    requestImpl: async () => { calls += 1; elapsed = MAX_VERIFICATION_MS; return markerResponse(); } });
+  assert.equal(calls, 1); assert.equal(sleeps, 0); assert.equal(expired.production_alias_sha, null);
+  assert.deepEqual(expired.evidence, []); assert.ok(expired.findings.every((finding) => finding.includes('overall time limit')));
 });
 
 test('artifact CLI requires exact SHA, immutable preview, and checkout; invalid invocation exits unsuccessfully', () => {

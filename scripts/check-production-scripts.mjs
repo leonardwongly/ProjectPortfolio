@@ -158,7 +158,7 @@ function validateScripts({ html, expectedHtml, pageUrl, origin }) {
   const required = APPROVED_SCRIPTS.map((source) => `src:${source}`);
   const allowedExpected = new URL(pageUrl).pathname === '/'
     ? [...required, expected[2]]
-    : ['/offline', '/.well-known/service-doc'].includes(new URL(pageUrl).pathname) ? [] : required;
+    : ['/offline', '/.well-known/service-doc', '/.well-known/service-doc.html'].includes(new URL(pageUrl).pathname) ? [] : required;
   if (expected.length !== allowedExpected.length ||
       expected.some((identity, index) => identity !== allowedExpected[index]) ||
       (allowedExpected.length === 3 && !expected[2]?.startsWith('jsonld:'))) {

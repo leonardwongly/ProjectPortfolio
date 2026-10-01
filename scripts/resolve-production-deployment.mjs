@@ -102,6 +102,13 @@ async function githubJson(apiPath, { token, requestImpl = requestPinnedHttpsByte
   return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(response.bytes));
 }
 
+async function resolveMainSha(api, token) {
+  const ref = await api(`/repos/${REPOSITORY}/git/ref/heads/main`, { token });
+  const mainSha = assertSha(ref?.object?.sha);
+  if (ref.ref !== 'refs/heads/main' || ref.object.type !== 'commit') throw new Error('Expected a main commit reference');
+  return mainSha;
+}
+
 async function resolveProductionDeployment({ eventName, event, githubRef, expectedSha = '', api = githubJson, token } = {}) {
   assertRepository(event?.repository);
   let check;
@@ -115,9 +122,7 @@ async function resolveProductionDeployment({ eventName, event, githubRef, expect
     }
   } else if (eventName === 'schedule' || eventName === 'workflow_dispatch') {
     if (githubRef !== 'refs/heads/main') throw new Error('Weekly and manual deployment verification must run from main');
-    const ref = await api(`/repos/${REPOSITORY}/git/ref/heads/main`, { token });
-    const mainSha = assertSha(ref?.object?.sha);
-    if (ref.ref !== 'refs/heads/main' || ref.object.type !== 'commit') throw new Error('Expected a main commit reference');
+    const mainSha = await resolveMainSha(api, token);
     if (expectedSha && assertSha(expectedSha) !== mainSha) throw new Error('Requested release SHA differs from current main');
     const checks = await api(`/repos/${REPOSITORY}/commits/${mainSha}/check-runs?per_page=100`, { token });
     if (!Array.isArray(checks?.check_runs) || checks.total_count > 100) {
@@ -132,6 +137,10 @@ async function resolveProductionDeployment({ eventName, event, githubRef, expect
   }
   const suite = await api(`/repos/${REPOSITORY}/check-suites/${check.check_suite.id}`, { token });
   assertSuite(suite, check);
+  // A late completion for an older main commit must not validate the current release.
+  if (eventName === 'check_run' && check.head_sha !== await resolveMainSha(api, token)) {
+    throw new Error('Cloudflare deployment is not for current exact main SHA');
+  }
   return deploymentIdentity(check);
 }
 
