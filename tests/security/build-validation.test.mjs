@@ -406,6 +406,95 @@ test('build input readers enforce the byte boundary and reject linked or malform
   }
 });
 
+for (const sequence of ['$$', '$&', '$`', "$'"]) {
+  test(`buildSite preserves literal ${sequence} in validated page and case-study content`, () => {
+    const { rootDir } = makeSiteBuildFixture();
+    try {
+      const text = `JavaScript replacement sequence ${sequence} stays literal`;
+      const escapedText = text.replaceAll('&', '&amp;').replaceAll("'", '&#39;');
+      const profilePath = path.join(rootDir, 'data/profile.json');
+      const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+      profile.hero.headline = text;
+      fs.writeFileSync(profilePath, JSON.stringify(profile));
+
+      const caseStudiesPath = path.join(rootDir, 'data/case-studies.json');
+      const caseStudies = JSON.parse(fs.readFileSync(caseStudiesPath, 'utf8'));
+      caseStudies[0].title = text;
+      caseStudies[0].summary = text;
+      fs.writeFileSync(caseStudiesPath, JSON.stringify(caseStudies));
+
+      buildSite({ rootDir, log: () => {} });
+
+      const indexHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+      assert.ok(indexHtml.includes(`<h1>${escapedText}</h1>`), 'normal-page content stays literal');
+      const caseHtml = fs.readFileSync(path.join(rootDir, caseStudies[0].slug), 'utf8');
+      assert.ok(caseHtml.includes(`<h1>${escapedText}</h1>`), 'case-study body stays literal');
+      assert.ok(caseHtml.includes(`<title>${escapedText}`), 'case-study title stays literal');
+      assert.ok(caseHtml.includes(`<meta name="description" content="${escapedText}"`),
+        'case-study description stays literal');
+    } finally {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+}
+
+test('buildSite preserves literal template-looking content without changing markup or JSON-LD', () => {
+  const { rootDir } = makeSiteBuildFixture();
+  try {
+    const text = "{{CONTACT}} {{CASE_STUDY}} {{UNKNOWN_TOKEN}} {{CSP_SCRIPT_HASHES}} $$ $& $` $'";
+    const escapedText = text.replaceAll('&', '&amp;').replaceAll("'", '&#39;');
+    const profilePath = path.join(rootDir, 'data/profile.json');
+    const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+    profile.hero.headline = text;
+    profile.person.name = text;
+    fs.writeFileSync(profilePath, JSON.stringify(profile));
+    const caseStudiesPath = path.join(rootDir, 'data/case-studies.json');
+    const caseStudies = JSON.parse(fs.readFileSync(caseStudiesPath, 'utf8'));
+    caseStudies[0].title = text;
+    caseStudies[0].summary = text;
+    fs.writeFileSync(caseStudiesPath, JSON.stringify(caseStudies));
+    const indexTemplatePath = path.join(rootDir, 'src/index.html');
+    fs.writeFileSync(indexTemplatePath, fs.readFileSync(indexTemplatePath, 'utf8').replace('{{PROFILE_SCHEMA}}', '{{PROFILE_SCHEMA}}  '));
+
+    buildSite({ rootDir, log: () => {} });
+
+    const indexHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+    assert.ok(indexHtml.includes(`<h1>${escapedText}</h1>`), 'literal content cannot expand into heading markup');
+    const schema = JSON.parse(indexHtml.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+    assert.equal(schema['@graph'][0].name, text, 'JSON-LD remains valid and keeps the exact authored name');
+    const headers = fs.readFileSync(path.join(rootDir, '_headers'), 'utf8');
+    collectInlineScriptHashes(indexHtml).forEach((hash) => {
+      assert.ok(headers.includes(`'${hash}'`), 'CSP still hashes the exact final inline script');
+      assert.ok(indexHtml.includes(`'${hash}'`), 'the index CSP hashes the final script after whitespace normalization');
+    });
+
+    const caseHtml = fs.readFileSync(path.join(rootDir, caseStudies[0].slug), 'utf8');
+    assert.ok(caseHtml.includes(`<h1>${escapedText}</h1>`), 'case-study body keeps literal content');
+    assert.ok(caseHtml.includes(`<title>${escapedText} | Leonard Wong</title>`), 'case-study title keeps literal content');
+    assert.ok(caseHtml.includes(`<meta name="description" content="${escapedText}"`), 'case-study metadata keeps literal content');
+    const workHtml = fs.readFileSync(path.join(rootDir, 'work.html'), 'utf8');
+    assert.match(workHtml, /href="\/work\.html" aria-current="page"/, 'authored navigation state still resolves');
+    assert.match(caseHtml, /href="\/work\.html" aria-current="page"/);
+    assert.doesNotMatch(indexHtml, /href="\/work\.html" aria-current="page"/);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+for (const sourcePath of ['src/index.html', 'src/case-study.html', 'partials/nav.html', 'partials/footer.html']) {
+  test(`buildSite rejects unknown authored tokens in ${sourcePath} before publication`, () => {
+    const { rootDir, outputNames } = makeSiteBuildFixture();
+    try {
+      fs.appendFileSync(path.join(rootDir, sourcePath), '\n{{UNKNOWN_TEMPLATE_TOKEN}}\n');
+      assert.throws(() => buildSite({ rootDir, log: () => {} }), /Unresolved tokens.*UNKNOWN_TEMPLATE_TOKEN/);
+      outputNames.forEach((name) => assert.equal(fs.existsSync(path.join(rootDir, name)), false));
+      assert.equal(fs.existsSync(path.join(rootDir, 'artifacts/.site-build.lock')), false);
+    } finally {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+}
+
 test('buildSite lock-scopes every rendered page and restores the bundle after an nth-write failure', () => {
   const { rootDir, outputNames } = makeSiteBuildFixture();
   const newlyIntroducedName = outputNames.at(-2);
@@ -686,6 +775,125 @@ test('site publication preflights every target and rejects destination or writer
     });
   } finally {
     roots.forEach((rootDir) => fs.rmSync(rootDir, { recursive: true, force: true }));
+  }
+});
+
+for (const destinationExists of [true, false]) {
+  test(`site publication preserves an external edit during temp writing (${destinationExists ? 'existing' : 'new'} target)`, () => {
+    const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-site-write-drift-'));
+    const indexPath = path.join(rootDir, 'index.html');
+    const workPath = path.join(rootDir, 'work.html');
+    const priorIndex = Buffer.from('prior owned index\n');
+    const externalWork = Buffer.from('external work edit made during temp writing\n');
+    try {
+      fs.writeFileSync(indexPath, priorIndex);
+      if (destinationExists) fs.writeFileSync(workPath, 'prior work\n');
+      let edited = false;
+      assert.throws(
+        () => publishSiteBundle({
+          rootDir,
+          entries: [
+            { path: indexPath, bytes: 'new index\n', label: 'generated index.html', maxBytes: 1024 },
+            { path: workPath, bytes: 'new work\n', label: 'generated work.html', maxBytes: 1024 }
+          ],
+          writeFileImpl(rootPath, filePath, bytes, label, options) {
+            assert.equal(options.expectedDestination.existed, filePath === indexPath || destinationExists);
+            writeFileNoFollow(rootPath, filePath, bytes, label, {
+              ...options,
+              beforeFinalDestinationCheck(state) {
+                options.beforeFinalDestinationCheck(state);
+                if (filePath === workPath) {
+                  fs.writeFileSync(workPath, externalWork);
+                  edited = true;
+                }
+              }
+            });
+          }
+        }),
+        /destination changed before publish/
+      );
+      assert.equal(edited, true, 'the edit happens after the temporary output is written');
+      assert.deepEqual(fs.readFileSync(workPath), externalWork, 'a failed writer does not claim or roll back the external edit');
+      assert.deepEqual(fs.readFileSync(indexPath), priorIndex, 'previously published owned files still roll back');
+      assert.deepEqual(fs.readdirSync(rootDir).filter((name) => name.startsWith('.safe-output-')), []);
+    } finally {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+}
+
+for (const throwAfterWrite of [true, false]) {
+  test(`site publication preserves a post-write replacement with identical generated bytes (${throwAfterWrite ? 'failed' : 'successful'} writer)`, () => {
+    const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-site-post-write-drift-'));
+    const indexPath = path.join(rootDir, 'index.html');
+    const generated = Buffer.from('generated index bytes\n');
+    try {
+      fs.writeFileSync(indexPath, 'prior index\n');
+      assert.throws(
+        () => publishSiteBundle({
+          rootDir,
+          entries: [{ path: indexPath, bytes: generated, label: 'generated index.html', maxBytes: 1024 }],
+          writeFileImpl(rootPath, filePath, bytes, label, options) {
+            writeFileNoFollow(rootPath, filePath, bytes, label, options);
+            fs.unlinkSync(filePath);
+            fs.writeFileSync(filePath, generated);
+            if (throwAfterWrite) throw new Error('synthetic writer failure after external replacement');
+          }
+        }),
+        throwAfterWrite ? /synthetic writer failure/ : /changed ownership or content before verification/
+      );
+      assert.deepEqual(fs.readFileSync(indexPath), generated, 'identical bytes do not establish ownership of an external replacement');
+      assert.deepEqual(fs.readdirSync(rootDir), ['index.html']);
+    } finally {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+}
+
+test('site rollback preserves an external edit made while preparing restoration', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-site-rollback-write-drift-'));
+  const indexPath = path.join(rootDir, 'index.html');
+  const workPath = path.join(rootDir, 'work.html');
+  const priorIndex = Buffer.from('prior index rollback snapshot\n');
+  const externalIndex = Buffer.from('external index edit during rollback temp writing\n');
+  const originalWriteFileSync = fs.writeFileSync;
+  let edited = false;
+  try {
+    fs.writeFileSync(indexPath, priorIndex);
+    fs.writeFileSync(workPath, 'prior work\n');
+    fs.writeFileSync = (file, bytes, ...args) => {
+      if (!edited && typeof file === 'number' && Buffer.isBuffer(bytes) && bytes.equals(priorIndex)) {
+        originalWriteFileSync(indexPath, externalIndex);
+        edited = true;
+      }
+      return originalWriteFileSync(file, bytes, ...args);
+    };
+    assert.throws(
+      () => publishSiteBundle({
+        rootDir,
+        entries: [
+          { path: indexPath, bytes: 'new index\n', label: 'generated index.html', maxBytes: 1024 },
+          { path: workPath, bytes: 'new work\n', label: 'generated work.html', maxBytes: 1024 }
+        ],
+        writeFileImpl(rootPath, filePath, bytes, label, options) {
+          if (filePath === workPath) throw new Error('synthetic publication failure');
+          writeFileNoFollow(rootPath, filePath, bytes, label, options);
+        }
+      }),
+      (error) => {
+        assert.ok(error instanceof AggregateError);
+        assert.ok(error.errors.some((nested) => /synthetic publication failure/.test(nested.message)));
+        assert.ok(error.errors.some((nested) => /destination changed before publish/.test(nested.message)));
+        return true;
+      }
+    );
+    assert.equal(edited, true);
+    assert.deepEqual(fs.readFileSync(indexPath), externalIndex, 'restoration cannot overwrite the concurrent edit');
+    assert.equal(fs.readFileSync(workPath, 'utf8'), 'prior work\n');
+    assert.deepEqual(fs.readdirSync(rootDir).filter((name) => name.startsWith('.safe-output-')), []);
+  } finally {
+    fs.writeFileSync = originalWriteFileSync;
+    fs.rmSync(rootDir, { recursive: true, force: true });
   }
 });
 
