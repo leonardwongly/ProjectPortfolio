@@ -1,9 +1,9 @@
 import crypto from 'node:crypto';
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { decodeHtmlAttributeEntities } from './lib/html-attributes.mjs';
+import safeInput from './lib/safe-input.cjs';
+import { HTML_NAMESPACE, SVG_NAMESPACE, parseHtmlDocument } from './lib/html-document.mjs';
 import { assertPublicHttpsUrl } from './lib/network-safety.mjs';
 import {
   normalizeSmokeOptions,
@@ -11,6 +11,7 @@ import {
   requestProductionPage
 } from './check-production-smoke.mjs';
 
+const { readStableFileNoFollow } = safeInput;
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MAX_HTML_BYTES = 1024 * 1024;
 const APPROVED_SCRIPTS = ['/js/main.js', '/js/site.js'];
@@ -25,103 +26,35 @@ const PAGE_FILES = new Map([
   ['/.well-known/service-doc', '.well-known/service-doc.html']
 ]);
 
-function nextTagEnd(html, start) {
-  let quote = null;
-  for (let cursor = start; cursor < html.length; cursor += 1) {
-    const character = html[cursor];
-    if (quote) {
-      if (character === quote) quote = null;
-    } else if (character === '"' || character === "'") {
-      quote = character;
-    } else if (character === '>') {
-      return cursor;
-    }
-  }
-  throw new Error('HTML contains an unterminated tag');
-}
-
-function parseAttributes(source) {
-  const attributes = new Map();
-  let cursor = 0;
-  while (cursor < source.length) {
-    while (/\s/.test(source[cursor] ?? '')) cursor += 1;
-    if (cursor >= source.length) break;
-    if (source[cursor] === '/') {
-      cursor += 1;
-      continue;
-    }
-    const start = cursor;
-    while (cursor < source.length && !/[\s=/>]/.test(source[cursor])) cursor += 1;
-    if (cursor === start) throw new Error('Script tag contains a malformed attribute');
-    const name = source.slice(start, cursor).toLowerCase();
-    if (attributes.has(name)) throw new Error(`Script tag repeats ${name} attribute`);
-    while (/\s/.test(source[cursor] ?? '')) cursor += 1;
-    let value = '';
-    if (source[cursor] === '=') {
-      cursor += 1;
-      while (/\s/.test(source[cursor] ?? '')) cursor += 1;
-      const quote = source[cursor] === '"' || source[cursor] === "'" ? source[cursor++] : null;
-      const valueStart = cursor;
-      if (quote) {
-        while (cursor < source.length && source[cursor] !== quote) cursor += 1;
-        if (cursor >= source.length) throw new Error(`Script ${name} attribute is unterminated`);
-        value = source.slice(valueStart, cursor);
-        cursor += 1;
-      } else {
-        while (cursor < source.length && !/[\s>]/.test(source[cursor])) cursor += 1;
-        value = source.slice(valueStart, cursor);
-      }
-    }
-    attributes.set(name, decodeHtmlAttributeEntities(value));
-  }
-  return attributes;
-}
-
 function extractScripts(html) {
-  if (typeof html !== 'string' || Buffer.byteLength(html, 'utf8') > MAX_HTML_BYTES) {
-    throw new Error(`HTML must be a string within ${MAX_HTML_BYTES} bytes`);
-  }
-  const scripts = [];
-  const lower = html.toLowerCase();
-  let cursor = 0;
-  while (cursor < html.length) {
-    const open = html.indexOf('<', cursor);
-    if (open < 0) break;
-    if (html.startsWith('<!--', open)) {
-      const end = html.indexOf('-->', open + 4);
-      if (end < 0) throw new Error('HTML contains an unterminated comment');
-      cursor = end + 3;
-      continue;
+  const { elements, scripts } = parseHtmlDocument(html, { maxBytes: MAX_HTML_BYTES });
+  const passiveSvgTags = new Set(['svg', 'symbol', 'g', 'path', 'rect', 'circle', 'use']);
+  for (const { tagName: name, namespace, attributes } of elements) {
+    if (name === 'template' ||
+        (namespace !== HTML_NAMESPACE && namespace !== SVG_NAMESPACE) ||
+        (namespace === SVG_NAMESPACE && !passiveSvgTags.has(name))) {
+      throw new Error('HTML foreign execution or ambiguous parsing context is not approved');
     }
-    const tag = /^<\/?([a-z][\w:-]*)\b/i.exec(html.slice(open, open + 64));
-    if (!tag) {
-      cursor = open + 1;
-      continue;
+    if (name === 'base') throw new Error('HTML base tags are not approved');
+    if (name === 'iframe' || name === 'object' || name === 'embed') {
+      throw new Error('HTML executable embedding is not approved');
     }
-    const closing = html[open + 1] === '/';
-    const name = tag[1].toLowerCase();
-    const tagEnd = nextTagEnd(html, open + tag[0].length);
-    cursor = tagEnd + 1;
-    if (closing) continue;
-    if (name === 'script') {
-      let close = lower.indexOf('</script', cursor);
-      while (close >= 0 && !/[\s/>]/.test(lower[close + 8] ?? '')) {
-        close = lower.indexOf('</script', close + 8);
+    for (const [attribute, rawValue] of attributes) {
+      if (attribute.startsWith('on') || attribute === 'srcdoc') {
+        throw new Error('HTML inline execution attributes are not approved');
       }
-      if (close < 0) {
-        throw new Error('HTML contains an unterminated script');
+      if (namespace === SVG_NAMESPACE && ['href', 'xlink:href'].includes(attribute) && !rawValue.startsWith('#')) {
+        throw new Error('SVG external resource references are not approved');
       }
-      const closeEnd = nextTagEnd(html, close + 8);
-      scripts.push({
-        attributes: parseAttributes(html.slice(open + tag[0].length, tagEnd)),
-        body: html.slice(cursor, close)
-      });
-      cursor = closeEnd + 1;
-    } else if (['style', 'textarea', 'title', 'iframe', 'xmp', 'noembed', 'noframes'].includes(name)) {
-      const close = lower.indexOf(`</${name}`, cursor);
-      cursor = close < 0 ? html.length : close;
-    } else if (name === 'plaintext') {
-      cursor = html.length;
+      if (['href', 'src', 'xlink:href', 'action', 'formaction'].includes(attribute)) {
+        const value = rawValue.replace(/[\u0000-\u0020\u007f]/g, '').toLowerCase();
+        if (/^(?:javascript|vbscript|data):/.test(value)) {
+          throw new Error('HTML executable URL schemes are not approved');
+        }
+      }
+      if (name === 'meta' && attribute === 'http-equiv' && rawValue.toLowerCase() === 'refresh') {
+        throw new Error('HTML refresh redirects are not approved');
+      }
     }
   }
   return scripts;
@@ -137,7 +70,8 @@ function scriptIdentity(script, pageUrl, origin) {
     } catch {
       throw new Error(`Invalid script source ${JSON.stringify(source)}`);
     }
-    if (resolved.origin !== origin || resolved.search || resolved.hash ||
+    if (resolved.username || resolved.password || /[\u0000-\u0020\u007f\\]/.test(source) ||
+        resolved.origin !== origin || resolved.search || resolved.hash ||
         !APPROVED_SCRIPTS.includes(resolved.pathname)) {
       throw new Error(`Unapproved external script ${JSON.stringify(source)}`);
     }
@@ -176,6 +110,16 @@ async function runProductionScriptCheck(inputOptions = parseArgs()) {
   const rootDir = inputOptions.rootDir ?? ROOT_DIR;
   const useInjectedFetch = Object.hasOwn(inputOptions, 'fetchImpl');
   const sleepImpl = inputOptions.sleepImpl ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+  if (typeof sleepImpl !== 'function') throw new Error('Production script sleep implementation must be a function');
+  if (useInjectedFetch && (typeof options.fetchImpl !== 'function' || typeof options.lookupImpl !== 'function')) {
+    throw new Error('Injected script transport requires explicit fetch and DNS implementations');
+  }
+  // Resolve and bound local inputs before any network request.
+  const readLocal = (filename) => readStableFileNoFollow(path.resolve(rootDir, filename), {
+    rootDir: path.resolve(rootDir), label: filename, maxBytes: MAX_HTML_BYTES, minBytes: 0
+  });
+  const approvedPages = new Map([...PAGE_FILES].map(([pagePath, filename]) => [pagePath, readLocal(filename).toString('utf8')]));
+  const approvedBytes = new Map(APPROVED_SCRIPTS.map((source) => [source, readLocal(source.slice(1))]));
   if (useInjectedFetch) {
     await assertPublicHttpsUrl(`${options.origin}/`, {
       fieldPath: 'production script origin',
@@ -185,18 +129,32 @@ async function runProductionScriptCheck(inputOptions = parseArgs()) {
   let findings = [];
   for (let attempt = 1; attempt <= options.attempts; attempt += 1) {
     findings = [];
-    for (const [pagePath, filename] of PAGE_FILES) {
+    for (const pagePath of PAGE_FILES.keys()) {
       const pageUrl = new URL(pagePath, `${options.origin}/`).toString();
       try {
-        const expectedHtml = fs.readFileSync(path.join(rootDir, filename), 'utf8');
+        const expectedHtml = approvedPages.get(pagePath);
         const { response, body } = await requestProductionPage(pageUrl, options, useInjectedFetch);
-        if (response.status !== 200) {
-          findings.push(`${pageUrl}: expected HTTP 200, received ${response.status}`);
+        if (response.status !== 200 || response.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'text/html') {
+          findings.push(`${pageUrl}: expected HTTP 200 HTML response, received ${response.status}`);
           continue;
         }
         findings.push(...validateScripts({ html: body, expectedHtml, pageUrl, origin: options.origin }));
       } catch (error) {
         findings.push(`${pageUrl}: ${error?.message || 'script inventory check failed'}`);
+      }
+    }
+    for (const [source, expectedBytes] of approvedBytes) {
+      const scriptUrl = new URL(source, options.origin).toString();
+      try {
+        const { response, body, bytes } = await requestProductionPage(scriptUrl, options, useInjectedFetch);
+        if (response.status !== 200 || !['application/javascript', 'text/javascript'].includes(
+          response.headers.get('content-type')?.split(';')[0].trim().toLowerCase())) {
+          findings.push(`${scriptUrl}: expected HTTP 200 JavaScript response`);
+        } else if (!(bytes ?? Buffer.from(body, 'utf8')).equals(expectedBytes)) {
+          findings.push(`${scriptUrl}: JavaScript bytes differ from the reviewed local asset`);
+        }
+      } catch (error) {
+        findings.push(`${scriptUrl}: ${error?.message || 'script content check failed'}`);
       }
     }
     if (findings.length === 0) return [];

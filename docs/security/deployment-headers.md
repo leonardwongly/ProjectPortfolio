@@ -1,11 +1,29 @@
 # Deployment Header Requirements
 
-Runtime security headers are managed in the repository via `/Users/leonardwongly/Developer/ProjectPortfolio/_headers` for Cloudflare Pages.
+Runtime security headers are generated from `src/_headers.template` into
+`_headers` for Cloudflare Pages.
 
 ## Canonical Source
 
-- Header policy source of truth: `/Users/leonardwongly/Developer/ProjectPortfolio/_headers`
-- Fallback document-level policy source: `/Users/leonardwongly/Developer/ProjectPortfolio/src/index.html`, `/Users/leonardwongly/Developer/ProjectPortfolio/src/reading.html`, `/Users/leonardwongly/Developer/ProjectPortfolio/src/offline.html`
+- Header policy source of truth: `src/_headers.template`; build output: `_headers`
+- Fallback document-level policies: the page templates under `src/`.
+
+## Canonical HTML Routes
+
+The seven canonical clean routes are `/`, `/work`, `/reading`, `/offline`,
+`/case-study-agentforge`, `/case-study-agentic`, and
+`/case-study-apple-calendar-mcp`. Each has an exact CSP/CORS rule. `/*.html`
+provides the same policy for their HTML file paths, including `/index.html`,
+without overlapping any of the clean-route rules. Global security headers
+remain in `/*`.
+
+The public service documentation also has an exact CSP/CORS rule at
+`/.well-known/service-doc`; its `.html` path matches the HTML policy.
+
+The route regression checks assert exactly one CSP and one canonical CORS
+value per clean or HTML file route in both the template and generated headers.
+This validates the repository policy; verify the deployed provider's routing
+and headers separately after release.
 
 ## Required Response Headers
 
@@ -28,9 +46,15 @@ Run:
 ```bash
 npm run check:production
 npm run check:production:scripts
-curl -sSI https://leonardwong.tech/ | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
-curl -sSI https://leonardwong.tech/reading | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
-curl -sSI https://leonardwong.tech/offline | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
+```
+
+The production smoke checks all canonical clean routes. To inspect the header
+values directly for both route forms:
+
+```bash
+for route in / /index.html /work /work.html /reading /reading.html /offline /offline.html /case-study-agentforge /case-study-agentforge.html /case-study-agentic /case-study-agentic.html /case-study-apple-calendar-mcp /case-study-apple-calendar-mcp.html /.well-known/service-doc /.well-known/service-doc.html; do
+  curl -sSI "https://leonardwong.tech${route}" | rg -i "^(HTTP/|location:|content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
+done
 ```
 
 Expected:
@@ -39,16 +63,13 @@ Expected:
 2. `Content-Security-Policy` includes `style-src 'self'` and `frame-ancestors 'none'`.
 3. `Access-Control-Allow-Origin` for HTML responses is `https://leonardwong.tech`.
 
-The production script check compares script elements on all eight published HTML
-pages, including the service documentation served at `/.well-known/service-doc`
-from `.well-known/service-doc.html`, with the committed pages. Only
-`/js/main.js`, `/js/site.js`, and the homepage's committed JSON-LD script are
-approved; `/offline` and the service documentation have no approved scripts.
-It fails on injected or changed scripts,
-including edge-injected WebMCP or analytics scripts. A failure requires review of
-the Cloudflare Pages project, zone integrations, deployment version, and audit
-logs before adding any new script to the approved source. Do not approve an
-unknown live script by changing the inventory to match production.
+The production script check compares all eight published HTML pages with the
+reviewed inventory and compares fetched page JavaScript bytes with local assets.
+Only `/js/main.js`, `/js/site.js`, and the homepage's reviewed JSON-LD are
+approved; offline and service documentation pages have no scripts. Browser HTML
+parsing is shared with runtime inventory checks. Unknown injected execution,
+including WebMCP and analytics adapters, fails closed. Review provider settings,
+deployment version and audit logs before approving any additional source.
 
 ## CSP Monitoring
 

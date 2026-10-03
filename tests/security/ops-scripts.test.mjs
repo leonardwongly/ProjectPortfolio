@@ -7,10 +7,34 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 import test from 'node:test';
 
+const PRODUCTION_SECURITY_HEADERS = {
+  'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
+  'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'permissions-policy': 'accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()'
+};
+
 function makeTempRoot(t) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-ops-'));
   t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
   return rootDir;
+}
+
+function makeTelemetryInventoryFixture(t) {
+  const rootDir = makeTempRoot(t);
+  for (const file of [
+    'js', 'src', 'pwabuilder-sw.js', 'index.html', 'work.html', 'reading.html', 'offline.html',
+    'case-study-agentforge.html', 'case-study-agentic.html', 'case-study-apple-calendar-mcp.html',
+    '.well-known/service-doc.html', 'docs/security/vendor-dependencies.json'
+  ]) {
+    const target = path.join(rootDir, file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.cpSync(new URL(`../../${file}`, import.meta.url), target, { recursive: true });
+  }
+  const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'docs/security/vendor-dependencies.json'), 'utf8'));
+  return { rootDir, today: manifest.last_reviewed };
 }
 
 function writeFile(rootDir, relativePath, content = '') {
@@ -29,6 +53,7 @@ function writePerformanceFixture(rootDir, overrides = {}) {
     'reading.html',
     'offline.html',
     'css/custom.css',
+    'css/offline.css',
     'css/case-study.css',
     'js/main.js',
     'js/site.js',
@@ -230,8 +255,6 @@ test('validation readers open every inspected source no-follow and nonblocking',
   assert.deepEqual(collectTelemetryPolicyFindings({
     rootDir,
     runtimeFiles: ['js/main.js'],
-    serviceWorkerFile: null,
-    verifyVendoredScripts: false,
     openSync
   }), []);
 
@@ -729,8 +752,7 @@ test('workflow hygiene enforces pinned actions and safe npm installs', async () 
 test('production smoke validator reports missing headers and markers', async () => {
   const { validatePage } = await import('../../scripts/check-production-smoke.mjs');
   const headers = new Headers({
-    'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
-    'x-content-type-options': 'nosniff'
+    ...PRODUCTION_SECURITY_HEADERS
   });
 
   assert.deepEqual(
@@ -777,7 +799,7 @@ test('production smoke arguments require an HTTPS public origin and positive bou
   assert.throws(() => parseArgs([], { SMOKE_RETRY_DELAY_MS: '-1' }), /positive integer/);
   assert.deepEqual(
     PAGE_CHECKS.map((check) => check.path),
-    ['/', '/work', '/case-study-agentforge', '/reading', '/offline']
+    ['/', '/work', '/case-study-agentforge', '/case-study-agentic', '/case-study-apple-calendar-mcp', '/reading', '/offline', '/.well-known/service-doc']
   );
 });
 
@@ -855,8 +877,11 @@ test('production smoke validates public DNS and fetches every page at least once
     ['/', 'Leonard Wong'],
     ['/work', 'Project Archive'],
     ['/case-study-agentforge', 'AgentForge Merge Guard'],
+    ['/case-study-agentic', 'Agentic Engineering Lab'],
+    ['/case-study-apple-calendar-mcp', 'Apple Calendar MCP'],
     ['/reading', 'Reading'],
-    ['/offline', 'Offline']
+    ['/offline', 'Offline'],
+    ['/.well-known/service-doc', 'Service Documentation']
   ]);
   const options = {
     origin: 'https://public.example',
@@ -874,9 +899,7 @@ test('production smoke validates public DNS and fetches every page at least once
       return new Response(`<main>${marker}</main>`, {
         status: 200,
         headers: {
-          'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
-          'strict-transport-security': 'max-age=31536000; includeSubDomains',
-          'x-content-type-options': 'nosniff'
+          ...PRODUCTION_SECURITY_HEADERS
         }
       });
     }
@@ -915,9 +938,7 @@ test('production smoke validates public DNS and fetches every page at least once
         {
           status: retryRequestCount <= PAGE_CHECKS.length ? 503 : 200,
           headers: {
-            'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
-            'strict-transport-security': 'max-age=31536000; includeSubDomains',
-            'x-content-type-options': 'nosniff'
+            ...PRODUCTION_SECURITY_HEADERS
           }
         }
       );
@@ -938,8 +959,11 @@ test('production smoke default transport pins each approved DNS answer into the 
     ['/', 'Leonard Wong'],
     ['/work', 'Project Archive'],
     ['/case-study-agentforge', 'AgentForge Merge Guard'],
+    ['/case-study-agentic', 'Agentic Engineering Lab'],
+    ['/case-study-apple-calendar-mcp', 'Apple Calendar MCP'],
     ['/reading', 'Reading'],
-    ['/offline', 'Offline']
+    ['/offline', 'Offline'],
+    ['/.well-known/service-doc', 'Service Documentation']
   ]);
   const findings = await runProductionSmoke({
     origin: 'https://public.example',
@@ -973,9 +997,7 @@ test('production smoke default transport pins each approved DNS answer into the 
           response.statusCode = 200;
           response.statusMessage = 'OK';
           response.headers = {
-            'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
-            'strict-transport-security': 'max-age=31536000; includeSubDomains',
-            'x-content-type-options': 'nosniff'
+            ...PRODUCTION_SECURITY_HEADERS
           };
           onResponse(response);
         });
@@ -1008,11 +1030,7 @@ test('telemetry policy validates real event calls and detects aliased network ad
     const documentation = 'fetch and sendBeacon are prohibited';
     const documentationPattern = /fetch|sendBeacon|Image|WebSocket|EventSource/;
   `);
-  assert.deepEqual(collectTelemetryPolicyFindings({
-    rootDir,
-    serviceWorkerFile: null,
-    verifyVendoredScripts: false
-  }), []);
+  assert.deepEqual(collectTelemetryPolicyFindings({ rootDir }), []);
   assert.deepEqual(inspectRuntimeSource('const documentationPattern = /fetch|sendBeacon|Image/;'), []);
   assert.deepEqual(inspectRuntimeSource('const msg = `prefetched ${count} records`;'), []);
   assert.deepEqual(inspectRuntimeSource('const msg = `rendered ${imageCount} covers`;'), []);
@@ -1046,11 +1064,7 @@ test('telemetry policy validates real event calls and detects aliased network ad
     trackEvent(getEventName());
     TELEMETRY_ALLOWED_EVENTS.add('late_mutation');
   `);
-  const findings = collectTelemetryPolicyFindings({
-    rootDir,
-    serviceWorkerFile: null,
-    verifyVendoredScripts: false
-  });
+  const findings = collectTelemetryPolicyFindings({ rootDir });
 
   assert.ok(findings.some((finding) => finding.includes('reference fetch')));
   assert.ok(findings.some((finding) => finding.includes('reference sendBeacon')));
@@ -1126,59 +1140,40 @@ test('telemetry source scanning refuses symlinks and oversized runtime files', a
   const linkedRoot = makeTempRoot(t);
   fs.mkdirSync(path.join(linkedRoot, 'js'));
   fs.symlinkSync(path.join(outsideRoot, 'main.js'), path.join(linkedRoot, 'js', 'main.js'));
-  const linkedFindings = collectTelemetryPolicyFindings({
-    rootDir: linkedRoot,
-    runtimeFiles: ['js/main.js'],
-    serviceWorkerFile: null,
-    verifyVendoredScripts: false
-  });
+  const linkedFindings = collectTelemetryPolicyFindings({ rootDir: linkedRoot, runtimeFiles: ['js/main.js'] });
   assert.ok(linkedFindings.some((finding) => finding.includes('refusing to follow a symbolic link')));
 
   const oversizedRoot = makeTempRoot(t);
   writeFile(oversizedRoot, 'js/main.js');
   fs.truncateSync(path.join(oversizedRoot, 'js', 'main.js'), 512 * 1024 + 1);
-  const oversizedFindings = collectTelemetryPolicyFindings({
-    rootDir: oversizedRoot,
-    runtimeFiles: ['js/main.js'],
-    serviceWorkerFile: null,
-    verifyVendoredScripts: false
-  });
+  const oversizedFindings = collectTelemetryPolicyFindings({ rootDir: oversizedRoot, runtimeFiles: ['js/main.js'] });
   assert.ok(oversizedFindings.some((finding) => finding.includes('exceeds the 524288-byte limit')));
 });
 
 test('telemetry policy pins reviewed service worker bytes without rejecting navigation fetch', async (t) => {
-  const { collectTelemetryPolicyFindings, inspectRuntimeSource } = await import('../../scripts/check-telemetry-policy.mjs');
-  const rootDir = makeTempRoot(t);
-  const workerPath = path.join(rootDir, 'pwabuilder-sw.js');
-  fs.copyFileSync(new URL('../../pwabuilder-sw.js', import.meta.url), workerPath);
-  const inspect = () => collectTelemetryPolicyFindings({
-    rootDir,
-    runtimeFiles: [],
-    verifyVendoredScripts: false
-  });
+  const { collectTelemetryPolicyFindings } = await import('../../scripts/check-telemetry-policy.mjs');
+  const fixture = makeTelemetryInventoryFixture(t);
+  const workerPath = path.join(fixture.rootDir, 'pwabuilder-sw.js');
+  const inspect = () => collectTelemetryPolicyFindings({ ...fixture, enforceRuntimeInventory: true });
 
   assert.deepEqual(inspect(), []);
   const workerSource = fs.readFileSync(workerPath, 'utf8');
-  const inspectWorker = (source) => inspectRuntimeSource(source, { allowInterceptedRequestFetch: true });
-  assert.deepEqual(inspectWorker(workerSource), []);
-  for (const [name, addedSource, expected] of [
-    ['extra fetch', "fetch('/collect?event=pageview');", 'reference fetch'],
-    ['computed fetch', "globalThis['fe' + 'tch']('/collect');", 'reference fetch'],
-    ['beacon', "navigator.sendBeacon('/collect', 'pageview');", 'sendBeacon'],
-    ['dynamic global', "self[adapterName]('/collect');", 'dynamic network-capable'],
-    ['duplicate navigation fetch', 'fetch(event.request);', 'reference fetch'],
-    ['request replacement', "event.request = new Request('/collect');", 'must not replace']
+  assert.match(workerSource, /fetch\(event\.request\)/);
+  // The worker is a reviewed byte contract, not page source with a fetch exception.
+  // Every formerly scanned mutation must still fail this stronger change gate.
+  for (const [name, addedSource] of [
+    ['extra fetch', "fetch('/collect?event=pageview');"],
+    ['computed fetch', "globalThis['fe' + 'tch']('/collect');"],
+    ['beacon', "navigator.sendBeacon('/collect', 'pageview');"],
+    ['dynamic global', "self[adapterName]('/collect');"],
+    ['duplicate navigation fetch', 'fetch(event.request);'],
+    ['request replacement', "event.request = new Request('/collect');"],
+    ['message request fetch', 'self.addEventListener("message", event => fetch(event.request));'],
+    ['digest drift', '// unreviewed worker change']
   ]) {
-    assert.ok(
-      inspectWorker(`${workerSource}\n${addedSource}`).some((finding) => finding.includes(expected)),
-      `${name} must fail worker source inspection`
-    );
+    fs.writeFileSync(workerPath, `${workerSource}\n${addedSource}\n`);
+    assert.ok(inspect().some((finding) => finding.includes('source changed since security review')), name);
   }
-  assert.ok(inspectWorker('self.addEventListener("message", event => fetch(event.request));')
-    .some((finding) => finding.includes('reference fetch')));
-  fs.appendFileSync(workerPath, "\nfetch('/collect?event=pageview');\n");
-  assert.ok(inspect().some((finding) => finding.includes('reference fetch')));
-  assert.ok(inspect().some((finding) => finding.includes('source changed since security review')));
 
   fs.unlinkSync(workerPath);
   fs.symlinkSync(new URL('../../pwabuilder-sw.js', import.meta.url), workerPath);
@@ -1187,21 +1182,15 @@ test('telemetry policy pins reviewed service worker bytes without rejecting navi
 
 test('telemetry policy includes vendored script digest and inventory validation', async (t) => {
   const { collectTelemetryPolicyFindings } = await import('../../scripts/check-telemetry-policy.mjs');
-  const rootDir = makeTempRoot(t);
-  fs.mkdirSync(path.join(rootDir, 'js'), { recursive: true });
-  fs.cpSync(new URL('../../js/vendor/', import.meta.url), path.join(rootDir, 'js/vendor'), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, 'docs/security'), { recursive: true });
-  fs.copyFileSync(
-    new URL('../../docs/security/vendor-dependencies.json', import.meta.url),
-    path.join(rootDir, 'docs/security/vendor-dependencies.json')
-  );
-  const inspect = () => collectTelemetryPolicyFindings({
-    rootDir,
-    runtimeFiles: [],
-    serviceWorkerFile: null
-  });
+  const fixture = makeTelemetryInventoryFixture(t);
+  const inspect = () => collectTelemetryPolicyFindings({ ...fixture, enforceRuntimeInventory: true });
 
   assert.deepEqual(inspect(), []);
-  fs.appendFileSync(path.join(rootDir, 'js/vendor/workbox-sw.js'), '\n// unexpected vendored change\n');
+  const workboxPath = path.join(fixture.rootDir, 'js/vendor/workbox-sw.js');
+  const workboxSource = fs.readFileSync(workboxPath);
+  fs.appendFileSync(workboxPath, '\n// unexpected vendored change\n');
   assert.ok(inspect().some((finding) => finding.includes('vendor integrity validation failed') && finding.includes('hash mismatch')));
+  fs.writeFileSync(workboxPath, workboxSource);
+  writeFile(fixture.rootDir, 'js/vendor/unreviewed.js', '// unreviewed vendor file');
+  assert.ok(inspect().some((finding) => finding.includes('vendor integrity validation failed') && finding.includes('Unexpected vendored file')));
 });

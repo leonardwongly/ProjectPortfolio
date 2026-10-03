@@ -27,17 +27,18 @@ For every production release or header-policy change:
    ```bash
    npm run check:production
    npm run check:production:scripts
-   curl -sSI https://leonardwong.tech/ | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
-   curl -sSI https://leonardwong.tech/work | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
-   curl -sSI https://leonardwong.tech/case-study-agentforge | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
-   curl -sSI https://leonardwong.tech/reading | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
-   curl -sSI https://leonardwong.tech/offline | rg -i "^(content-security-policy|strict-transport-security|permissions-policy|x-frame-options|x-content-type-options|referrer-policy|access-control-allow-origin):"
    ```
+   Check every canonical clean route: `/`, `/work`, `/reading`, `/offline`,
+   `/case-study-agentforge`, `/case-study-agentic`, and
+   `/case-study-apple-calendar-mcp`, plus `/.well-known/service-doc`. Inspect the corresponding `.html` URLs and
+   redirects as described in `docs/security/deployment-headers.md`.
 3. Open the deployed pages in a browser with developer tools and confirm there
    are no CSP violations in the console.
 4. Review Cloudflare Pages deployment output and Cloudflare security events for
    unexpected blocked resources, injected script attempts, or repeated requests
-   for undeployed assets.
+   for undeployed assets. These manual checks are release-time observations;
+   without a collector they do not detect or report browser violations between
+   reviews.
 
 ## Collector Rollout Requirements
 
