@@ -1,8 +1,8 @@
 # Adversarial audit remediation — 2026-10-03
 
 Repository remediation follows the nine findings from the 2026-10-02 manual
-adversarial audit. This is local implementation and validation evidence. It
-does not represent an official Deep Scan result, hosted CI, deployment, or a
+adversarial audit. Local validation and hosted checks are recorded separately
+below. This does not represent an official Deep Scan result, deployment, or a
 change to Cloudflare settings.
 
 | Finding | Implemented behavior | Validation |
@@ -37,14 +37,15 @@ has a 4 KiB performance budget.
 
 ## Validation evidence
 
-The final frozen implementation passed `npm run validate:full` on Node.js
-24.21.0, matching the CI major version:
+The final implementation, including the hosted-alert follow-up, passed
+`npm run validate:full` on Node.js 24.21.0 in the current checkout, matching the
+CI major version:
 
 | Check | Result |
 | --- | --- |
 | Build and generated-output stability | Passed |
 | Resume freshness, repository and workflow hygiene | Passed |
-| Security coverage suite | 403 passed; 88.68% lines, 79.37% branches, 94.26% functions |
+| Security coverage suite | 405 passed; 88.68% lines, 79.37% branches, 94.26% functions |
 | Reading metadata, performance budgets and telemetry policy | Passed |
 | Strict link preflight | Passed; 118 external references checked structurally |
 | `npm audit --audit-level=high` | Passed; zero reported vulnerabilities |
@@ -66,9 +67,10 @@ reviewer was not explicitly authorized. The helper was not run or bypassed;
 closeout evidence consists of the in-session review and local validation above.
 This is not a clean structured Autoreview result.
 
-The gate ran from a disposable snapshot staged as its baseline, so
-`check:generated` verifies regeneration without treating the intended patch
-as stale generated output. No source checkout commit is needed for this check.
+The initial gate ran from a disposable snapshot staged as its baseline, so
+`check:generated` verified regeneration without treating the intended patch
+as stale generated output. After the initial six commits, the complete gate
+passed again in the actual checkout with the two-file caller-boundary fix.
 
 Bootstrap provenance was checked on 2026-10-03 against the pinned upstream
 distribution. Removing only its terminal 45-byte source-map comment yields
@@ -107,10 +109,34 @@ approving or removing injection, deploying the repository changes, and running
 resulting deployment. Those actions require separate deployment/provider
 authorization.
 
-Local fixtures do not establish GitHub's hosted scheduler behavior or hosted
-workflow success. The final local validation uses Node.js 24. The static
+Local fixtures do not establish GitHub's hosted scheduler behavior. The final
+local validation uses Node.js 24. The static
 telemetry guard remains bounded defense in depth, not an exhaustive proof of
 JavaScript behavior.
+
+## Hosted review follow-through
+
+PR #182 was opened from six signed commits; GitHub verified each signature.
+At `27a8a1be`, all six Actions jobs passed, including the full release gate,
+browser integration and CodeQL analysis. A separate code-scanning check failed
+on high-severity `js/path-injection` alert #21775, tracing the fixture server's
+request path into the shared no-follow reader.
+
+The trace followed the reader's default root initializer even though the caller
+supplies its fixed root. The existing reader rejected outside targets before
+filesystem inspection; direct probes did not reproduce file disclosure. The
+HTTP caller now also checks the normalized target against a separator-aware
+root prefix and rejects raw or decoded double-leading slashes. Regressions
+verify rejection before reader entry, root-prefix siblings, ordinary nested
+assets and clean routes. The shared no-follow reader remains unchanged.
+
+This is caller-boundary hardening following a hosted alert, not a claim of
+reproduced disclosure. Focused server tests passed 5/5 and an independent
+review found no actionable containment error. Full local validation passed as
+recorded above. Fresh hosted code-scanning status is tracked on
+[PR #182](https://github.com/leonardwongly/ProjectPortfolio/pull/182); the
+Actions job and separate Advanced Security result must both succeed for the
+current revision. No alert dismissal or suppression is used.
 
 ## Independent review follow-through
 

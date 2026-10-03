@@ -34,6 +34,7 @@ function parseServerPort(value) {
 function createStaticServer(rootDir) {
   const root = fs.realpathSync(rootDir);
   if (!fs.statSync(root).isDirectory()) throw new Error('Static server root must be a directory');
+  const rootPrefix = root.endsWith(path.sep) ? root : `${root}${path.sep}`;
   return http.createServer((request, response) => {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       response.writeHead(405, { Allow: 'GET, HEAD' });
@@ -44,13 +45,15 @@ function createStaticServer(rootDir) {
       // Decode the raw request target before resolving it. URL normalization
       // would erase traversal segments before we could reject them.
       const pathname = decodeURIComponent(request.url.split(/[?#]/, 1)[0]);
-      if (!pathname.startsWith('/') || /[\u0000-\u001f\u007f\\]/.test(pathname) ||
+      if (!pathname.startsWith('/') || pathname.startsWith('//') || /[\u0000-\u001f\u007f\\]/.test(pathname) ||
           pathname.split('/').some((segment) => segment.startsWith('.'))) {
         throw new Error('Invalid static path');
       }
       const relativePath = pathname === '/' ? 'index.html' : pathname.slice(1);
       const filename = path.extname(relativePath) ? relativePath : `${relativePath}.html`;
       const target = path.resolve(root, filename);
+      // Reject outside targets here as well as in the shared no-follow reader.
+      if (!target.startsWith(rootPrefix)) throw new Error('Invalid static path');
       const bytes = safeInput.readStableFileNoFollow(target, {
         rootDir: root,
         maxBytes: 32 * 1024 * 1024,
