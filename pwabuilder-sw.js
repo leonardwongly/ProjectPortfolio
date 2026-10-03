@@ -1,14 +1,21 @@
 // Service worker with offline fallback page
 
-const CACHE = 'pwabuilder-offline-cache-v2';
+const CACHE = 'pwabuilder-offline-cache-v3';
+const RETIRED_OFFLINE_CACHES = new Set([
+  'pwabuilder-offline-cache',
+  'pwabuilder-offline-cache-v1',
+  'pwabuilder-offline-cache-v2'
+]);
 
 importScripts('js/vendor/workbox-sw.js');
 
 workbox.setConfig({
+  debug: false,
   modulePathPrefix: 'js/vendor/workbox'
 });
 
 const offlineFallbackPage = 'offline.html';
+const offlineStylesheet = '/css/offline.css';
 const SW_UPDATE_EVENT_TYPE = 'SKIP_WAITING';
 const SW_UPDATE_TOKEN_PATTERN = /^[a-f0-9]{16,64}$/i;
 
@@ -55,6 +62,18 @@ function createEmergencyOfflineResponse() {
   });
 }
 
+function isOfflineStylesheetRequest(request) {
+  if (request.method !== 'GET') {
+    return false;
+  }
+
+  try {
+    return new URL(request.url).href === new URL(offlineStylesheet, self.location.origin).href;
+  } catch {
+    return false;
+  }
+}
+
 self.addEventListener('message', (event) => {
   if (!isSkipWaitingMessage(event.data)) {
     return;
@@ -74,12 +93,18 @@ self.addEventListener('message', (event) => {
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.add(offlineFallbackPage))
+      .then((cache) => cache.addAll([offlineFallbackPage, offlineStylesheet]))
   );
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(names
+      .filter((name) => RETIRED_OFFLINE_CACHES.has(name))
+      .map((name) => caches.delete(name)));
+    await self.clients.claim();
+  })());
 });
 
 if (workbox.navigationPreload.isSupported()) {
@@ -113,6 +138,26 @@ self.addEventListener('fetch', (event) => {
           // Cache storage can be unavailable or externally cleared.
         }
 
+        return createEmergencyOfflineResponse();
+      }
+    })());
+    return;
+  }
+
+  if (isOfflineStylesheetRequest(event.request)) {
+    event.respondWith((async () => {
+      try {
+        return await fetch(event.request);
+      } catch {
+        try {
+          const cache = await caches.open(CACHE);
+          const cachedResponse = await cache.match(offlineStylesheet);
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+        } catch {
+          // Keep cache failures bounded without substituting HTML for CSS.
+        }
         return createEmergencyOfflineResponse();
       }
     })());

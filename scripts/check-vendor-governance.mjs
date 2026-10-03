@@ -23,6 +23,12 @@ const MAX_VENDOR_FILE_BYTES = 5 * 1024 * 1024;
 // Keep this separate from the Workbox manifest: update-vendor.mjs only manages js/vendor/.
 const PINNED_BOOTSTRAP_CSS = Object.freeze({
   path: 'css/bootstrap.min.css',
+  version: '5.3.8',
+  source: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
+  license: 'MIT',
+  last_reviewed: '2026-09-27',
+  review_cadence: 'monthly',
+  max_review_age_days: 45,
   sha256: '8f8173cb2d8f867274aeb0cb15328e60f490c7f272351e51a55f1dabb486e4ff'
 });
 const require = createRequire(import.meta.url);
@@ -140,9 +146,26 @@ function sha256File(filePath, options = {}) {
   return crypto.createHash('sha256').update(readRegularFileNoFollow(filePath, filePath, options)).digest('hex');
 }
 
-function validatePinnedBootstrapCss(rootDir = projectRoot) {
+function validatePinnedBootstrapCss(rootDir = projectRoot, { today = getTodayIsoDate() } = {}) {
+  const reviewAgeDays = daysBetweenIsoDates(PINNED_BOOTSTRAP_CSS.last_reviewed, today);
+  if (reviewAgeDays < 0 || reviewAgeDays > PINNED_BOOTSTRAP_CSS.max_review_age_days) {
+    fail(`Pinned Bootstrap CSS review age ${reviewAgeDays} day(s) is outside the allowed 0-${PINNED_BOOTSTRAP_CSS.max_review_age_days} days for ${PINNED_BOOTSTRAP_CSS.review_cadence} review`);
+  }
   const absolutePath = path.join(path.resolve(rootDir), PINNED_BOOTSTRAP_CSS.path);
-  const actualSha = sha256File(absolutePath, { rootDir, maxBytes: MAX_VENDOR_FILE_BYTES });
+  const bytes = readRegularFileNoFollow(absolutePath, PINNED_BOOTSTRAP_CSS.path, { rootDir, maxBytes: MAX_VENDOR_FILE_BYTES });
+  let content;
+  try {
+    content = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    fail('Pinned Bootstrap CSS must contain valid UTF-8');
+  }
+  if (!content.includes(` * Bootstrap  v${PINNED_BOOTSTRAP_CSS.version} (https://getbootstrap.com/)`)) {
+    fail(`Pinned Bootstrap CSS version must be ${PINNED_BOOTSTRAP_CSS.version}`);
+  }
+  if (!content.includes(` * Licensed under ${PINNED_BOOTSTRAP_CSS.license} (https://github.com/twbs/bootstrap/blob/main/LICENSE)`)) {
+    fail(`Pinned Bootstrap CSS must preserve its ${PINNED_BOOTSTRAP_CSS.license} license notice`);
+  }
+  const actualSha = crypto.createHash('sha256').update(bytes).digest('hex');
   if (actualSha !== PINNED_BOOTSTRAP_CSS.sha256) {
     fail(`Pinned CSS hash mismatch for ${PINNED_BOOTSTRAP_CSS.path}: expected ${PINNED_BOOTSTRAP_CSS.sha256}, found ${actualSha}`);
   }
@@ -373,6 +396,7 @@ export {
   loadManifest,
   MAX_VENDOR_FILE_BYTES,
   MAX_VENDOR_MANIFEST_BYTES,
+  PINNED_BOOTSTRAP_CSS,
   readRegularFileNoFollow,
   sha256File,
   validatePinnedBootstrapCss,

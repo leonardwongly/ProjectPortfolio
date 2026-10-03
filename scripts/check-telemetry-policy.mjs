@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import safeInput from './lib/safe-input.cjs';
+import { parseHtmlDocument } from './lib/html-document.mjs';
 import { loadManifest, validateVendorGovernance } from './check-vendor-governance.mjs';
 
 const { readStableFileNoFollow } = safeInput;
@@ -16,11 +17,17 @@ const RUNTIME_FILES = [
   'js/main.js',
   'js/site.js'
 ];
+
 const SERVICE_WORKER_FILE = 'pwabuilder-sw.js';
-// Review every service-worker change for new network, message, and import behavior before
-// updating this digest. The worker's one navigation fetch has a narrow scanner exception;
-// this pin remains a change-review gate, not proof of safety.
-const REVIEWED_SERVICE_WORKER_SHA256 = 'a6b5d4b8a232f0c29b1a882d5d3e83a5201ea305d58e80b173590a68cb8b058d';
+// Review worker network, cache, message, and import behavior before updating this pin.
+// Matching a reviewed digest is a change gate, not a proof that arbitrary JS is safe.
+const REVIEWED_SERVICE_WORKER_SHA256 = '3f119738bdd1e6e48b4b638e264a7c26706b99c3c54f3eb5fd1f265150fccc4c';
+const RUNTIME_HTML_FILES = [
+  'src/index.html', 'src/work.html', 'src/reading.html', 'src/offline.html', 'src/case-study.html',
+  'index.html', 'work.html', 'reading.html', 'offline.html',
+  'case-study-agentforge.html', 'case-study-agentic.html', 'case-study-apple-calendar-mcp.html',
+  '.well-known/service-doc.html'
+];
 
 const MAX_RUNTIME_SOURCE_BYTES = 512 * 1024;
 const MAX_RUNTIME_TOKENS = 100000;
@@ -33,9 +40,15 @@ const DISALLOWED_RUNTIME_IDENTIFIERS = new Map([
   ['plausible', 'runtime telemetry must not use Plausible adapters'],
   ['image', 'runtime telemetry must not use Image beacon adapters'],
   ['websocket', 'runtime telemetry must not use WebSocket adapters'],
-  ['eventsource', 'runtime telemetry must not use EventSource adapters']
+  ['eventsource', 'runtime telemetry must not use EventSource adapters'],
+  ['audio', 'runtime telemetry must not use Audio resource adapters'],
+  ['import', 'page runtime imports require explicit inventory review'],
+  ['importscripts', 'page runtime imports require explicit inventory review'],
+  ['worker', 'page worker constructors require explicit inventory review'],
+  ['sharedworker', 'page worker constructors require explicit inventory review'],
+  ['eval', 'page runtime must not evaluate dynamic source']
 ]);
-const NETWORK_GLOBAL_IDENTIFIERS = new Set(['globalThis', 'navigator', 'self', 'window']);
+const NETWORK_GLOBAL_IDENTIFIERS = new Set(['document', 'globalThis', 'navigator', 'self', 'window']);
 const DYNAMIC_GLOBAL_ACCESS_FINDING = 'runtime telemetry must not use dynamic network-capable global property access';
 
 const ALLOWED_EVENTS = new Set([
@@ -253,6 +266,7 @@ function readJavaScriptTemplate(source, start) {
 function tokenizeJavaScript(source) {
   const tokens = [];
   let cursor = 0;
+  let previousTokenEnd = 0;
   while (cursor < source.length) {
     const character = source[cursor];
     if (/\s/.test(character)) {
@@ -274,26 +288,28 @@ function tokenizeJavaScript(source) {
       cursor = skipRegexLiteral(source, cursor);
       continue;
     }
+    const lineBreakBefore = /[\r\n\u2028\u2029]/.test(source.slice(previousTokenEnd, cursor));
     if (character === '`') {
       const parsed = readJavaScriptTemplate(source, cursor);
-      tokens.push({ type: 'template', value: parsed.value, expressions: parsed.expressions });
+      tokens.push({ type: 'template', value: parsed.value, expressions: parsed.expressions, lineBreakBefore });
       parsed.expressions.forEach((expression) => {
         tokens.push(...tokenizeJavaScript(expression));
       });
       cursor = parsed.end;
     } else if (character === '"' || character === "'") {
       const parsed = readJavaScriptString(source, cursor, character);
-      tokens.push({ type: 'string', value: parsed.value });
+      tokens.push({ type: 'string', value: parsed.value, lineBreakBefore });
       cursor = parsed.end;
     } else if (/[A-Za-z_$]/.test(character) || (character === '\\' && source[cursor + 1] === 'u')) {
       const parsed = readJavaScriptIdentifier(source, cursor);
-      tokens.push({ type: 'identifier', value: parsed.value });
+      tokens.push({ type: 'identifier', value: parsed.value, lineBreakBefore });
       cursor = parsed.end;
     } else {
-      tokens.push({ type: 'punctuation', value: character });
+      tokens.push({ type: 'punctuation', value: character, lineBreakBefore });
       cursor += 1;
     }
 
+    previousTokenEnd = cursor;
     if (tokens.length > MAX_RUNTIME_TOKENS) {
       throw new Error(`runtime source exceeds ${MAX_RUNTIME_TOKENS} token limit`);
     }
@@ -394,35 +410,44 @@ function conditionRejectsUnknownEvent(conditionTokens, parameter) {
 
 function hasGuardedTrackEventDefinition(tokens, foundStaticSet) {
   if (!foundStaticSet) return false;
+  if (hasTrackEventAssignment(tokens)) return false;
+  const definitions = tokens.filter((token, index) => token.value === 'function' && tokens[index + 1]?.value === 'trackEvent');
+  if (definitions.length !== 1) return false;
+  let outerDepth = 0;
   for (let index = 0; index < tokens.length - 4; index += 1) {
+    if (tokens[index].value === '{') outerDepth += 1;
+    if (tokens[index].value === '}') outerDepth -= 1;
     if (tokens[index].value !== 'function' || tokens[index + 1].value !== 'trackEvent' || tokens[index + 2].value !== '(') {
       continue;
     }
+    if (outerDepth !== 0) return false;
     const parametersEnd = findMatchingToken(tokens, index + 2, '(', ')');
     if (parametersEnd === -1 || tokens[parametersEnd + 1]?.value !== '{') return false;
     const parameter = tokens.slice(index + 3, parametersEnd).find((token) => token.type === 'identifier')?.value;
     const bodyEnd = findMatchingToken(tokens, parametersEnd + 1, '{', '}');
     if (!parameter || bodyEnd === -1) return false;
-    for (let bodyIndex = parametersEnd + 2; bodyIndex < bodyEnd; bodyIndex += 1) {
-      if (tokens[bodyIndex].value !== 'if' || tokens[bodyIndex + 1]?.value !== '(') continue;
-      const conditionEnd = findMatchingToken(tokens, bodyIndex + 1, '(', ')');
-      if (conditionEnd === -1 || conditionEnd >= bodyEnd) continue;
-      if (!conditionRejectsUnknownEvent(tokens.slice(bodyIndex + 2, conditionEnd), parameter)) continue;
-      const consequentStart = conditionEnd + 1;
-      if (tokens[consequentStart]?.value === 'return') return true;
-      if (tokens[consequentStart]?.value === '{') {
-        const consequentEnd = findMatchingToken(tokens, consequentStart, '{', '}');
-        if (
-          consequentEnd !== -1 &&
-          tokens[consequentStart + 1]?.value === 'return' &&
-          (tokens[consequentStart + 2]?.value === ';' || consequentStart + 2 === consequentEnd)
-        ) {
-          return true;
-        }
-      }
-    }
+    // Only the first statement in the function body can establish protection.
+    // Nested/dead branches and guards after emission are not control-flow proofs.
+    const bodyIndex = parametersEnd + 2;
+    if (tokens[bodyIndex]?.value !== 'if' || tokens[bodyIndex + 1]?.value !== '(') return false;
+    const conditionEnd = findMatchingToken(tokens, bodyIndex + 1, '(', ')');
+    if (conditionEnd === -1 || conditionEnd >= bodyEnd) return false;
+    if (!conditionRejectsUnknownEvent(tokens.slice(bodyIndex + 2, conditionEnd), parameter)) return false;
+    const consequentStart = conditionEnd + 1;
+    if (tokens[consequentStart]?.value === 'return' &&
+        (tokens[consequentStart + 1]?.value === ';' || tokens[consequentStart + 1]?.value === '}')) return true;
+    if (tokens[consequentStart]?.value !== '{') return false;
+    const consequentEnd = findMatchingToken(tokens, consequentStart, '{', '}');
+    return consequentEnd !== -1 && tokens[consequentStart + 1]?.value === 'return' &&
+      (consequentStart + 2 === consequentEnd ||
+       (tokens[consequentStart + 2]?.value === ';' && consequentStart + 3 === consequentEnd));
   }
   return false;
+}
+
+function hasTrackEventAssignment(tokens) {
+  return tokens.some((token, index) => token.type === 'identifier' && token.value === 'trackEvent' &&
+    tokens[index + 1]?.value === '=' && !['=', '>'].includes(tokens[index + 2]?.value));
 }
 
 function readStaticPropertyName(tokens, openBracketIndex) {
@@ -490,64 +515,120 @@ function inspectAllowedSetMutation(tokens) {
   return findings;
 }
 
-function isInterceptedRequestFetch(tokens, index) {
-  const directRequestFetch = tokens[index].type === 'identifier' &&
-    tokens[index].value === 'fetch' &&
-    tokens[index - 2]?.value === 'return' &&
-    tokens[index - 1]?.value === 'await' &&
-    tokens[index + 1]?.value === '(' &&
-    tokens[index + 2]?.value === 'event' &&
-    tokens[index + 3]?.value === '.' &&
-    tokens[index + 4]?.value === 'request' &&
-    tokens[index + 5]?.value === ')';
-  if (!directRequestFetch) return false;
+const RESOURCE_ELEMENTS = new Set([
+  'img', 'image', 'script', 'link', 'iframe', 'frame', 'object', 'embed',
+  'audio', 'video', 'source', 'track', 'input'
+]);
+const RESOURCE_ATTRIBUTES = new Set(['src', 'srcset', 'href', 'poster', 'data', 'background', 'ping']);
+const DOM_RESOURCE_FINDING = 'runtime telemetry must not create DOM resource beacons or assign resource URLs';
+const RESOURCE_METHODS = new Set([
+  'createElement', 'createElementNS', 'setAttribute', 'setAttributeNS',
+  'insertAdjacentHTML', 'write', 'writeln', 'setProperty', 'insertRule', 'replaceSync'
+]);
 
-  for (let listener = 0; listener < tokens.length - 11; listener += 1) {
-    if (
-      tokens[listener].value !== 'self' ||
-      tokens[listener + 1].value !== '.' ||
-      tokens[listener + 2].value !== 'addEventListener' ||
-      tokens[listener + 3].value !== '(' ||
-      tokens[listener + 4].type !== 'string' ||
-      tokens[listener + 4].value !== 'fetch' ||
-      tokens[listener + 5].value !== ',' ||
-      tokens[listener + 6].value !== '(' ||
-      tokens[listener + 7].value !== 'event' ||
-      tokens[listener + 8].value !== ')' ||
-      tokens[listener + 9].value !== '=' ||
-      tokens[listener + 10].value !== '>' ||
-      tokens[listener + 11].value !== '{'
-    ) continue;
-    const listenerEnd = findMatchingToken(tokens, listener + 11, '{', '}');
-    if (listenerEnd === -1 || index >= listenerEnd) continue;
-
-    for (let branch = listener + 12; branch < listenerEnd; branch += 1) {
-      if (tokens[branch].value !== 'if' || tokens[branch + 1]?.value !== '(') continue;
-      const conditionEnd = findMatchingToken(tokens, branch + 1, '(', ')');
-      if (conditionEnd === -1 || tokens[conditionEnd + 1]?.value !== '{') continue;
-      const condition = tokens.slice(branch + 2, conditionEnd);
-      if (
-        condition.length !== 9 ||
-        condition.slice(0, 8).map((token) => token.value).join(' ') !== 'event . request . mode = = =' ||
-        condition[8].type !== 'string' || condition[8].value !== 'navigate'
-      ) continue;
-      const branchEnd = findMatchingToken(tokens, conditionEnd + 1, '{', '}');
-      if (branchEnd !== -1 && index > conditionEnd + 1 && index < branchEnd) return true;
+function inspectDomResourceSinks(tokens) {
+  const methods = new Map([...RESOURCE_METHODS].map((name) => [name, name]));
+  const namedMethod = (token) => methods.get(token?.value);
+  // Direct assignments, .bind wrappers, and ordinary alias chains. This is a
+  // deliberately bounded policy scanner, not an interpreter for arbitrary JS.
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let index = 0; index < tokens.length; index += 1) {
+      if (tokens[index].type !== 'identifier') continue;
+      let method;
+      if (tokens[index + 1]?.value === '=' && tokens[index + 2]?.value !== '=') {
+        for (let cursor = index + 2; cursor < Math.min(tokens.length, index + 18); cursor += 1) {
+          if ([';', '(', '{', '=', '>'].includes(tokens[cursor].value)) break;
+          let candidate = namedMethod(tokens[cursor]);
+          let referenceEnd = cursor;
+          if (tokens[cursor].value === '[') {
+            const property = readStaticPropertyName(tokens, cursor);
+            candidate = methods.get(property.propertyName);
+            referenceEnd = property.end;
+          }
+          const next = tokens[referenceEnd + 1]?.value;
+          const memberStart = referenceEnd + (next === '?' && tokens[referenceEnd + 2]?.value === '.' ? 2 : 1);
+          const asiBoundary = tokens[referenceEnd + 1]?.lineBreakBefore &&
+            tokens[referenceEnd + 1]?.type === 'identifier';
+          if (candidate && (next === undefined || [';', ',', '}', ']'].includes(next) || asiBoundary ||
+              (tokens[memberStart]?.value === '.' && tokens[memberStart + 1]?.value === 'bind'))) {
+            method = candidate;
+            break;
+          }
+        }
+      } else if (tokens[index - 1]?.value === ':' && namedMethod(tokens[index - 2]) &&
+                 [',', '}'].includes(tokens[index + 1]?.value)) {
+        method = namedMethod(tokens[index - 2]);
+      }
+      if (method && !methods.has(tokens[index].value)) {
+        methods.set(tokens[index].value, method);
+        changed = true;
+      }
     }
   }
-  return false;
+  for (let index = 0; index < tokens.length; index += 1) {
+    let method = namedMethod(tokens[index]);
+    let callStart = index + 1;
+    if (tokens[index].value === '[') {
+      const property = readStaticPropertyName(tokens, index);
+      method = methods.get(property.propertyName);
+      callStart = property.end + 1;
+    } else if (tokens[index + 1]?.value === ']') callStart += 1;
+    if (tokens[callStart]?.value === '?' && tokens[callStart + 1]?.value === '.') {
+      callStart += tokens[callStart + 2]?.value === '(' ? 2 : 1;
+    }
+    if (method && tokens[callStart]?.value === '.' &&
+        ['call', 'apply'].includes(tokens[callStart + 1]?.value)) {
+      // Indirect invocation wrappers require review; do not guess their argument flow.
+      return [DOM_RESOURCE_FINDING];
+    }
+    if (method && tokens[callStart]?.value === '(') {
+      if (/^(?:createElement|createElementNS|setAttribute|setAttributeNS)$/.test(method)) {
+        const argsEnd = findMatchingToken(tokens, callStart, '(', ')');
+        if (argsEnd === -1) return [DOM_RESOURCE_FINDING];
+        let argument = callStart + 1;
+        if (method.endsWith('NS')) {
+          const comma = tokens.slice(argument, argsEnd).findIndex((token) => token.value === ',');
+          if (comma === -1) return [DOM_RESOURCE_FINDING];
+          argument += comma + 1;
+        }
+        const value = tokens[argument];
+        // Dynamic or composed tag/attribute names require explicit review.
+        if (!value || !['string', 'template'].includes(value.type) || value.expressions?.length ||
+            ![',', ')'].includes(tokens[argument + 1]?.value)) return [DOM_RESOURCE_FINDING];
+        const name = value.value.toLowerCase();
+        if (method.startsWith('createElement') ? RESOURCE_ELEMENTS.has(name) : RESOURCE_ATTRIBUTES.has(name)) {
+          return [DOM_RESOURCE_FINDING];
+        }
+      } else {
+        return [DOM_RESOURCE_FINDING];
+      }
+    }
+    let property;
+    let end = index + 2;
+    if (tokens[index + 1]?.value === '.') property = tokens[end]?.value;
+    if (tokens[index + 1]?.value === '[') {
+      const parsed = readStaticPropertyName(tokens, index + 1);
+      property = parsed.propertyName;
+      end = parsed.end;
+    }
+    if ((RESOURCE_ATTRIBUTES.has(property?.toLowerCase()) || /^(?:innerHTML|outerHTML|srcdoc)$/.test(property || '')) &&
+        ((tokens[end + 1]?.value === '=' && tokens[end + 2]?.value !== '=') ||
+         (tokens[end + 1]?.value === '+' && tokens[end + 2]?.value === '='))) return [DOM_RESOURCE_FINDING];
+  }
+  return [];
 }
 
-function inspectRuntimeSource(source, { allowInterceptedRequestFetch = false } = {}) {
+function inspectRuntimeSource(source) {
   if (typeof source !== 'string') throw new TypeError('runtime source must be a string');
   if (Buffer.byteLength(source, 'utf8') > MAX_RUNTIME_SOURCE_BYTES) {
     throw new Error(`runtime source exceeds ${MAX_RUNTIME_SOURCE_BYTES} byte limit`);
   }
 
   const tokens = tokenizeJavaScript(source);
-  const findings = [];
+  const findings = inspectDomResourceSinks(tokens);
   const detectedAdapters = new Set();
-  let interceptedRequestFetches = 0;
   tokens.forEach((token, index) => {
     let identifier = token.type === 'identifier' ? token.value.toLowerCase() : null;
     if (
@@ -557,34 +638,12 @@ function inspectRuntimeSource(source, { allowInterceptedRequestFetch = false } =
     ) {
       identifier = token.value.toLowerCase();
     }
+    if (token.type === 'identifier' && token.value === 'Function') {
+      detectedAdapters.add('page runtime must not evaluate dynamic source');
+    }
     const reason = identifier ? DISALLOWED_RUNTIME_IDENTIFIERS.get(identifier) : null;
-    if (reason) {
-      if (
-        allowInterceptedRequestFetch &&
-        identifier === 'fetch' &&
-        isInterceptedRequestFetch(tokens, index) &&
-        interceptedRequestFetches === 0
-      ) {
-        interceptedRequestFetches += 1;
-      } else {
-        detectedAdapters.add(reason);
-      }
-    }
+    if (reason) detectedAdapters.add(reason);
   });
-  if (allowInterceptedRequestFetch && interceptedRequestFetches !== 1) {
-    findings.push('service worker must have exactly one direct fetch(event.request) navigation fallback');
-  }
-  if (allowInterceptedRequestFetch) {
-    for (let index = 0; index < tokens.length - 3; index += 1) {
-      if (
-        tokens[index].type === 'identifier' && tokens[index].value === 'event' &&
-        tokens[index + 1].value === '.' && tokens[index + 2].value === 'request' &&
-        tokens[index + 3].value === '='
-      ) {
-        findings.push('service worker must not replace the intercepted event request');
-      }
-    }
-  }
   const networkGlobalAliases = new Set(NETWORK_GLOBAL_IDENTIFIERS);
   let globalAliasesChanged = true;
   while (globalAliasesChanged) {
@@ -631,6 +690,7 @@ function inspectRuntimeSource(source, { allowInterceptedRequestFetch = false } =
   findings.push(...allowedSet.findings);
   const mutationFindings = inspectAllowedSetMutation(tokens);
   findings.push(...mutationFindings);
+  if (hasTrackEventAssignment(tokens)) findings.push('trackEvent must not be reassigned at runtime');
   const dynamicCallsAreGuarded =
     hasGuardedTrackEventDefinition(tokens, allowedSet.foundStaticSet) &&
     allowedSet.findings.length === 0 &&
@@ -656,10 +716,13 @@ function inspectRuntimeSource(source, { allowInterceptedRequestFetch = false } =
   }
 
   for (let index = 0; index < tokens.length - 1; index += 1) {
-    if (!telemetryCallees.has(tokens[index].value) || tokens[index + 1].value !== '(') continue;
+    if (!telemetryCallees.has(tokens[index].value)) continue;
+    let callStart = index + 1;
+    if (tokens[callStart]?.value === '?' && tokens[callStart + 1]?.value === '.') callStart += 2;
+    if (tokens[callStart]?.value !== '(') continue;
     if (tokens[index - 1]?.value === 'function') continue;
-    const eventToken = tokens[index + 2];
-    if (eventToken?.type === 'string') {
+    const eventToken = tokens[callStart + 1];
+    if (eventToken?.type === 'string' && [',', ')'].includes(tokens[callStart + 2]?.value)) {
       if (!ALLOWED_EVENTS.has(eventToken.value)) {
         findings.push(`unapproved telemetry event "${eventToken.value}" in trackEvent call`);
       }
@@ -683,11 +746,77 @@ function readStableRuntimeSource(rootDir, file, { openSync = fs.openSync } = {})
   }).toString('utf8');
 }
 
+function inspectRuntimeInventory(rootDir, runtimeFiles, { openSync = fs.openSync, today } = {}) {
+  const findings = [];
+  const classified = new Set(runtimeFiles);
+  let visited = 0;
+  const visit = (relativePath) => {
+    const absolutePath = path.resolve(rootDir, relativePath);
+    const stats = fs.lstatSync(absolutePath);
+    if (stats.isSymbolicLink()) throw new Error(`${relativePath}: runtime inventory must not follow symbolic links`);
+    if (stats.isDirectory()) {
+      for (const name of fs.readdirSync(absolutePath)) {
+        if (++visited > 20000) throw new Error('runtime inventory exceeds entry limit');
+        visit(`${relativePath}/${name}`);
+      }
+    } else if (!stats.isFile()) {
+      throw new Error(`${relativePath}: runtime inventory requires regular files`);
+    } else if (/\.(?:js|mjs|cjs)$/i.test(relativePath) &&
+               !classified.has(relativePath) && !relativePath.startsWith('js/vendor/')) {
+      findings.push(`${relativePath}: executable source is not classified in the telemetry runtime inventory`);
+    }
+  };
+  try { visit('js'); } catch (error) { findings.push(error.message); }
+  // Root workers and scripts cannot silently bypass the js/ inventory.
+  for (const name of fs.readdirSync(rootDir)) {
+    if (/\.html$/i.test(name) && !RUNTIME_HTML_FILES.includes(name)) {
+      findings.push(`${name}: HTML page is not classified in the telemetry runtime inventory`);
+    }
+    if (/\.(?:js|mjs|cjs)$/i.test(name) && name !== SERVICE_WORKER_FILE && name !== 'playwright.config.mjs') {
+      findings.push(`${name}: executable source is not classified in the telemetry runtime inventory`);
+    }
+  }
+  for (const file of RUNTIME_HTML_FILES) {
+    try {
+      const html = readStableFileNoFollow(path.resolve(rootDir, file), {
+        rootDir: path.resolve(rootDir), label: file, maxBytes: 2 * 1024 * 1024, fatalUtf8: true, openSync
+      });
+      const document = parseHtmlDocument(html);
+      // Inline executable additions require classification, rather than automatic
+      // acceptance merely because the build assigns them a CSP hash.
+      for (const { attributes, body } of document.scripts) {
+        if (attributes.has('src')) {
+          if (body.trim()) findings.push(`${file}: external script tags must not contain inline source`);
+          const source = attributes.get('src').replace(/^\//, '');
+          if (!classified.has(source)) findings.push(`${file}: script ${JSON.stringify(source)} is not a scanned page runtime`);
+        } else if (attributes.get('type') === 'application/ld+json') {
+          if (!file.startsWith('src/')) JSON.parse(body);
+        } else {
+          findings.push(`${file}: inline executable script is not classified in the page runtime inventory`);
+        }
+      }
+    } catch (error) { findings.push(`${file}: runtime HTML inventory failed: ${error.message}`); }
+  }
+  try {
+    const worker = readStableFileNoFollow(path.resolve(rootDir, SERVICE_WORKER_FILE), {
+      rootDir: path.resolve(rootDir), label: SERVICE_WORKER_FILE, maxBytes: MAX_RUNTIME_SOURCE_BYTES, openSync
+    });
+    if (crypto.createHash('sha256').update(worker).digest('hex') !== REVIEWED_SERVICE_WORKER_SHA256) {
+      findings.push(`${SERVICE_WORKER_FILE}: source changed since security review; review network/cache/message/import behavior before updating its SHA-256`);
+    }
+  } catch (error) { findings.push(`${SERVICE_WORKER_FILE}: reviewed worker validation failed: ${error.message}`); }
+  try {
+    const manifest = loadManifest(path.resolve(rootDir, 'docs/security/vendor-dependencies.json'), { rootDir });
+    validateVendorGovernance(manifest, { rootDir, today });
+  } catch (error) { findings.push(`js/vendor: vendor integrity validation failed: ${error.message}`); }
+  return findings;
+}
+
 function collectTelemetryPolicyFindings({
   rootDir = projectRoot,
   runtimeFiles = RUNTIME_FILES,
-  serviceWorkerFile = SERVICE_WORKER_FILE,
-  verifyVendoredScripts = true,
+  enforceRuntimeInventory = path.resolve(rootDir) === projectRoot,
+  today,
   openSync = fs.openSync
 } = {}) {
   const findings = [];
@@ -702,36 +831,7 @@ function collectTelemetryPolicyFindings({
     }
   });
 
-  if (serviceWorkerFile) {
-    try {
-      const source = readStableFileNoFollow(path.resolve(rootDir, serviceWorkerFile), {
-        label: 'service worker source',
-        rootDir: path.resolve(rootDir),
-        maxBytes: MAX_RUNTIME_SOURCE_BYTES,
-        minBytes: 1,
-        openSync
-      });
-      inspectRuntimeSource(source.toString('utf8'), { allowInterceptedRequestFetch: true }).forEach((finding) => {
-        findings.push(`${serviceWorkerFile}: ${finding}`);
-      });
-      const digest = crypto.createHash('sha256').update(source).digest('hex');
-      if (digest !== REVIEWED_SERVICE_WORKER_SHA256) {
-        findings.push(`${serviceWorkerFile}: source changed since security review; inspect the worker before updating its reviewed SHA-256`);
-      }
-    } catch (error) {
-      findings.push(`${serviceWorkerFile}: service worker source validation failed: ${error?.message || 'invalid source'}`);
-    }
-  }
-
-  if (verifyVendoredScripts) {
-    try {
-      const manifest = loadManifest(path.join(rootDir, 'docs/security/vendor-dependencies.json'), { rootDir });
-      validateVendorGovernance(manifest, { rootDir });
-    } catch (error) {
-      findings.push(`js/vendor: vendor integrity validation failed: ${error?.message || 'invalid vendor files'}`);
-    }
-  }
-
+  if (enforceRuntimeInventory) findings.push(...inspectRuntimeInventory(rootDir, runtimeFiles, { openSync, today }));
   return findings;
 }
 
@@ -742,7 +842,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     findings.forEach((finding) => console.error(`- ${finding}`));
     process.exitCode = 1;
   } else {
-    console.log('Telemetry policy OK: page adapters, reviewed service worker, and vendored script integrity validated.');
+    console.log('Telemetry policy OK: bounded page-source checks, runtime inventory, reviewed worker, and vendor integrity passed.');
   }
 }
 

@@ -9,9 +9,17 @@ import { fileURLToPath } from 'node:url';
 import {
   loadManifest,
   MAX_VENDOR_MANIFEST_BYTES,
+  PINNED_BOOTSTRAP_CSS,
   validatePinnedBootstrapCss,
   validateVendorGovernance
 } from '../../scripts/check-vendor-governance.mjs';
+
+const bootstrapReviewOptions = { today: PINNED_BOOTSTRAP_CSS.last_reviewed };
+
+function bootstrapReviewDate(offsetDays) {
+  const reviewedAt = Date.parse(`${PINNED_BOOTSTRAP_CSS.last_reviewed}T00:00:00.000Z`);
+  return new Date(reviewedAt + offsetDays * 86400000).toISOString().slice(0, 10);
+}
 
 function makeGovernanceFixture(t) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vendor-governance-'));
@@ -58,7 +66,7 @@ test('vendored dependency governance validates digests, freshness, and inventory
 });
 
 test('pinned Bootstrap CSS matches the reviewed distribution bytes', () => {
-  assert.equal(validatePinnedBootstrapCss(), 'css/bootstrap.min.css');
+  assert.equal(validatePinnedBootstrapCss(undefined, bootstrapReviewOptions), PINNED_BOOTSTRAP_CSS.path);
 });
 
 test('pinned Bootstrap CSS rejects modified bytes and symbolic links', (t) => {
@@ -68,14 +76,42 @@ test('pinned Bootstrap CSS rejects modified bytes and symbolic links', (t) => {
   const cssPath = path.join(rootDir, 'css', 'bootstrap.min.css');
   fs.mkdirSync(path.dirname(cssPath), { recursive: true });
   fs.copyFileSync(sourcePath, cssPath);
-  assert.equal(validatePinnedBootstrapCss(rootDir), 'css/bootstrap.min.css');
+  assert.equal(validatePinnedBootstrapCss(rootDir, bootstrapReviewOptions), PINNED_BOOTSTRAP_CSS.path);
 
   fs.appendFileSync(cssPath, '/* unexpected change */');
-  assert.throws(() => validatePinnedBootstrapCss(rootDir), /Pinned CSS hash mismatch/);
+  assert.throws(() => validatePinnedBootstrapCss(rootDir, bootstrapReviewOptions), /Pinned CSS hash mismatch/);
 
   fs.unlinkSync(cssPath);
   fs.symlinkSync(sourcePath, cssPath);
-  assert.throws(() => validatePinnedBootstrapCss(rootDir), /symbolic link/);
+  assert.throws(() => validatePinnedBootstrapCss(rootDir, bootstrapReviewOptions), /symbolic link/);
+});
+
+test('pinned Bootstrap CSS rejects missing, malformed, version-drifted and stale assets', (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bootstrap-css-policy-'));
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  const sourcePath = fileURLToPath(new URL('../../css/bootstrap.min.css', import.meta.url));
+  const cssPath = path.join(rootDir, 'css', 'bootstrap.min.css');
+  const originalBytes = fs.readFileSync(sourcePath);
+  fs.mkdirSync(path.dirname(cssPath), { recursive: true });
+
+  assert.throws(() => validatePinnedBootstrapCss(rootDir, bootstrapReviewOptions), /file is missing/);
+  fs.writeFileSync(cssPath, Buffer.alloc(0));
+  assert.throws(() => validatePinnedBootstrapCss(rootDir, bootstrapReviewOptions), /file is smaller than 1 bytes/);
+  fs.writeFileSync(cssPath, Buffer.concat([originalBytes, Buffer.from([0xff])]));
+  assert.throws(() => validatePinnedBootstrapCss(rootDir, bootstrapReviewOptions), /valid UTF-8/);
+  fs.writeFileSync(cssPath, originalBytes.toString('utf8').replace(`Bootstrap  v${PINNED_BOOTSTRAP_CSS.version}`, 'Bootstrap  vunreviewed'));
+  assert.throws(() => validatePinnedBootstrapCss(rootDir, bootstrapReviewOptions), /version must be/);
+  fs.writeFileSync(cssPath, originalBytes.toString('utf8').replace(`Licensed under ${PINNED_BOOTSTRAP_CSS.license}`, 'Licensed under unreviewed'));
+  assert.throws(() => validatePinnedBootstrapCss(rootDir, bootstrapReviewOptions), /preserve its .* license/);
+  fs.writeFileSync(cssPath, originalBytes);
+  assert.equal(validatePinnedBootstrapCss(rootDir, bootstrapReviewOptions), PINNED_BOOTSTRAP_CSS.path);
+  assert.equal(validatePinnedBootstrapCss(rootDir, {
+    today: bootstrapReviewDate(PINNED_BOOTSTRAP_CSS.max_review_age_days)
+  }), PINNED_BOOTSTRAP_CSS.path);
+  assert.throws(() => validatePinnedBootstrapCss(rootDir, { today: bootstrapReviewDate(-1) }), /review age -1/);
+  assert.throws(() => validatePinnedBootstrapCss(rootDir, {
+    today: bootstrapReviewDate(PINNED_BOOTSTRAP_CSS.max_review_age_days + 1)
+  }), new RegExp(`review age ${PINNED_BOOTSTRAP_CSS.max_review_age_days + 1}`));
 });
 
 test('vendor manifest loading is bounded, no-follow, regular-only, and snapshot-stable', (t) => {
