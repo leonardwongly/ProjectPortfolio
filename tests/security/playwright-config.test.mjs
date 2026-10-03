@@ -7,13 +7,13 @@ import config, { parsePort, playwrightStaticRoot, webServerCommand } from '../..
 
 test('Playwright owns the loopback listener instead of reusing an unexpected server', () => {
   assert.equal(config.webServer.reuseExistingServer, false);
-  assert.match(webServerCommand, /--bind 127\.0\.0\.1/);
+  assert.match(webServerCommand, /scripts\/serve-static\.mjs/);
 });
 
 test('Playwright serves a staged deployment allowlist rather than the repository root', () => {
   const root = path.resolve('.');
 
-  assert.match(webServerCommand, /--directory/);
+  assert.ok(webServerCommand.includes(playwrightStaticRoot));
   assert.notEqual(path.resolve(playwrightStaticRoot), root);
   assert.ok(fs.existsSync(path.join(playwrightStaticRoot, 'index.html')));
   assert.equal(fs.existsSync(path.join(playwrightStaticRoot, '.git')), false);

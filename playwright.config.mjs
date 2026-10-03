@@ -19,6 +19,7 @@ const integrationPort = parsePort(process.env.PLAYWRIGHT_PORT ?? '4173');
 const integrationBaseURL = `http://127.0.0.1:${integrationPort}`;
 
 const STATIC_FILES = [
+  '.well-known/service-doc.html',
   'case-study-agentforge.html',
   'case-study-agentic.html',
   'case-study-apple-calendar-mcp.html',
@@ -85,11 +86,10 @@ function cleanupStagedSite() {
 process.once('exit', cleanupStagedSite);
 
 const webServerCommand = [
-  'python3 -m http.server',
-  String(integrationPort),
-  '--bind 127.0.0.1',
-  '--directory',
-  shellQuote(playwrightStaticRoot)
+  shellQuote(process.execPath),
+  shellQuote(path.join(projectRoot, 'scripts/serve-static.mjs')),
+  shellQuote(playwrightStaticRoot),
+  String(integrationPort)
 ].join(' ');
 
 export default defineConfig({
