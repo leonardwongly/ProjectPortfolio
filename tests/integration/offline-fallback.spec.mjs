@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './browser-fixture.mjs';
 
 test.use({ serviceWorkers: 'allow' });
 
@@ -78,4 +78,25 @@ test('real worker activation preserves unrelated caches and removes its retired 
   expect(names).toContain('pwabuilder-offline-cache-v3');
   expect(names).toContain('unrelated-application-cache');
   expect(names).not.toContain('pwabuilder-offline-cache-v2');
+});
+
+test('erased runtime offline cache returns bounded plaintext document and stylesheet failures', async ({ page, context, browserName }) => {
+  test.skip(browserName !== 'chromium', 'Clearing the HTTP cache requires the Chromium DevTools protocol.');
+  await page.goto('/index.html');
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  await page.evaluate(() => caches.delete('pwabuilder-offline-cache-v3'));
+  const session = await context.newCDPSession(page);
+  await session.send('Network.clearBrowserCache');
+  await session.detach();
+  await context.setOffline(true);
+  const response = await page.goto('/unavailable/after-cache-erasure');
+  expect(response.status()).toBe(503);
+  expect(response.headers()['cache-control']).toBe('no-store');
+  expect(response.headers()['content-type']).toBe('text/plain; charset=utf-8');
+  expect((await page.locator('body').innerText()).length).toBeLessThanOrEqual(80);
+  expect(await page.evaluate(async () => {
+    const stylesheet = await fetch('/css/offline.css');
+    return { status: stylesheet.status, type: stylesheet.headers.get('content-type'), body: await stylesheet.text() };
+  })).toEqual({ status: 503, type: 'text/plain; charset=utf-8', body: 'Offline content is temporarily unavailable.' });
 });

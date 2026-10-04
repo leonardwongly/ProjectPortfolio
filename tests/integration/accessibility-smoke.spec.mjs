@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './browser-fixture.mjs';
 
 const PAGE_PATHS = [
   '/index.html',

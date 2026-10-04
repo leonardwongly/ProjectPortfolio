@@ -14,6 +14,7 @@ function createWorkerHarness({
   cacheMatchImpl = async () => undefined,
   cacheNames = [],
   cacheDeleteImpl = async () => true,
+  cacheOpenImpl = async () => undefined,
   skipWaitingImpl = async () => undefined
 } = {}) {
   const listeners = new Map();
@@ -55,6 +56,7 @@ function createWorkerHarness({
       },
       async open(name) {
         calls.cacheOpen.push(name);
+        await cacheOpenImpl(name);
         return cache;
       }
     },
@@ -471,4 +473,47 @@ test('offline asset interception rejects non-GET, other-origin, altered and malf
   }
   assert.deepEqual(harness.calls.fetch, []);
   assert.deepEqual(harness.calls.cacheOpen, []);
+});
+
+test('cache-open failure rejects installation but navigation and CSS remain bounded', async () => {
+  const failure = new Error('CacheStorage denied');
+  const harness = createWorkerHarness({
+    cacheOpenImpl: async () => { throw failure; },
+    fetchImpl: async () => { throw new Error('offline'); }
+  });
+  await assert.rejects(dispatchExtendableEvent(harness, 'install').lifetimePromise, failure);
+  for (const request of [
+    { mode: 'navigate', method: 'GET', url: `${workerOrigin}/missing` },
+    { mode: 'no-cors', method: 'GET', url: `${workerOrigin}/css/offline.css` }
+  ]) {
+    const response = await dispatchFetch(harness, request).responsePromise;
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('content-type'), 'text/plain; charset=utf-8');
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.ok((await response.text()).length <= 80);
+  }
+});
+
+test('navigation forwards the original request and preserves HTTP errors instead of offline fallback', async () => {
+  for (const status of [200, 404, 503]) {
+    const response = new Response(`network-${status}`, { status, headers: { 'x-proof': 'network' } });
+    const request = { mode: 'navigate', method: 'GET', url: `${workerOrigin}/work.html?proof=preserved`, headers: { 'x-proof': 'request' } };
+    const harness = createWorkerHarness({ fetchImpl: async () => response });
+    const actual = await dispatchFetch(harness, request, Promise.resolve(undefined)).responsePromise;
+    assert.equal(harness.calls.fetch[0], request);
+    assert.equal(actual, response);
+    assert.equal(actual.status, status);
+    assert.equal(actual.headers.get('x-proof'), 'network');
+    assert.equal(await actual.text(), `network-${status}`);
+    assert.deepEqual(harness.calls.cacheOpen, []);
+  }
+});
+
+test('an accepted message owns a rejected skipWaiting promise', async () => {
+  const failure = new Error('activation unavailable');
+  const harness = createWorkerHarness({ skipWaitingImpl: async () => { throw failure; } });
+  const message = dispatchMessage(harness, validMessage());
+  assert.equal(message.ownershipCount, 1);
+  await assert.rejects(message.lifetimePromise, failure);
+  assert.equal(harness.calls.skipWaiting, 1);
 });

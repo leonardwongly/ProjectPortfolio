@@ -2238,7 +2238,7 @@ main.container-xxl {
 
 .accordion-button:not(.collapsed) {
   background: var(--accent-soft);
-  color: var(--accent-strong);
+  color: var(--ink);
 }
 
 /* --- Footer: VS Code-style status bar --- */
