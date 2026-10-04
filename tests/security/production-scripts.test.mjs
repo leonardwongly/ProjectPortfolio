@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import { EventEmitter } from 'node:events';
+import { Readable } from 'node:stream';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +16,14 @@ import {
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ORIGIN = 'https://public.example';
+const EXPECTED_PAGES = [
+  ['/', 'index.html'], ['/work', 'work.html'],
+  ['/case-study-agentforge', 'case-study-agentforge.html'],
+  ['/case-study-agentic', 'case-study-agentic.html'],
+  ['/case-study-apple-calendar-mcp', 'case-study-apple-calendar-mcp.html'],
+  ['/reading', 'reading.html'], ['/offline', 'offline.html'],
+  ['/.well-known/service-doc', '.well-known/service-doc.html']
+];
 const localPage = (pagePath) => fs.readFileSync(path.join(ROOT_DIR, PAGE_FILES.get(pagePath)), 'utf8');
 const validate = (html, pagePath = '/work') => validateScripts({
   html,
@@ -22,24 +33,26 @@ const validate = (html, pagePath = '/work') => validateScripts({
 });
 
 test('committed pages have the approved script inventory', () => {
+  assert.deepEqual([...PAGE_FILES], EXPECTED_PAGES);
   for (const pagePath of PAGE_FILES.keys()) {
     assert.deepEqual(validate(localPage(pagePath), pagePath), [], pagePath);
   }
 });
 
-test('service documentation has no approved executable scripts', () => {
-  const pagePath = '/.well-known/service-doc';
-  const source = localPage(pagePath);
-  assert.deepEqual(extractScripts(source), []);
-  assert.deepEqual(validate(source, pagePath), []);
-  assert.match(
-    validate(`${source}<script src="/js/main.js" defer></script>`, pagePath)[0],
-    /script inventory differs/
-  );
-  assert.throws(
-    () => validate(`${source}<script>alert(1)</script>`, pagePath),
-    /Unapproved inline script/
-  );
+test('offline and service documentation have no approved executable scripts', () => {
+  for (const pagePath of ['/offline', '/.well-known/service-doc']) {
+    const source = localPage(pagePath);
+    assert.deepEqual(extractScripts(source), []);
+    assert.deepEqual(validate(source, pagePath), []);
+    assert.match(
+      validate(`${source}<script src="/js/main.js" defer></script>`, pagePath)[0],
+      /script inventory differs/
+    );
+    assert.throws(
+      () => validate(`${source}<script>alert(1)</script>`, pagePath),
+      /Unapproved inline script/
+    );
+  }
 });
 
 test('live script injection, removal, and inline mutation fail the inventory', () => {
@@ -63,7 +76,7 @@ test('live script injection, removal, and inline mutation fail the inventory', (
   assert.match(validate(work.replace('<script src="js/site.js" defer></script>', ''))[0], /script inventory differs/);
   assert.throws(
     () => validate(work.replace('<script src="js/site.js" defer></script>', '<script src="js/site.js" defer onload="alert(1)"></script>')),
-    /unapproved attributes/
+    /inline execution|unapproved attributes/
   );
   const home = localPage('/');
   assert.match(validate(home.replace('"@context"', '"@context-modified"'), '/')[0], /script inventory differs/);
@@ -80,13 +93,14 @@ test('script extraction skips comments and raw text but accepts HTML attribute s
   assert.deepEqual(validate(html), []);
   assert.equal(extractScripts('<script src="js/main.js" data-note=">" defer></script>').length, 1);
   assert.equal(extractScripts('<script>"</scriptx>"</script>').length, 1);
-  assert.throws(() => extractScripts('<script src="/evil">'), /unterminated script/);
-  assert.throws(() => extractScripts('<!-- unfinished'), /unterminated comment/);
+  assert.throws(() => extractScripts('<script src="/evil">'), /HTML parse error: eof-in-element/);
+  assert.throws(() => extractScripts('<!-- unfinished'), /HTML parse error: eof-in-comment/);
 });
 
 test('script source aliases and duplicate attributes fail closed', () => {
   const work = localPage('/work');
   const sourceTag = '<script src="js/main.js" defer></script>';
+  assert.ok(work.includes(sourceTag));
   for (const replacement of [
     '<script src="//evil.example/main.js" defer></script>',
     '<script src="/.webmcp/bridge.js" defer></script>',
@@ -110,14 +124,18 @@ test('production script check uses bounded public HTTPS requests for all approve
     fetchImpl: async (url) => {
       const pagePath = new URL(url).pathname;
       requested.push(pagePath);
-      return new Response(localPage(pagePath), { status: 200 });
+      return pagePath.startsWith('/js/')
+        ? new Response(fs.readFileSync(path.join(ROOT_DIR, pagePath.slice(1))), { headers: { 'content-type': 'application/javascript' } })
+        : new Response(localPage(pagePath), { status: 200, headers: { 'content-type': 'text/html' } });
     }
   };
   assert.deepEqual(await runProductionScriptCheck(options), []);
-  assert.deepEqual(requested, [...PAGE_FILES.keys()]);
+  assert.deepEqual(requested, [...PAGE_FILES.keys(), '/js/main.js', '/js/site.js']);
   assert.deepEqual(await runProductionScriptCheck({
     ...options,
-    fetchImpl: async (url) => new Response(`${localPage(new URL(url).pathname)}<script src="/.webmcp/bridge.js" defer></script>`)
+    fetchImpl: async (url) => new URL(url).pathname.startsWith('/js/')
+      ? new Response(fs.readFileSync(path.join(ROOT_DIR, new URL(url).pathname.slice(1))), { headers: { 'content-type': 'text/javascript' } })
+      : new Response(`${localPage(new URL(url).pathname)}<script src="/.webmcp/bridge.js" defer></script>`, { headers: { 'content-type': 'text/html' } })
   }), [...PAGE_FILES.keys()].map((pagePath) =>
     `${new URL(pagePath, ORIGIN)}: Unapproved external script "/.webmcp/bridge.js"`
   ));
@@ -125,4 +143,263 @@ test('production script check uses bounded public HTTPS requests for all approve
     () => runProductionScriptCheck({ ...options, origin: 'https://localhost' }),
     /local\/private/
   );
+});
+
+
+test('inline execution outside script elements and browser parsing ambiguities fail closed', () => {
+  const work = localPage('/work');
+  for (const injection of [
+    '<img src=x onerror=alert(1)>', '<a href="jav&#x61;script:alert(1)">bad</a>',
+    '<a href="java&#10;script:alert(1)">bad</a>', '<iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;"></iframe>',
+    '<base href="https://evil.example/">', '<meta http-equiv="refresh" content="0;url=https://evil.example">',
+    '<!-- --!><script src="/unknown.js" defer></script> -->',
+    '<svg><script href="https://evil.example/a.js"></script></svg>',
+    '<svg><style/><script href="https://evil.example/a.js"></script></svg>',
+    '<svg><title><script src="/unknown.js"></script></title></svg>',
+    '<math><mtext><script src="/unknown.js"></script></mtext></math>'
+  ]) assert.throws(() => validate(`${work}${injection}`), undefined, injection);
+  const unicode = `İİİ${work}`;
+  assert.deepEqual(validate(unicode), []);
+  assert.throws(() => validate(`${unicode}<script src="/unknown.js" defer></script>`));
+});
+
+test('reviewed local inventory cannot silently approve additional executable scripts', () => {
+  const work = localPage('/work');
+  assert.throws(() => validateScripts({ html: work, expectedHtml: `${work}<script src="js/main.js" defer></script>`,
+    pageUrl: `${ORIGIN}/work`, origin: ORIGIN }), /Committed HTML/);
+  assert.throws(() => validate(work.replace('src="js/main.js"', 'src="https://user:password@public.example/js/main.js"')));
+});
+
+test('production script bytes and JavaScript content types must match reviewed assets', async () => {
+  for (const mode of ['bytes', 'type']) {
+    const findings = await runProductionScriptCheck({ origin: ORIGIN, timeoutMs: 100, attempts: 1, retryDelayMs: 1,
+      lookupImpl: async () => [{ address: '93.184.216.34', family: 4 }],
+      fetchImpl: async (url) => {
+        const pagePath = new URL(url).pathname;
+        if (!pagePath.startsWith('/js/')) return new Response(localPage(pagePath), { headers: { 'content-type': 'text/html' } });
+        return new Response(mode === 'bytes' ? 'alert(1)' : fs.readFileSync(path.join(ROOT_DIR, pagePath.slice(1))),
+          { headers: { 'content-type': mode === 'type' ? 'text/html' : 'text/javascript' } });
+      }
+    });
+    assert.equal(findings.length, 2);
+    assert.ok(findings.every((finding) => finding.includes(mode === 'bytes' ? 'bytes differ' : 'JavaScript response')));
+  }
+});
+
+
+test('default inventory transport pins public DNS for all page and asset requests', async () => {
+  const requested = [];
+  const findings = await runProductionScriptCheck({ origin: ORIGIN, timeoutMs: 100, attempts: 1, retryDelayMs: 1,
+    lookupImpl: async () => [{ address: '93.184.216.34', family: 4 }],
+    requestImpl: (url, options, onResponse) => {
+      assert.equal(options.agent, false);
+      assert.equal(options.servername, 'public.example');
+      assert.equal(options.headers.connection, 'close');
+      const request = new EventEmitter();
+      request.destroy = () => {};
+      request.end = () => options.lookup('public.example', {}, (error, address) => {
+        assert.ifError(error);
+        assert.equal(address, '93.184.216.34');
+        const pathname = new URL(url).pathname;
+        requested.push(pathname);
+        const bytes = pathname.startsWith('/js/')
+          ? fs.readFileSync(path.join(ROOT_DIR, pathname.slice(1))) : Buffer.from(localPage(pathname));
+        const response = Readable.from([bytes]);
+        response.statusCode = 200;
+        response.headers = { 'content-type': pathname.startsWith('/js/') ? 'application/javascript' : 'text/html' };
+        onResponse(response);
+      });
+      return request;
+    }
+  });
+  assert.deepEqual(findings, []);
+  assert.deepEqual(requested, [...PAGE_FILES.keys(), '/js/main.js', '/js/site.js']);
+});
+
+test('private DNS destinations and unsafe local baseline inputs fail before transport', async (t) => {
+  let requests = 0;
+  const options = { origin: ORIGIN, timeoutMs: 100, attempts: 1, retryDelayMs: 1,
+    lookupImpl: async () => [{ address: '127.0.0.1', family: 4 }],
+    requestImpl: () => { requests += 1; throw new Error('must not send'); }
+  };
+  const blocked = await runProductionScriptCheck(options);
+  assert.equal(blocked.length, PAGE_FILES.size + 2);
+  assert.ok(blocked.every((finding) => finding.includes('blocked address')));
+  assert.equal(requests, 0);
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'production-script-baseline-'));
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  for (const filename of PAGE_FILES.values()) {
+    fs.mkdirSync(path.dirname(path.join(rootDir, filename)), { recursive: true });
+    fs.copyFileSync(path.join(ROOT_DIR, filename), path.join(rootDir, filename));
+  }
+  fs.mkdirSync(path.join(rootDir, 'js'));
+  fs.symlinkSync(path.join(ROOT_DIR, 'js/main.js'), path.join(rootDir, 'js/main.js'));
+  await assert.rejects(() => runProductionScriptCheck({ ...options, rootDir }), /symbolic link/);
+  assert.equal(requests, 0);
+  assert.throws(() => extractScripts('x'.repeat(1024 * 1024 + 1)), /within.*bytes/);
+  await assert.rejects(() => runProductionScriptCheck({ ...options, fetchImpl: async () => new Response('') }), /explicit fetch and DNS|blocked address/);
+});
+
+test('script monitor bounds retries and surfaces page, asset and transport errors', async () => {
+  let sleeps = 0;
+  const requested = [];
+  const options = { origin: ORIGIN, timeoutMs: 100, attempts: 2, retryDelayMs: 1,
+    sleepImpl: async (delay) => { assert.equal(delay, 1); sleeps += 1; }, lookupImpl: async () => [{ address: '93.184.216.34', family: 4 }],
+    fetchImpl: async (url) => { requested.push(new URL(url).pathname); if (new URL(url).pathname.startsWith('/js/')) throw new Error(`asset transport failed attempt ${sleeps + 1}`);
+      return new Response('unavailable', { status: 503, headers: { 'content-type': 'text/html' } }); }
+  };
+  const findings = await runProductionScriptCheck(options);
+  assert.equal(findings.length, PAGE_FILES.size + 2);
+  assert.equal(sleeps, 1);
+  const vector = [...EXPECTED_PAGES.map(([page]) => page), '/js/main.js', '/js/site.js'];
+  assert.deepEqual(requested, [...vector, ...vector]);
+  assert.ok(findings.filter((finding) => finding.includes('asset transport failed')).every((finding) => finding.includes('attempt 2')));
+  assert.ok(findings.some((finding) => finding.includes('asset transport failed')));
+  assert.ok(findings.some((finding) => finding.includes('503')));
+  await assert.rejects(() => runProductionScriptCheck({ ...options, sleepImpl: 'bad' }), /sleep implementation/);
+  await assert.rejects(() => runProductionScriptCheck({ ...options, lookupImpl: undefined }), /explicit fetch and DNS/);
+  assert.equal(requested.length, vector.length * 2);
+  let calls = 0;
+  sleeps = 0;
+  assert.deepEqual(await runProductionScriptCheck({ ...options, fetchImpl: async (url) => {
+    const page = new URL(url).pathname;
+    const firstAttempt = calls++ < vector.length;
+    if (firstAttempt) return new Response('unavailable', { status: 503 });
+    return new Response(page.startsWith('/js/') ? fs.readFileSync(path.join(ROOT_DIR, page.slice(1))) : localPage(page), {
+      headers: { 'content-type': page.startsWith('/js/') ? 'Text/JavaScript; charset=utf-8' : 'Text/HTML; charset=utf-8' }
+    });
+  } }), []);
+  assert.equal(calls, vector.length * 2);
+  assert.equal(sleeps, 1);
+});
+
+test('default asset integrity distinguishes unequal bytes with identical UTF-8 decoding', async (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'production-byte-integrity-'));
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  for (const [, file] of EXPECTED_PAGES) {
+    fs.mkdirSync(path.dirname(path.join(rootDir, file)), { recursive: true });
+    fs.copyFileSync(path.join(ROOT_DIR, file), path.join(rootDir, file));
+  }
+  fs.mkdirSync(path.join(rootDir, 'js'));
+  fs.writeFileSync(path.join(rootDir, 'js/main.js'), Buffer.from([0x80]));
+  fs.writeFileSync(path.join(rootDir, 'js/site.js'), 'safe');
+  assert.equal(Buffer.from([0x80]).toString('utf8'), Buffer.from([0x81]).toString('utf8'));
+  const options = { rootDir, origin: ORIGIN, attempts: 1, timeoutMs: 1000, retryDelayMs: 1,
+    lookupImpl: async () => [{ address: '93.184.216.34', family: 4 }],
+    requestImpl: (url, _options, onResponse) => {
+      const page = new URL(url).pathname;
+      const request = new EventEmitter();
+      request.destroy = () => {};
+      request.end = () => {
+        const response = Readable.from([page === '/js/main.js' ? Buffer.from([0x81]) : fs.readFileSync(path.join(rootDir, page.startsWith('/js/') ? page.slice(1) : PAGE_FILES.get(page)))]);
+        response.statusCode = 200;
+        response.headers = { 'content-type': page.startsWith('/js/') ? 'application/javascript' : 'text/html' };
+        onResponse(response);
+      };
+      return request;
+    }
+  };
+  assert.deepEqual(await runProductionScriptCheck(options), [`${ORIGIN}/js/main.js: JavaScript bytes differ from the reviewed local asset`]);
+  for (const byte of [0x80, 0x81]) {
+    await t.test(`injected raw byte ${byte.toString(16)}`, async () => {
+      const findings = await runProductionScriptCheck({ ...options, fetchImpl: async (url) => {
+        const page = new URL(url).pathname;
+        return new Response(page === '/js/main.js' ? Buffer.from([byte]) : fs.readFileSync(path.join(rootDir,
+          page.startsWith('/js/') ? page.slice(1) : PAGE_FILES.get(page))), {
+          headers: { 'content-type': page.startsWith('/js/') ? 'application/javascript' : 'text/html' }
+        });
+      } });
+      assert.deepEqual(findings, byte === 0x80 ? [] : [`${ORIGIN}/js/main.js: JavaScript bytes differ from the reviewed local asset`]);
+    });
+  }
+  fs.writeFileSync(path.join(rootDir, 'js/main.js'), 'valid UTF-8 script');
+  for (const [target, status, mime, expected] of [
+    ['/js/site.js', 503, 'application/javascript', 'expected HTTP 200 JavaScript response'],
+    ['/work', 200, 'text/plain', 'expected HTTP 200 HTML response, received 200']
+  ]) {
+    assert.deepEqual(await runProductionScriptCheck({ ...options, fetchImpl: async (url) => {
+      const page = new URL(url).pathname;
+      return new Response(fs.readFileSync(path.join(rootDir, page.startsWith('/js/') ? page.slice(1) : PAGE_FILES.get(page))), {
+        status: page === target ? status : 200,
+        headers: { 'content-type': page === target ? mime : page.startsWith('/js/') ? 'Application/JavaScript; charset=utf-8' : 'Text/HTML; charset=utf-8' }
+      });
+    } }), [`${ORIGIN}${target}: ${expected}`]);
+  }
+});
+
+test('injected late production responses never open readers after timeout', async () => {
+  const { fetchTextWithTimeout } = await import('../../scripts/check-production-smoke.mjs');
+  let deliver;
+  let cancelled = 0;
+  let reads = 0;
+  await assert.rejects(() => fetchTextWithTimeout(`${ORIGIN}/work`, { timeoutMs: 10,
+    fetchImpl: () => new Promise((resolve) => { deliver = resolve; })
+  }), { name: 'AbortError' });
+  deliver({ status: 200, headers: new Headers(), body: {
+    cancel: async (reason) => { assert.equal(reason.name, 'AbortError'); cancelled += 1; },
+    getReader: () => { reads += 1; assert.fail('late body must not be read'); }
+  } });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(cancelled, 1);
+  assert.equal(reads, 0);
+});
+
+test('injected response capture retains decoded text, exact chunks and cumulative bounds', async () => {
+  const { fetchTextWithTimeout, readBoundedResponseBody } = await import('../../scripts/check-production-smoke.mjs');
+  assert.equal(await readBoundedResponseBody(new Response('text'), 4), 'text');
+  const stream = (chunks) => new ReadableStream({ start(controller) {
+    for (const chunk of chunks) controller.enqueue(Uint8Array.from(chunk));
+    controller.close();
+  } });
+  const options = { timeoutMs: 1000, maxBodyBytes: 3,
+    fetchImpl: async () => new Response(stream([[0xe2], [0x82, 0xac]])) };
+  const result = await fetchTextWithTimeout(`${ORIGIN}/work`, options);
+  assert.equal(result.body, '€');
+  assert.deepEqual(result.bytes, Buffer.from([0xe2, 0x82, 0xac]));
+  await assert.rejects(() => fetchTextWithTimeout(`${ORIGIN}/work`, { ...options,
+    fetchImpl: async () => new Response(stream([[0xe2], [0x82, 0xac], [0x61]]))
+  }), /exceeds 3 byte limit/);
+});
+
+
+test('attribute quote and raw-tag name recovery cannot hide executable scripts on offline', () => {
+  const offline = localPage('/offline');
+  for (const injection of [
+    '<div a=x"><script src="/unknown.js" defer></script><div a=">',
+    '<style$invalid><script src="/unknown.js" defer></script>',
+    '<style=invalid><script src="/unknown.js" defer></script>',
+    '<textarea$invalid><script src="/unknown.js" defer></script>',
+    '<svg><style/><script src="/unknown.js" defer></script></svg>'
+  ]) assert.throws(() => validate(`${offline}${injection}`, '/offline'), undefined, injection);
+});
+
+test('browser raw-text, unknown-tag and declaration payloads cannot conceal added scripts', () => {
+  const offline = localPage('/offline');
+  for (const injection of [
+    '<style></stylex><div title="</style><script src=/unknown.js defer></script>">',
+    '<noscript><div title="</noscript><script src=/unknown.js defer></script>">',
+    '<div$invalid title="<style>"><script src=/unknown.js defer></script>',
+    `<${'a'.repeat(70)} title="<style>"><script src=/unknown.js defer></script>`,
+    '<![CDATA[<style>]]><script src=/unknown.js defer></script>',
+    '<?foo <style> ?><script src=/unknown.js defer></script>',
+    '<!DOCTYPE x "<style>"><script src=/unknown.js defer></script>'
+  ]) assert.throws(() => validate(`${offline}${injection}`, '/offline'), undefined, injection);
+});
+
+test('non-HTML whitespace cannot impersonate a required script source attribute', () => {
+  const work = localPage('/work');
+  for (const whitespace of ['\u00a0', '\u000b', '\u2003']) {
+    assert.throws(() => validate(work.replace('src="js/main.js"', `src${whitespace}="js/main.js"`)),
+      /Unapproved inline script|HTML parse error/, JSON.stringify(whitespace));
+  }
+});
+
+test('foreign scripts, external SVG references and template content remain unapproved', () => {
+  const offline = localPage('/offline');
+  for (const injection of [
+    '<svg><script href="/unknown.js"></script></svg>',
+    '<svg><use xlink:href="https://evil.example/icons.svg#icon" /></svg>',
+    '<template><script src="/js/main.js" defer></script></template>',
+    '<math><mtext><img src=x onerror=alert(1)></mtext></math>'
+  ]) assert.throws(() => validate(`${offline}${injection}`, '/offline'), undefined, injection);
 });

@@ -59,8 +59,9 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
   };
 }
 
-async function requestPage(url, acceptHeader, timeoutMs) {
+async function requestPage(url, acceptHeader, timeoutMs, transportOptions = {}) {
   const result = await requestPinnedHttpsBytes(url, {
+    ...transportOptions,
     fieldPath: 'markdown negotiation page',
     timeoutMs,
     maxBytes: MAX_RESPONSE_BODY_BYTES,
@@ -83,33 +84,38 @@ function headerValue(headers, name) {
   return value ?? '';
 }
 
-function runCheck(name, findings, ok) {
-  if (ok) {
-    console.log(`  ok: ${name}`);
-  } else {
-    findings.push(name);
+async function runMarkdownNegotiation(inputOptions = parseArgs()) {
+  if (!inputOptions || typeof inputOptions !== 'object' || Array.isArray(inputOptions)) {
+    throw new TypeError('Markdown negotiation options must be an object');
   }
-}
-
-async function main() {
-  const { origin, timeoutMs } = parseArgs();
+  const { origin, timeoutMs } = parseArgs([], {
+    SITE_ORIGIN: inputOptions.origin ?? DEFAULT_ORIGIN,
+    MARKDOWN_TIMEOUT_MS: inputOptions.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  });
+  const transportOptions = {};
+  for (const key of ['lookupImpl', 'requestImpl']) {
+    if (Object.hasOwn(inputOptions, key)) {
+      if (typeof inputOptions[key] !== 'function') throw new TypeError(`Markdown ${key} must be a function`);
+      transportOptions[key] = inputOptions[key];
+    }
+  }
   const homepage = `${origin}/`;
   const findings = [];
+  const runCheck = (name, _findings, ok) => {
+    if (!ok) findings.push(name);
+    inputOptions.onCheck?.(name, ok);
+  };
 
-  console.log(`Checking markdown content negotiation for ${origin}`);
-
-  console.log('Default (no Accept: text/markdown) should return HTML:');
-  const html = await requestPage(homepage, 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', timeoutMs);
-  const htmlContentType = headerValue(html.headers, 'content-type').toLowerCase();
+  const html = await requestPage(homepage, 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', timeoutMs, transportOptions);
+  const htmlContentType = headerValue(html.headers, 'content-type').split(';')[0].trim().toLowerCase();
   runCheck('HTTP 200 for default HTML request', findings, html.status === 200);
-  runCheck('default request returns text/html', findings, htmlContentType.startsWith('text/html'));
+  runCheck('default request returns text/html', findings, htmlContentType === 'text/html');
   runCheck('default request body contains HTML markup', findings, /<html[\s>]/i.test(html.body));
 
-  console.log('Accept: text/markdown should return markdown:');
-  const markdown = await requestPage(homepage, MARKDOWN_ACCEPT, timeoutMs);
-  const mdContentType = headerValue(markdown.headers, 'content-type').toLowerCase();
+  const markdown = await requestPage(homepage, MARKDOWN_ACCEPT, timeoutMs, transportOptions);
+  const mdContentType = headerValue(markdown.headers, 'content-type').split(';')[0].trim().toLowerCase();
   runCheck('HTTP 200 for markdown request', findings, markdown.status === 200);
-  runCheck('markdown request returns text/markdown', findings, mdContentType.startsWith('text/markdown'));
+  runCheck('markdown request returns text/markdown', findings, mdContentType === 'text/markdown');
   runCheck('markdown response is not HTML markup', findings, !/<html[\s>]/i.test(markdown.body));
   runCheck('markdown response is non-empty', findings, markdown.body.trim().length > 0);
 
@@ -117,10 +123,17 @@ async function main() {
   runCheck('response declares Vary: Accept', findings, vary.split(',').map((v) => v.trim()).includes('accept'));
 
   const tokens = headerValue(markdown.headers, 'x-markdown-tokens');
-  if (tokens) {
-    console.log(`  info: x-markdown-tokens=${tokens}`);
-  }
+  if (tokens) inputOptions.onInfo?.(`x-markdown-tokens=${tokens}`);
+  return findings;
+}
 
+async function main() {
+  const options = parseArgs();
+  console.log(`Checking markdown content negotiation for ${options.origin}`);
+  const findings = await runMarkdownNegotiation({ ...options,
+    onCheck: (name, ok) => { if (ok) console.log(`  ok: ${name}`); },
+    onInfo: (message) => console.log(`  info: ${message}`)
+  });
   if (findings.length > 0) {
     console.error('\nMarkdown content negotiation check FAILED:');
     findings.forEach((finding) => console.error(`  - ${finding}`));
@@ -131,9 +144,11 @@ async function main() {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
     console.error(`Markdown negotiation check error: ${error?.message ?? error}`);
     process.exitCode = 1;
   });
 }
+
+export { MARKDOWN_ACCEPT, parseArgs, runMarkdownNegotiation };

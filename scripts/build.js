@@ -3,6 +3,7 @@ const path = require('path');
 const {
   StableFileReadError,
   readStableFileNoFollow,
+  readStableFileSnapshotNoFollow,
   sameFileIdentity,
   sameFileSnapshot
 } = require('./lib/safe-input.cjs');
@@ -272,7 +273,10 @@ function collectInlineScriptHashes(html) {
 
     const attrs = html.slice(start + '<script'.length, openEnd);
     if (!hasScriptSrcAttribute(attrs)) {
-      hashes.push(hashInlineScript(html.slice(openEnd + 1, endTag.start)));
+      // HTML preprocessing normalizes CRLF and lone CR before the browser
+      // evaluates CSP hashes against the parsed inline script text.
+      const scriptText = html.slice(openEnd + 1, endTag.start).replace(/\r\n?/g, '\n');
+      hashes.push(hashInlineScript(scriptText));
     }
 
     fromIndex = endTag.end;
@@ -289,6 +293,51 @@ function renderCspScriptHashesDirective(html) {
 
 function injectCspScriptHashes(template, html) {
   return template.replaceAll(CSP_INLINE_SCRIPT_HASH_TOKEN, renderCspScriptHashesDirective(html));
+}
+
+function renderCaseStudyHeaderRules(template, caseStudies) {
+  const token = '{{CASE_STUDY_HEADERS}}';
+  if (template.split(token).length !== 2 ||
+      template.split(/\r?\n/).filter((line) => line === token).length !== 1) {
+    throw new Error('Expected exactly one CASE_STUDY_HEADERS token on its own line in src/_headers.template.');
+  }
+  // Clean routes inherit the same authored policy as their .html responses.
+  // Keep one policy body in the template so CSP and CORS cannot drift apart.
+  const htmlRules = template.split(/\r?\n[ \t]*\r?\n/)
+    .filter((block) => block.split(/\r?\n/, 1)[0] === '/*.html');
+  if (htmlRules.length !== 1) {
+    throw new Error('Expected exactly one HTML policy rule in src/_headers.template.');
+  }
+  const policyLines = htmlRules[0].split(/\r?\n/).slice(1);
+  if (policyLines.some((line) => line.includes(token))) {
+    throw new Error('CASE_STUDY_HEADERS must be a separate block from the HTML policy rule.');
+  }
+  for (const name of ['Content-Security-Policy', 'Access-Control-Allow-Origin']) {
+    if (policyLines.filter((line) => line.startsWith(`  ${name}:`)).length !== 1) {
+      throw new Error(`Expected exactly one ${name} in the HTML policy rule.`);
+    }
+  }
+  const policy = policyLines.join('\n');
+  const rules = caseStudies.map((study) =>
+    `/${study.slug.slice(0, -'.html'.length)}\n${policy}`).join('\n\n');
+  return renderAuthoredTemplate(template, { CASE_STUDY_HEADERS: rules },
+    'src/_headers.template', { preserveCspToken: true });
+}
+
+function renderAuthoredTemplate(template, tokens, label, { preserveCspToken = false } = {}) {
+  const tokenPattern = /\{\{([A-Z_]+)}}/g;
+  const unresolved = Array.from(template.matchAll(tokenPattern))
+    .filter(([token, name]) => !Object.hasOwn(tokens, name) &&
+      !(preserveCspToken && token === CSP_INLINE_SCRIPT_HASH_TOKEN))
+    .map(([token]) => token);
+  if (unresolved.length > 0) {
+    throw new Error(`Unresolved tokens in ${label}: ${unresolved.join(', ')}`);
+  }
+
+  // Only interpret the authored template. Replacement content may itself
+  // contain literal template-looking text or JavaScript replacement sequences.
+  return template.replace(tokenPattern, (token, name) =>
+    Object.hasOwn(tokens, name) ? tokens[name] : token);
 }
 
 const MAX_TEXT_LENGTH = 600;
@@ -1887,13 +1936,12 @@ function inspectPublishedSiteFile(entry) {
 
 function snapshotSiteOutput(entry) {
   try {
-    const bytes = readStableFileNoFollow(entry.path, {
+    const { bytes, stats } = readStableFileSnapshotNoFollow(entry.path, {
       rootDir: entry.rootDir,
       label: entry.label,
       maxBytes: entry.maxBytes,
       minBytes: 0
     });
-    const stats = fs.lstatSync(entry.path, { bigint: true });
     return { existed: true, bytes, stats };
   } catch (error) {
     if (error instanceof StableFileReadError && error.reason === 'missing') {
@@ -1928,6 +1976,17 @@ function assertSiteSnapshotUnchanged(entry, snapshot) {
   if (!sameFileSnapshot(snapshot.stats, currentStats) || !snapshot.bytes.equals(currentBytes)) {
     throw new Error(`${entry.label} changed after publication preflight; refusing to replace it.`);
   }
+}
+
+function matchesPublishedTemporaryFile(temporary, stats, bytes) {
+  // Publishing by rename may update ctime, but it must preserve the owned
+  // temporary inode, bytes, and every other part of its verified snapshot.
+  return sameFileIdentity(temporary.stats, stats) &&
+    temporary.stats.mode === stats.mode &&
+    temporary.stats.nlink === stats.nlink &&
+    temporary.stats.size === stats.size &&
+    temporary.stats.mtimeNs === stats.mtimeNs &&
+    temporary.bytes.equals(bytes);
 }
 
 function publishSiteBundle({ rootDir = projectRoot, entries, writeFileImpl = writeFileNoFollow }) {
@@ -1973,8 +2032,19 @@ function publishSiteBundle({ rootDir = projectRoot, entries, writeFileImpl = wri
     preparedEntries.forEach((entry, index) => {
       assertSiteSnapshotUnchanged(entry, snapshots[index]);
       let writeError = null;
+      let temporarySnapshot;
       try {
-        writeFileImpl(resolvedRoot, entry.path, entry.bytes, entry.label);
+        writeFileImpl(resolvedRoot, entry.path, entry.bytes, entry.label, {
+          expectedDestination: snapshots[index],
+          beforeFinalDestinationCheck({ temporaryPath }) {
+            temporarySnapshot = readStableFileSnapshotNoFollow(temporaryPath, {
+              rootDir: resolvedRoot,
+              label: `publication ownership ${entry.label}`,
+              maxBytes: entry.maxBytes,
+              minBytes: 1
+            });
+          }
+        });
       } catch (error) {
         writeError = error;
       }
@@ -1989,21 +2059,34 @@ function publishSiteBundle({ rootDir = projectRoot, entries, writeFileImpl = wri
         if (writeError) throw writeError;
         throw inspectionError;
       }
-      published.push({ index, stats: initialStats, bytes: null });
+      let writtenBytes;
+      let verifiedStats;
+      try {
+        ({ bytes: writtenBytes, stats: verifiedStats } = readStableFileSnapshotNoFollow(entry.path, {
+          rootDir: resolvedRoot,
+          label: entry.label,
+          maxBytes: entry.maxBytes,
+          minBytes: 1
+        }));
+      } catch (inspectionError) {
+        if (writeError) throw writeError;
+        throw inspectionError;
+      }
 
-      const writtenBytes = readStableFileNoFollow(entry.path, {
-        rootDir: resolvedRoot,
-        label: entry.label,
-        maxBytes: entry.maxBytes,
-        minBytes: 1
-      });
-      const verifiedStats = inspectPublishedSiteFile(entry);
-      published[published.length - 1] = { index, stats: verifiedStats, bytes: writtenBytes };
+      // A rejected write or a post-publication edit can leave another actor's
+      // file at the destination. Prove ownership before claiming it for rollback.
+      if (writeError && !temporarySnapshot) throw writeError;
+      if (!sameFileSnapshot(initialStats, verifiedStats) ||
+          (temporarySnapshot && !matchesPublishedTemporaryFile(temporarySnapshot, verifiedStats, writtenBytes))) {
+        if (writeError) throw writeError;
+        throw new Error(`Published ${entry.label} changed ownership or content before verification; refusing to alter it.`);
+      }
+      published.push({ index, stats: verifiedStats, bytes: writtenBytes });
 
       if (writeError) {
         throw writeError;
       }
-      if (!sameFileSnapshot(initialStats, verifiedStats) || !entry.bytes.equals(writtenBytes)) {
+      if (!entry.bytes.equals(writtenBytes)) {
         throw new Error(`Published ${entry.label} does not match its validated rendered bytes.`);
       }
     });
@@ -2014,13 +2097,12 @@ function publishSiteBundle({ rootDir = projectRoot, entries, writeFileImpl = wri
       const entry = preparedEntries[index];
       const snapshot = snapshots[index];
       try {
-        const currentBytes = readStableFileNoFollow(entry.path, {
+        const { bytes: currentBytes, stats: currentStats } = readStableFileSnapshotNoFollow(entry.path, {
           rootDir: resolvedRoot,
           label: `rollback ownership ${entry.label}`,
           maxBytes: entry.maxBytes,
           minBytes: 1
         });
-        const currentStats = fs.lstatSync(entry.path, { bigint: true });
         if (!currentStats.isFile() || currentStats.isSymbolicLink() ||
             !sameFileSnapshot(publishedStats, currentStats) ||
             (publishedBytes && !publishedBytes.equals(currentBytes))) {
@@ -2030,7 +2112,9 @@ function publishSiteBundle({ rootDir = projectRoot, entries, writeFileImpl = wri
         }
 
         if (snapshot.existed) {
-          writeFileNoFollow(resolvedRoot, entry.path, snapshot.bytes, `rollback ${entry.label}`);
+          writeFileNoFollow(resolvedRoot, entry.path, snapshot.bytes, `rollback ${entry.label}`, {
+            expectedDestination: { existed: true, stats: currentStats }
+          });
           const restoredBytes = readStableFileNoFollow(entry.path, {
             rootDir: resolvedRoot,
             label: `rollback ${entry.label}`,
@@ -2204,8 +2288,11 @@ function buildSite({
     validateDataCollections(data);
     validateReadingAssetInventory(data.reading, { rootDir: resolvedRoot });
 
+    const renderPartials = (workNavCurrent) => ({
+      NAV: renderAuthoredTemplate(partials.NAV, { WORK_NAV_CURRENT: workNavCurrent }, 'partials/nav.html'),
+      FOOTER: renderAuthoredTemplate(partials.FOOTER, {}, 'partials/footer.html')
+    });
     const tokens = {
-      ...partials,
       PROFILE_SCHEMA: renderProfileSchema(data.profile, data.certifications),
       HERO: renderHero(data.profile),
       FEATURED_WORK: renderFeaturedWork(data.featured),
@@ -2229,20 +2316,15 @@ function buildSite({
     pages.forEach((page) => {
       const pageTokens = {
         ...tokens,
+        ...renderPartials(page === 'work.html' ? ' aria-current="page"' : ''),
         WORK_NAV_CURRENT: page === 'work.html' ? ' aria-current="page"' : ''
       };
-      let content = readBuildText(path.posix.join('src', page), { rootDir: resolvedRoot });
-      Object.entries(pageTokens).forEach(([key, value]) => {
-        const token = `{{${key}}}`;
-        if (content.includes(token)) {
-          content = content.replaceAll(token, value);
-        }
-      });
-
-      const leftover = content.match(/\{\{[A-Z_]+}}/g)
-        ?.filter((token) => token !== CSP_INLINE_SCRIPT_HASH_TOKEN);
-      if (leftover && leftover.length > 0) {
-        throw new Error(`Unresolved tokens in ${page}: ${leftover.join(', ')}`);
+      const template = readBuildText(path.posix.join('src', page), { rootDir: resolvedRoot });
+      let content = renderAuthoredTemplate(template, pageTokens, page, { preserveCspToken: page === 'index.html' });
+      if (page === 'index.html') {
+        // Resolve the authored CSP placeholder before inserting data again, so
+        // identical text in JSON-LD or page content remains literal.
+        content = renderAuthoredTemplate(injectCspScriptHashes(template, stripTrailingWhitespace(content)), pageTokens, page);
       }
 
       renderedPages.set(page, stripTrailingWhitespace(content));
@@ -2252,21 +2334,14 @@ function buildSite({
     data.caseStudies.forEach((study) => {
       const canonical = `https://leonardwong.tech/${study.slug}`;
       const caseTokens = {
-        ...partials,
+        ...renderPartials(' aria-current="page"'),
         WORK_NAV_CURRENT: ' aria-current="page"',
         CASE_STUDY_TITLE: escapeHtml(study.title),
         CASE_STUDY_DESCRIPTION: escapeHtml(study.summary),
         CASE_STUDY_CANONICAL: escapeHtml(canonical),
         CASE_STUDY: renderCaseStudy(study, data.caseStudies)
       };
-      let content = caseStudyTemplate;
-      Object.entries(caseTokens).forEach(([key, value]) => {
-        content = content.replaceAll(`{{${key}}}`, value);
-      });
-      const leftover = content.match(/\{\{[A-Z_]+}}/g);
-      if (leftover && leftover.length > 0) {
-        throw new Error(`Unresolved tokens in ${study.slug}: ${leftover.join(', ')}`);
-      }
+      const content = renderAuthoredTemplate(caseStudyTemplate, caseTokens, study.slug);
       renderedPages.set(study.slug, stripTrailingWhitespace(content));
       pages.push(study.slug);
     });
@@ -2276,16 +2351,14 @@ function buildSite({
       throw new Error('Missing rendered index page content');
     }
     const headersTemplate = readBuildText('src/_headers.template', { rootDir: resolvedRoot });
-    const headersContent = injectCspScriptHashes(headersTemplate, indexPage);
+    const headersContent = injectCspScriptHashes(
+      renderCaseStudyHeaderRules(headersTemplate, data.caseStudies), indexPage);
 
     const entries = [];
     renderedPages.forEach((content, page) => {
-      const finalContent = page === 'index.html'
-        ? injectCspScriptHashes(content, content)
-        : content;
       entries.push({
         path: path.join(resolvedRoot, page),
-        bytes: finalContent,
+        bytes: content,
         label: `generated ${page}`,
         maxBytes: MAX_SITE_OUTPUT_BYTES
       });

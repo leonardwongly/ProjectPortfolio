@@ -10,13 +10,17 @@ const workerOrigin = 'https://portfolio.example';
 function createWorkerHarness({
   preloadSupported = true,
   fetchImpl = async () => ({ kind: 'network' }),
-  cacheAddImpl = async () => undefined,
+  cacheAddAllImpl = async () => undefined,
   cacheMatchImpl = async () => undefined,
+  cacheNames = [],
+  cacheDeleteImpl = async () => true,
+  cacheOpenImpl = async () => undefined,
   skipWaitingImpl = async () => undefined
 } = {}) {
   const listeners = new Map();
   const calls = {
-    cacheAdd: [],
+    cacheAddAll: [],
+    cacheDelete: [],
     cacheMatch: [],
     cacheOpen: [],
     clientsClaim: 0,
@@ -28,9 +32,9 @@ function createWorkerHarness({
   };
 
   const cache = {
-    async add(resource) {
-      calls.cacheAdd.push(resource);
-      return cacheAddImpl(resource);
+    async addAll(resources) {
+      calls.cacheAddAll.push(Array.from(resources));
+      return cacheAddAllImpl(resources);
     },
     async match(resource) {
       calls.cacheMatch.push(resource);
@@ -43,8 +47,16 @@ function createWorkerHarness({
     Response,
     URL,
     caches: {
+      async keys() {
+        return cacheNames;
+      },
+      async delete(name) {
+        calls.cacheDelete.push(name);
+        return cacheDeleteImpl(name);
+      },
       async open(name) {
         calls.cacheOpen.push(name);
+        await cacheOpenImpl(name);
         return cache;
       }
     },
@@ -213,20 +225,20 @@ test('worker owns skipWaiting only for well-formed messages from same-origin win
   assert.equal(harness.calls.skipWaiting, 2, 'both inclusive token-length boundaries should be valid');
 });
 
-test('install stores the offline page and fails closed when cache population fails', async () => {
+test('install atomically stores the offline document and stylesheet and fails closed', async () => {
   const harness = createWorkerHarness();
   const installation = dispatchExtendableEvent(harness, 'install');
 
   assert.equal(installation.ownershipCount, 1);
   await installation.lifetimePromise;
-  assert.deepEqual(harness.calls.cacheOpen, ['pwabuilder-offline-cache-v2']);
-  assert.deepEqual(harness.calls.cacheAdd, ['offline.html']);
+  assert.deepEqual(harness.calls.cacheOpen, ['pwabuilder-offline-cache-v3']);
+  assert.deepEqual(harness.calls.cacheAddAll, [['offline.html', '/css/offline.css']]);
   assert.deepEqual(harness.calls.importedScripts, ['js/vendor/workbox-sw.js']);
-  assert.deepEqual(harness.calls.workboxConfig, [{ modulePathPrefix: 'js/vendor/workbox' }]);
+  assert.deepEqual(harness.calls.workboxConfig, [{ debug: false, modulePathPrefix: 'js/vendor/workbox' }]);
 
   const cacheError = new Error('cache quota exceeded');
   const failingHarness = createWorkerHarness({
-    cacheAddImpl: async () => {
+    cacheAddAllImpl: async () => {
       throw cacheError;
     }
   });
@@ -241,6 +253,32 @@ test('activation claims existing clients so an accepted update completes the rel
   const activation = dispatchExtendableEvent(harness, 'activate');
 
   assert.equal(activation.ownershipCount, 1);
+  await activation.lifetimePromise;
+  assert.equal(harness.calls.clientsClaim, 1);
+});
+
+test('activation removes only explicitly retired owned offline caches before claiming clients', async () => {
+  let finishDeletion;
+  const deletion = new Promise((resolve) => { finishDeletion = resolve; });
+  const harness = createWorkerHarness({
+    cacheNames: [
+      'pwabuilder-offline-cache',
+      'pwabuilder-offline-cache-v1',
+      'pwabuilder-offline-cache-v2',
+      'pwabuilder-offline-cache-v3',
+      'pwabuilder-offline-cache-v4',
+      'pwabuilder-offline-cache-v2-other-app',
+      'other-app-cache'
+    ],
+    cacheDeleteImpl: () => deletion
+  });
+  const activation = dispatchExtendableEvent(harness, 'activate');
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(harness.calls.cacheDelete, [
+    'pwabuilder-offline-cache', 'pwabuilder-offline-cache-v1', 'pwabuilder-offline-cache-v2'
+  ]);
+  assert.equal(harness.calls.clientsClaim, 0, 'claim must wait for owned cache cleanup');
+  finishDeletion(true);
   await activation.lifetimePromise;
   assert.equal(harness.calls.clientsClaim, 1);
 });
@@ -307,7 +345,7 @@ test('navigation response pipeline prefers preload, then network, then cached of
 
   assert.equal(offline.ownershipCount, 1);
   assert.equal(await offline.responsePromise, offlineResponse);
-  assert.deepEqual(offlineHarness.calls.cacheOpen, ['pwabuilder-offline-cache-v2']);
+  assert.deepEqual(offlineHarness.calls.cacheOpen, ['pwabuilder-offline-cache-v3']);
   assert.deepEqual(offlineHarness.calls.cacheMatch, ['offline.html']);
 
   const unsupportedHarness = createWorkerHarness({ preloadSupported: false });
@@ -346,7 +384,7 @@ test('offline navigation still returns a bounded response when cache state is co
   }
 });
 
-test('worker has one fetch listener and never claims non-navigation requests', () => {
+test('worker has one fetch listener and leaves unrelated non-navigation requests alone', () => {
   const harness = createWorkerHarness({
     fetchImpl: async () => {
       throw new Error('non-navigation requests must not be fetched by this worker');
@@ -368,4 +406,114 @@ test('worker has one fetch listener and never claims non-navigation requests', (
   assert.equal(ownershipCount, 0);
   assert.deepEqual(harness.calls.fetch, []);
   assert.deepEqual(harness.calls.cacheOpen, []);
+});
+
+test('offline stylesheet prefers network, then its owned cache, without caching arbitrary responses', async () => {
+  const request = { method: 'GET', mode: 'no-cors', url: `${workerOrigin}/css/offline.css` };
+  const networkResponse = { kind: 'network-css' };
+  const networkHarness = createWorkerHarness({ fetchImpl: async () => networkResponse });
+  const networked = dispatchFetch(networkHarness, request);
+  assert.equal(networked.ownershipCount, 1);
+  assert.equal(await networked.responsePromise, networkResponse);
+  assert.deepEqual(networkHarness.calls.fetch, [request]);
+  assert.deepEqual(networkHarness.calls.cacheOpen, []);
+
+  const cachedResponse = { kind: 'cached-css' };
+  const offlineHarness = createWorkerHarness({
+    fetchImpl: async () => { throw new Error('offline'); },
+    cacheMatchImpl: async () => cachedResponse
+  });
+  const offline = dispatchFetch(offlineHarness, request);
+  assert.equal(await offline.responsePromise, cachedResponse);
+  assert.deepEqual(offlineHarness.calls.cacheOpen, ['pwabuilder-offline-cache-v3']);
+  assert.deepEqual(offlineHarness.calls.cacheMatch, ['/css/offline.css']);
+  assert.deepEqual(offlineHarness.calls.cacheAddAll, []);
+});
+
+test('offline stylesheet cache failure returns a bounded non-HTML response', async () => {
+  for (const cacheMatchImpl of [
+    async () => undefined,
+    async () => { throw new Error('cache storage unavailable'); }
+  ]) {
+    const harness = createWorkerHarness({
+      fetchImpl: async () => { throw new Error('offline'); },
+      cacheMatchImpl
+    });
+    const { responsePromise } = dispatchFetch(harness, {
+      method: 'GET', mode: 'no-cors', url: `${workerOrigin}/css/offline.css`
+    });
+    const response = await responsePromise;
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('content-type'), 'text/plain; charset=utf-8');
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.ok((await response.text()).length <= 80);
+  }
+});
+
+test('offline asset interception rejects non-GET, other-origin, altered and malformed URLs', () => {
+  const harness = createWorkerHarness();
+  const invalidRequests = [
+    { method: 'POST', url: `${workerOrigin}/css/offline.css` },
+    { method: 'HEAD', url: `${workerOrigin}/css/offline.css` },
+    { url: `${workerOrigin}/css/offline.css` },
+    { method: 'GET', url: 'https://attacker.example/css/offline.css' },
+    { method: 'GET', url: 'http://portfolio.example/css/offline.css' },
+    { method: 'GET', url: 'https://portfolio.example:444/css/offline.css' },
+    { method: 'GET', url: 'https://portfolio.example@attacker.example/css/offline.css' },
+    { method: 'GET', url: `${workerOrigin}/css/offline.css?version=attacker` },
+    { method: 'GET', url: `${workerOrigin}/css/offline.css#fragment` },
+    { method: 'GET', url: `${workerOrigin}/css/%6fffline.css` },
+    { method: 'GET', url: `${workerOrigin}/css/Offline.css` },
+    { method: 'GET', url: `${workerOrigin}/css/custom.css` },
+    { method: 'GET', url: '/css/offline.css' },
+    { method: 'GET', url: 'not a url' }
+  ];
+  for (const request of invalidRequests) {
+    assert.equal(dispatchFetch(harness, { mode: 'no-cors', ...request }).ownershipCount, 0, JSON.stringify(request));
+  }
+  assert.deepEqual(harness.calls.fetch, []);
+  assert.deepEqual(harness.calls.cacheOpen, []);
+});
+
+test('cache-open failure rejects installation but navigation and CSS remain bounded', async () => {
+  const failure = new Error('CacheStorage denied');
+  const harness = createWorkerHarness({
+    cacheOpenImpl: async () => { throw failure; },
+    fetchImpl: async () => { throw new Error('offline'); }
+  });
+  await assert.rejects(dispatchExtendableEvent(harness, 'install').lifetimePromise, failure);
+  for (const request of [
+    { mode: 'navigate', method: 'GET', url: `${workerOrigin}/missing` },
+    { mode: 'no-cors', method: 'GET', url: `${workerOrigin}/css/offline.css` }
+  ]) {
+    const response = await dispatchFetch(harness, request).responsePromise;
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('content-type'), 'text/plain; charset=utf-8');
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.ok((await response.text()).length <= 80);
+  }
+});
+
+test('navigation forwards the original request and preserves HTTP errors instead of offline fallback', async () => {
+  for (const status of [200, 404, 503]) {
+    const response = new Response(`network-${status}`, { status, headers: { 'x-proof': 'network' } });
+    const request = { mode: 'navigate', method: 'GET', url: `${workerOrigin}/work.html?proof=preserved`, headers: { 'x-proof': 'request' } };
+    const harness = createWorkerHarness({ fetchImpl: async () => response });
+    const actual = await dispatchFetch(harness, request, Promise.resolve(undefined)).responsePromise;
+    assert.equal(harness.calls.fetch[0], request);
+    assert.equal(actual, response);
+    assert.equal(actual.status, status);
+    assert.equal(actual.headers.get('x-proof'), 'network');
+    assert.equal(await actual.text(), `network-${status}`);
+    assert.deepEqual(harness.calls.cacheOpen, []);
+  }
+});
+
+test('an accepted message owns a rejected skipWaiting promise', async () => {
+  const failure = new Error('activation unavailable');
+  const harness = createWorkerHarness({ skipWaitingImpl: async () => { throw failure; } });
+  const message = dispatchMessage(harness, validMessage());
+  assert.equal(message.ownershipCount, 1);
+  await assert.rejects(message.lifetimePromise, failure);
+  assert.equal(harness.calls.skipWaiting, 1);
 });

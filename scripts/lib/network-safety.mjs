@@ -420,6 +420,7 @@ async function fetchInjectedHttpsBytes(rawUrl, {
 
   const operation = (async () => {
     const target = await resolvePublicHttpsUrl(rawUrl, { fieldPath, allowedHosts, lookupImpl });
+    controller.signal.throwIfAborted();
     let response;
     try {
       response = await fetchImpl(target.url, {
@@ -434,6 +435,14 @@ async function fetchInjectedHttpsBytes(rawUrl, {
       transportError.code = error?.code;
       transportError.networkTransportError = true;
       throw transportError;
+    }
+    if (controller.signal.aborted) {
+      try {
+        await response.body?.cancel?.(controller.signal.reason);
+      } catch {
+        // Preserve the deadline error even when a late body's cleanup fails.
+      }
+      controller.signal.throwIfAborted();
     }
     const bytes = await readBoundedFetchBody(response, {
       controller,

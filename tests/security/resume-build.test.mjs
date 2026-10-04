@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 import {
   buildResume,
@@ -17,7 +18,9 @@ import {
   MAX_PANDOC_DIAGNOSTIC_BYTES,
   MAX_RESUME_EXPORT_TIMEOUT_MS,
   MAX_RESUME_SOURCE_BYTES,
+  MAX_RESUME_ARTIFACT_BYTES,
   parseArgs,
+  publishResumeBundle,
   renderResumeHtml,
   ResumeExportTimeoutError,
   validateResumeData,
@@ -86,6 +89,9 @@ function issueFor(result, code, artifact) {
 }
 
 function assertIssue(result, code, artifact) {
+  assert.equal(result.ok, false, 'an issue must fail the freshness gate');
+  assert.ok(result.failures.length > 0, 'rejection must include diagnostics');
+  assert.deepEqual(result.failures, result.issues.map((issue) => issue.message));
   const issue = issueFor(result, code, artifact);
   assert.ok(issue, `Expected ${code} for ${artifact || 'any artifact'}:\n${result.failures.join('\n')}`);
   return issue;
@@ -213,6 +219,26 @@ test('validateResumeData accepts its contract and rejects distinct malformed bou
       name: 'empty AI highlights',
       mutate: (resume) => { resume.ai_highlights.items = []; },
       error: /at least 1 item/
+    },
+    {
+      name: 'nested unknown contact field',
+      mutate: (resume) => { resume.contact.unexpected = true; },
+      error: /resume\.contact: unexpected key/
+    },
+    {
+      name: 'credentialed HTTPS URL',
+      mutate: (resume) => { resume.contact.links[0].url = 'https://user:password@example.com/'; },
+      error: /credentials in URL/
+    },
+    {
+      name: 'name maximum plus one',
+      mutate: (resume) => { resume.name = 'a'.repeat(121); },
+      error: /resume\.name: string exceeds max length 120/
+    },
+    {
+      name: 'contact link count maximum plus one',
+      mutate: (resume) => { resume.contact.links = Array.from({ length: 11 }, () => ({ label: 'Link', url: 'https://example.com/' })); },
+      error: /resume\.contact\.links: expected at most 10/
     }
   ];
 
@@ -221,6 +247,10 @@ test('validateResumeData accepts its contract and rejects distinct malformed bou
     entry.mutate(resume);
     assert.throws(() => validateResumeData(resume), entry.error, entry.name);
   }
+  const boundary = validResume();
+  boundary.name = 'a'.repeat(120);
+  boundary.contact.links = Array.from({ length: 10 }, () => ({ label: 'Link', url: 'https://example.com/' }));
+  assert.doesNotThrow(() => validateResumeData(boundary));
 });
 
 test('validateResumeSources applies every shared website-data validator', () => {
@@ -336,6 +366,20 @@ test('rendered resume escapes fields and the default AI heading exactly once', (
   assert.doesNotMatch(unsafeHtml, /<script>alert\(1\)<\/script>/);
   assert.match(unsafeHtml, /&lt;script&gt;/);
   assert.doesNotMatch(unsafeHtml, /<img src=x onerror/);
+  assert.ok(unsafeHtml.includes('&lt;img src=x onerror=alert(1)&gt;'), 'summary is preserved as escaped text');
+
+  const contacts = minimalData(validResume());
+  contacts.resume.contact.email = 'me"<&@example.com';
+  contacts.resume.contact.links = [
+    { label: 'Safe "<& link', url: 'https://example.com/?a=1&b=2' },
+    { label: 'Unsafe active link', url: 'javascript:alert(1)' },
+    { label: 'Unsafe credential link', url: 'https://user:password@example.com/' }
+  ];
+  const contactsHtml = renderResumeHtml(contacts);
+  assert.ok(contactsHtml.includes('href="mailto:me&quot;&lt;&amp;@example.com"'));
+  assert.ok(contactsHtml.includes('href="https://example.com/?a=1&amp;b=2"'));
+  assert.ok(contactsHtml.includes('Safe &quot;&lt;&amp; link'));
+  assert.doesNotMatch(contactsHtml, /Unsafe active link|Unsafe credential link|javascript:|user:password/);
 
   const resume = validResume();
   delete resume.ai_highlights.heading;
@@ -380,7 +424,7 @@ test('freshness returns structured failures for malformed and non-strict manifes
     for (const [name, value] of cases) {
       fs.writeFileSync(manifestPath, `${JSON.stringify(value)}\n`);
       const result = checkResumeFreshness({ rootDir });
-      assert.ok(issueFor(result, 'MANIFEST_SCHEMA'), `${name}: ${result.failures.join('\n')}`);
+      assertIssue(result, 'MANIFEST_SCHEMA');
     }
   } finally {
     cleanupFixture(rootDir);
@@ -980,6 +1024,41 @@ test('nth publication failure restores the exact prior bundle and leaves no temp
   }
 });
 
+test('resume rollback preserves a foreign replacement and restores owned siblings', () => {
+  const rootDir = makeFixture({ includeDocs: false });
+  const first = path.join(rootDir, 'first.html');
+  const second = path.join(rootDir, 'second.html');
+  const third = path.join(rootDir, 'third.html');
+  const foreign = Buffer.from('foreign edit must survive rollback\n');
+  try {
+    fs.writeFileSync(first, 'prior first\n');
+    fs.writeFileSync(second, 'prior second\n');
+    fs.writeFileSync(third, 'prior third\n');
+    let failure;
+    try {
+      publishResumeBundle({
+        rootDir,
+        entries: [first, second, third].map((file) => ({ path: file, bytes: 'generated\n', label: path.basename(file), maxBytes: 1024 })),
+        writeFileImpl(root, file, bytes, label, options) {
+          if (file === third) {
+            fs.renameSync(first, `${first}.displaced`);
+            fs.writeFileSync(first, foreign);
+            throw new Error('synthetic final publication failure');
+          }
+          writeFileNoFollow(root, file, bytes, label, options);
+        }
+      });
+    } catch (error) { failure = error; }
+    assert.deepEqual(fs.readFileSync(first), foreign, 'rollback must not overwrite a foreign replacement');
+    assert.equal(fs.readFileSync(second, 'utf8'), 'prior second\n');
+    assert.equal(fs.readFileSync(third, 'utf8'), 'prior third\n');
+    assert.ok(failure instanceof AggregateError);
+    assert.ok(failure.errors.some((error) => /synthetic final publication failure/.test(error.message)));
+    assert.ok(failure.errors.some((error) => /changed ownership or content/.test(error.message)));
+    assert.deepEqual(fs.readdirSync(rootDir).filter((name) => name.startsWith('.safe-output-')), []);
+  } finally { cleanupFixture(rootDir); }
+});
+
 test('build lock preserves stale and replacement ownership', async () => {
   const rootDir = makeFixture({ includeDocs: false });
   const paths = getResumePaths(rootDir);
@@ -1019,5 +1098,170 @@ test('build lock preserves stale and replacement ownership', async () => {
     assert.equal(fs.existsSync(movedOwnedLockPath), true, 'the displaced owned lock is not confused with the replacement');
   } finally {
     cleanupFixture(rootDir);
+  }
+});
+
+test('resume freshness CLI rejects malformed sources with bounded diagnostics', () => {
+  const rootDir = makeFixture();
+  try {
+    fs.mkdirSync(path.join(rootDir, 'scripts/lib'), { recursive: true });
+    for (const relative of ['build-resume.mjs', 'check-resume-freshness.mjs', 'build.js', 'lib/safe-input.cjs', 'lib/safe-output.cjs', 'lib/static-rendering.cjs', 'lib/asset-paths.cjs']) {
+      fs.copyFileSync(path.join(projectRoot, 'scripts', relative), path.join(rootDir, 'scripts', relative));
+    }
+    fs.writeFileSync(path.join(rootDir, 'data/skills.json'), '[]');
+    const child = spawnSync(process.execPath, [fs.realpathSync(path.join(rootDir, 'scripts/check-resume-freshness.mjs'))], {
+      cwd: rootDir, encoding: 'utf8', timeout: 2000, killSignal: 'SIGKILL', maxBuffer: 128 * 1024
+    });
+    assert.equal(child.error, undefined);
+    assert.equal(child.signal, null);
+    assert.equal(child.status, 1, child.stderr);
+    assert.match(child.stderr, /Resume freshness check failed:/);
+    assert.match(child.stderr, /Invalid data at skills/);
+    assert.doesNotMatch(child.stdout, /freshness check passed/);
+  } finally { cleanupFixture(rootDir); }
+});
+
+test('resume publication restores owned outputs for each failure position', () => {
+  for (const failAt of [1, 2, 3, 4]) {
+    const rootDir = makeFixture({ includeDocs: false });
+    try {
+      const outputs = Array.from({ length: 4 }, (_, index) => path.join(rootDir, `output-${index}.bin`));
+      for (const file of outputs.slice(1)) fs.writeFileSync(file, `prior ${path.basename(file)}\n`);
+      const before = outputs.map(snapshotFile);
+      let writes = 0;
+      assert.throws(() => publishResumeBundle({
+        rootDir,
+        entries: outputs.map((file) => ({ path: file, bytes: 'generated bytes\n', label: path.basename(file), maxBytes: 1024 })),
+        writeFileImpl(root, file, bytes, label, options) {
+          if (++writes === failAt) throw new Error(`synthetic position ${failAt}`);
+          writeFileNoFollow(root, file, bytes, label, options);
+        }
+      }), new RegExp(`synthetic position ${failAt}`));
+      assert.equal(writes, failAt);
+      outputs.forEach((file, index) => assertSnapshot(file, before[index]));
+      assert.deepEqual(fs.readdirSync(rootDir).filter((name) => name.startsWith('.safe-output-')), []);
+    } finally { cleanupFixture(rootDir); }
+  }
+});
+
+test('resume publication and rollback preparation preserve concurrent external edits', (t) => {
+  for (const phase of ['publication', 'rollback']) {
+    const rootDir = makeFixture({ includeDocs: false });
+    const first = path.join(rootDir, 'first.bin');
+    const second = path.join(rootDir, 'second.bin');
+    const prior = Buffer.from('prior owned bytes\n');
+    const foreign = Buffer.from('external bytes during temporary preparation\n');
+    let injected = false;
+    const originalWrite = fs.writeFileSync;
+    let mock;
+    try {
+      fs.writeFileSync(first, prior);
+      fs.writeFileSync(second, 'prior second\n');
+      if (phase === 'rollback') {
+        mock = t.mock.method(fs, 'writeFileSync', (file, bytes, ...args) => {
+          if (!injected && typeof file === 'number' && Buffer.isBuffer(bytes) && bytes.equals(prior)) {
+            originalWrite(first, foreign);
+            injected = true;
+          }
+          return originalWrite(file, bytes, ...args);
+        });
+      }
+      assert.throws(() => publishResumeBundle({
+        rootDir,
+        entries: [first, second].map((file) => ({ path: file, bytes: 'generated bytes\n', label: path.basename(file), maxBytes: 1024 })),
+        writeFileImpl(root, file, bytes, label, options) {
+          if (phase === 'rollback' && file === second) throw new Error('synthetic later publication failure');
+          writeFileNoFollow(root, file, bytes, label, {
+            ...options,
+            beforeFinalDestinationCheck(state) {
+              options.beforeFinalDestinationCheck(state);
+              if (phase === 'publication' && file === second) {
+                originalWrite(second, foreign);
+                injected = true;
+              }
+            }
+          });
+        }
+      }), phase === 'rollback'
+        ? (error) => error instanceof AggregateError && error.errors.some((nested) => /destination changed before publish/.test(nested.message)) && error.errors.some((nested) => /synthetic later publication failure/.test(nested.message))
+        : /destination changed before publish/);
+      assert.equal(injected, true, `${phase} edit occurs during temporary writing`);
+      assert.deepEqual(fs.readFileSync(phase === 'rollback' ? first : second), foreign);
+      if (phase === 'publication') assert.deepEqual(fs.readFileSync(first), prior);
+      else assert.equal(fs.readFileSync(second, 'utf8'), 'prior second\n');
+      assert.deepEqual(fs.readdirSync(rootDir).filter((name) => name.startsWith('.safe-output-')), []);
+    } finally { mock?.mock.restore(); cleanupFixture(rootDir); }
+  }
+});
+
+test('build rejects hostile staged exporter files before any publication', { timeout: 10000 }, async () => {
+  for (const artifact of ['pdf', 'docx']) {
+    for (const kind of ['empty', 'oversized', 'symlink', 'hardlink', 'directory']) {
+      const rootDir = makeFixture();
+      const paths = getResumePaths(rootDir);
+      const outputPaths = [paths.htmlOutPath, paths.pdfOutPath, paths.docxOutPath, paths.manifestOutPath];
+      const before = outputPaths.map(snapshotFile);
+      const external = path.join(rootDir, 'external.bin');
+      fs.writeFileSync(external, 'outside staged exporter canary');
+      let perRunDirectory;
+      let publications = 0;
+      const emit = (type, outputPath) => {
+        perRunDirectory = path.dirname(outputPath);
+        if (type !== artifact) {
+          fs.copyFileSync(path.join(projectRoot, `docs/resume.${type}`), outputPath);
+        } else if (kind === 'empty') fs.writeFileSync(outputPath, '');
+        else if (kind === 'oversized') {
+          const descriptor = fs.openSync(outputPath, 'w');
+          try { fs.ftruncateSync(descriptor, MAX_RESUME_ARTIFACT_BYTES + 1); } finally { fs.closeSync(descriptor); }
+        } else if (kind === 'symlink') fs.symlinkSync(external, outputPath);
+        else if (kind === 'hardlink') fs.linkSync(external, outputPath);
+        else fs.mkdirSync(outputPath);
+      };
+      try {
+        await assert.rejects(buildResume({
+          rootDir, log: () => {},
+          exportPdfImpl(_html, file) { emit('pdf', file); },
+          exportDocxImpl(_html, file) { emit('docx', file); },
+          publishFileImpl() { publications += 1; assert.fail('hostile staged outputs cannot publish'); }
+        }), (error) => {
+          const expected = { empty: 'too_small', oversized: 'oversized', symlink: 'symlink', hardlink: 'hardlink', directory: 'non_regular' }[kind];
+          assert.equal(error.reason, expected, `${artifact}/${kind}`);
+          return true;
+        });
+        assert.equal(publications, 0);
+        outputPaths.forEach((file, index) => assertSnapshot(file, before[index]));
+        assert.equal(fs.existsSync(paths.buildLockPath), false);
+        assert.equal(fs.existsSync(perRunDirectory), false);
+        assert.equal(fs.readFileSync(external, 'utf8'), 'outside staged exporter canary');
+      } finally { cleanupFixture(rootDir); }
+    }
+  }
+});
+
+test('artifact validators reject unsafe archive names and local-header disagreement', () => {
+  const pdf = fs.readFileSync(path.join(projectRoot, 'docs/resume.pdf'));
+  assert.throws(() => validatePdfBytes(Buffer.concat([pdf, Buffer.from('trailing junk')])), /non-whitespace bytes after/);
+  const missingStartxref = replaceAsciiEverywhere(pdf, 'startxref', 'startxrez');
+  assert.ok(missingStartxref.count > 0);
+  assert.throws(() => validatePdfBytes(missingStartxref.bytes), /startxref marker/);
+
+  const original = fs.readFileSync(path.join(projectRoot, 'docs/resume.docx'));
+  const eocd = original.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  const central = original.readUInt32LE(eocd + 16);
+  const local = original.readUInt32LE(central + 42);
+  const nameLength = original.readUInt16LE(central + 28);
+  assert.ok(nameLength >= 3);
+  const cases = [
+    ['traversing name', (bytes) => Buffer.from(`../${'x'.repeat(nameLength - 3)}`).copy(bytes, central + 46), /path-traversing ZIP entry/],
+    ['local/central flags disagree', (bytes) => bytes.writeUInt16LE(bytes.readUInt16LE(local + 6) ^ 0x0008, local + 6), /disagrees with its local header/],
+    ['encrypted entry', (bytes) => bytes.writeUInt16LE(bytes.readUInt16LE(central + 8) | 1, central + 8), /encrypted ZIP entry/],
+    ['unsupported compression', (bytes) => bytes.writeUInt16LE(99, central + 10), /unsupported ZIP compression method/],
+    ['multidisk', (bytes) => bytes.writeUInt16LE(1, eocd + 4), /multi-disk/],
+    ['ZIP64 directory', (bytes) => bytes.writeUInt32LE(0xffffffff, eocd + 16), /ZIP64 central/]
+  ];
+  for (const [name, mutate, expected] of cases) {
+    const bytes = Buffer.from(original);
+    mutate(bytes);
+    assert.throws(() => validateDocxBytes(bytes), expected, name);
   }
 });

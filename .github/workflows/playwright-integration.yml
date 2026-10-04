@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   nav-and-accordion:
-    name: Nav + Accordion Integration
+    name: Navigation + Offline Integration
     if: ${{ github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -31,5 +31,5 @@ jobs:
       - name: Install Chromium for Playwright
         run: ./node_modules/.bin/playwright install --with-deps chromium
 
-      - name: Run nav and accordion integration spec
-        run: ./node_modules/.bin/playwright test tests/integration/mobile-nav-and-accordion.spec.mjs --config=playwright.config.mjs
+      - name: Run navigation, offline, and browser contract integration specs
+        run: ./node_modules/.bin/playwright test tests/integration/mobile-nav-and-accordion.spec.mjs tests/integration/offline-fallback.spec.mjs tests/integration/browser-contracts.spec.mjs --config=playwright.config.mjs

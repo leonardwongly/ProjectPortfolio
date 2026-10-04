@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import vm from 'node:vm';
+import YAML from 'yaml';
 
 import {
   MAX_WORKFLOW_BYTES,
@@ -660,6 +662,208 @@ test('workflow hygiene rejects unsafe workflow input files', { timeout: 5_000 },
         () => collectWorkflowHygieneFindings({ cwd: root }),
         fixture.expected
       );
+    });
+  }
+});
+
+
+// Evaluate the expression subset used by these parsed workflow gates, including
+// Actions' case-insensitive contains(). This is not a general Actions evaluator.
+function evaluateWorkflowExpression(source, github) {
+  const expression = source.trim().replace(/^\$\{\{\s*/, '').replace(/\s*}}$/, '')
+    .replace(/\bgithub(?:\.[A-Za-z_][A-Za-z_0-9]*)+/g, (reference) => 'lookup(' + JSON.stringify(reference) + ')');
+  return vm.runInNewContext(expression, {
+    lookup(reference) {
+      return reference.split('.').slice(1).reduce((value, key) => value?.[key], github);
+    },
+    format(template, ...values) {
+      return template.replace(/\{(\d+)}/g, (_, index) => String(values[Number(index)]));
+    },
+    contains(value, search) {
+      return String(value ?? '').toLowerCase().includes(String(search).toLowerCase());
+    }
+  }, { timeout: 1_000 });
+}
+
+const GEMINI_REQUEST_EVENTS = [
+  { name: 'issues', action: 'opened', subject: 'issue', actor: 'issue' },
+  { name: 'issue_comment', action: 'created', subject: 'issue', actor: 'comment' },
+  { name: 'pull_request_review', action: 'submitted', subject: 'pull_request', actor: 'review' },
+  { name: 'pull_request_review_comment', action: 'created', subject: 'pull_request', actor: 'comment' }
+];
+const GEMINI_PLAN_ID = '01234567-89ab-cdef-0123-456789abcdef';
+
+function geminiEventFixture(definition, body, {
+  association = 'COLLABORATOR',
+  senderType = 'User',
+  number = 42
+} = {}) {
+  const event = {
+    action: definition.action,
+    sender: { type: senderType },
+    [definition.subject]: { number, author_association: 'NONE' }
+  };
+  event[definition.actor] = {
+    ...event[definition.actor],
+    body,
+    author_association: association
+  };
+  return event;
+}
+
+function geminiConcurrencyEvaluator() {
+  const workflow = YAML.parse(fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8'));
+  return (eventName, event, runId = 100) => {
+    const github = { workflow: 'Gemini CLI', run_id: runId, event_name: eventName, event };
+    const subject = GEMINI_REQUEST_EVENTS.find((definition) => definition.name === eventName)?.subject;
+    const subjectNumber = subject && event[subject]?.number;
+    // Derive eligibility from the real jobs so future request-policy changes
+    // cannot silently leave concurrency accepting a different set of requests.
+    const eligibleJobs = Object.entries(workflow.jobs)
+      .filter(([, job]) => Boolean(evaluateWorkflowExpression(job.if, github)))
+      .map(([name]) => name);
+    return {
+      actual: {
+        group: evaluateWorkflowExpression(workflow.concurrency.group, github),
+        cancel: Boolean(evaluateWorkflowExpression(workflow.concurrency['cancel-in-progress'], github))
+      },
+      expected: {
+        group: subjectNumber && eligibleJobs.length > 0
+          ? 'Gemini CLI-subject-' + subjectNumber
+          : 'Gemini CLI-run-' + runId,
+        cancel: Boolean(subjectNumber && eligibleJobs.length > 0)
+      },
+      eligibleJobs
+    };
+  };
+}
+
+test('Gemini concurrency shares subjects only for requests accepted by its actual jobs', () => {
+  const evaluate = geminiConcurrencyEvaluator();
+  const planMarker = 'plan#' + GEMINI_PLAN_ID;
+  const requests = [
+    { body: '@gemini-cli explain this change', job: 'gemini-cli-plan' },
+    { body: planMarker + ' revise the proposal', job: 'gemini-cli-plan' },
+    { body: planMarker + ' rejected', job: 'gemini-cli-plan' },
+    { body: '@gemini-cli ' + planMarker + ' approved', job: 'gemini-cli-execute' },
+    { body: planMarker + ' approved', job: 'gemini-cli-execute' },
+    { body: '@gemini-cli explain the approved approach', job: 'gemini-cli-plan' }
+  ];
+  for (const definition of GEMINI_REQUEST_EVENTS) {
+    for (const association of ['OWNER', 'MEMBER', 'COLLABORATOR']) {
+      for (const request of requests) {
+        const result = evaluate(definition.name, geminiEventFixture(definition, request.body, { association }));
+        const expectedJobs = definition.name === 'issues' && request.job === 'gemini-cli-execute'
+          ? [] : [request.job];
+        const label = [definition.name, association, request.body].join(': ');
+        assert.deepEqual(result.eligibleJobs, expectedJobs, label);
+        assert.deepEqual(result.actual, result.expected, label);
+      }
+    }
+  }
+
+  const comment = GEMINI_REQUEST_EVENTS[1];
+  const review = GEMINI_REQUEST_EVENTS[2];
+  const sameSubject = evaluate(review.name, geminiEventFixture(review, planMarker + ' approved'));
+  const firstSubject = evaluate(comment.name, geminiEventFixture(comment, '@gemini-cli explain'));
+  const differentSubject = evaluate(review.name, geminiEventFixture(review, '@gemini-cli explain', { number: 43 }));
+  assert.equal(firstSubject.actual.group, sameSubject.actual.group);
+  assert.notEqual(firstSubject.actual.group, differentSubject.actual.group);
+  assert.deepEqual(differentSubject.actual, { group: 'Gemini CLI-subject-43', cancel: true });
+});
+
+test('Gemini concurrency isolates ordinary trusted discussion and excluded requests', () => {
+  const evaluate = geminiConcurrencyEvaluator();
+  const planMarker = 'plan#' + GEMINI_PLAN_ID;
+  for (const definition of GEMINI_REQUEST_EVENTS) {
+    for (const association of ['OWNER', 'MEMBER', 'COLLABORATOR']) {
+      const event = geminiEventFixture(definition, 'Looks good to me', { association });
+      for (const runId of [100, 101]) {
+        const result = evaluate(definition.name, event, runId);
+        assert.deepEqual(result.eligibleJobs, [], [definition.name, 'ordinary', association, 'discussion'].join(' '));
+        assert.deepEqual(result.actual, { group: 'Gemini CLI-run-' + runId, cancel: false });
+        assert.deepEqual(result.actual, result.expected);
+      }
+    }
+    for (const body of [
+      '@gemini-cli /review',
+      '@gemini-cli /triage',
+      planMarker + ' approved /review',
+      planMarker + ' approved /triage',
+      '@gemini-cli /REVIEW',
+      '',
+      null,
+      undefined
+    ]) {
+      const result = evaluate(definition.name, geminiEventFixture(definition, body));
+      assert.deepEqual(result.eligibleJobs, [], definition.name + ': ' + body);
+      assert.deepEqual(result.actual, { group: 'Gemini CLI-run-100', cancel: false });
+      assert.deepEqual(result.actual, result.expected);
+    }
+  }
+});
+
+test('Gemini concurrency fails closed for untrusted, bot, unknown and incomplete events', () => {
+  const evaluate = geminiConcurrencyEvaluator();
+  const rejected = [
+    ['unsupported', geminiEventFixture(GEMINI_REQUEST_EVENTS[1], '@gemini-cli explain')],
+    ['issues', { ...geminiEventFixture(GEMINI_REQUEST_EVENTS[0], '@gemini-cli explain'), action: 'closed' }]
+  ];
+  for (const definition of GEMINI_REQUEST_EVENTS) {
+    for (const association of ['NONE', 'CONTRIBUTOR', 'FIRST_TIMER', 'FIRST_TIME_CONTRIBUTOR']) {
+      rejected.push([definition.name, geminiEventFixture(definition, '@gemini-cli explain', { association })]);
+    }
+    rejected.push([definition.name, geminiEventFixture(definition, '@gemini-cli explain', { senderType: 'Bot' })]);
+    for (const missing of ['sender', 'number', 'body', 'association', 'actor']) {
+      const event = geminiEventFixture(definition, '@gemini-cli explain');
+      if (missing === 'sender') delete event.sender;
+      if (missing === 'number') delete event[definition.subject].number;
+      if (missing === 'body') delete event[definition.actor].body;
+      if (missing === 'association') delete event[definition.actor].author_association;
+      if (missing === 'actor') delete event[definition.actor];
+      rejected.push([definition.name, event]);
+    }
+  }
+  for (const [eventName, event] of rejected) {
+    for (const runId of [100, 101]) {
+      const result = evaluate(eventName, event, runId);
+      assert.deepEqual(result.actual, { group: 'Gemini CLI-run-' + runId, cancel: false }, eventName);
+      assert.deepEqual(result.actual, result.expected, eventName);
+    }
+  }
+});
+
+test('Release Candidate validates each ready PR revision while retaining the draft guard', () => {
+  const workflow = YAML.parse(fs.readFileSync('.github/workflows/release-candidate.yml', 'utf8'));
+  const expectedActions = ['opened', 'synchronize', 'reopened', 'ready_for_review'];
+  assert.deepEqual(workflow.on.pull_request.types, expectedActions);
+  assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
+  const job = workflow.jobs['release-candidate'];
+  const validation = job.steps.filter((step) => step.run === 'npm run validate:full');
+  assert.equal(validation.length, 1);
+  assert.equal(validation[0].if, undefined);
+  assert.equal(validation[0]['continue-on-error'], undefined);
+  assert.equal(job['continue-on-error'], undefined);
+  for (const action of expectedActions) {
+    for (const draft of [false, true]) {
+      assert.equal(Boolean(evaluateWorkflowExpression(job.if, {
+        event_name: 'pull_request',
+        event: { action, pull_request: { number: 42, draft } }
+      })), !draft, action + ': draft=' + draft);
+    }
+  }
+  assert.equal(Boolean(evaluateWorkflowExpression(job.if, {
+    event_name: 'workflow_dispatch',
+    event: {}
+  })), true);
+});
+
+test('workflow hygiene reports malformed and duplicate-key YAML instead of accepting it', async (t) => {
+  for (const content of ['name: [unterminated', 'permissions: {}\npermissions: write-all\n']) {
+    await t.test(content, (t) => {
+      const findings = collectFixtureFindings(t, content);
+      assert.ok(findings.length > 0);
+      assert.ok(findings.every((finding) => finding.startsWith('.github/workflows/adversarial.yml: invalid YAML:')));
     });
   }
 });

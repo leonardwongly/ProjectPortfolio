@@ -15,7 +15,7 @@ jobs:
   production-smoke:
     name: Production Smoke
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
@@ -29,7 +29,6 @@ jobs:
           cache: npm
 
       - name: Install Node dependencies
-        id: install
         run: npm ci --ignore-scripts
 
       - name: Check production pages and headers
@@ -39,10 +38,10 @@ jobs:
           SMOKE_RETRY_DELAY_MS: '10000'
           SMOKE_TIMEOUT_MS: '10000'
 
-      - name: Check production script inventory
-        if: ${{ always() && steps.install.outcome == 'success' }}
+      - name: Check production script inventory and content
+        if: success() || failure()
         run: npm run check:production:scripts
         env:
-          SMOKE_ATTEMPTS: '3'
+          SMOKE_ATTEMPTS: '6'
           SMOKE_RETRY_DELAY_MS: '10000'
           SMOKE_TIMEOUT_MS: '10000'

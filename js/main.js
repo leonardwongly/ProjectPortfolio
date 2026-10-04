@@ -107,7 +107,7 @@ function initCommandPalette() {
     if (hadTabIndex) {
       content.setAttribute('tabindex', previousTabIndex);
     } else {
-      content.removeAttribute('tabindex');
+      content.addEventListener('blur', () => content.removeAttribute('tabindex'), { once: true });
     }
   };
 

@@ -26,6 +26,7 @@ const FILE_BUDGETS = [
   { path: 'offline.html', maxBytes: 20 * KiB },
   { path: 'css/custom.css', maxBytes: 50 * KiB },
   { path: 'css/case-study.css', maxBytes: 8 * KiB },
+  { path: 'css/offline.css', maxBytes: 4 * KiB },
   { path: 'js/main.js', maxBytes: 32 * KiB },
   { path: 'js/site.js', maxBytes: 8 * KiB },
   { path: 'pwabuilder-sw.js', maxBytes: 8 * KiB }

@@ -271,6 +271,63 @@ test('writeFileNoFollow revalidates the parent immediately before rename', () =>
   }
 });
 
+test('writeFileNoFollow rejects a parent swap after the final temporary inspection', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-output-root-'));
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-output-outside-'));
+  const parentPath = path.join(root, 'generated');
+  const displacedPath = path.join(root, 'generated-original');
+  const destination = path.join(parentPath, 'index.html');
+  const originalLstatSync = fs.lstatSync;
+  const originalRenameSync = fs.renameSync;
+  let finalCheckArmed = false;
+  let finalTemporaryChecks = 0;
+  let publicationAttempts = 0;
+  let swapped = false;
+
+  try {
+    fs.mkdirSync(parentPath);
+    fs.writeFileSync(destination, 'previous complete page');
+    fs.writeFileSync(path.join(outside, 'sentinel.txt'), 'outside must remain unchanged');
+    fs.renameSync = (from, to, ...args) => {
+      if (to === destination) publicationAttempts += 1;
+      return Reflect.apply(originalRenameSync, fs, [from, to, ...args]);
+    };
+    fs.lstatSync = (filePath, ...args) => {
+      const stats = Reflect.apply(originalLstatSync, fs, [filePath, ...args]);
+      if (finalCheckArmed && !swapped && typeof filePath === 'string' &&
+          path.dirname(filePath) === parentPath &&
+          path.basename(filePath).startsWith('.safe-output-')) {
+        finalTemporaryChecks += 1;
+        // Return the genuine final inspection, then change the parent before
+        // the immediately following parent check can permit publication.
+        Reflect.apply(originalRenameSync, fs, [parentPath, displacedPath]);
+        fs.symlinkSync(outside, parentPath);
+        swapped = true;
+      }
+      return stats;
+    };
+
+    assert.throws(
+      () => writeFileNoFollow(root, destination, 'generated', 'generated index', {
+        beforeFinalDestinationCheck() { finalCheckArmed = true; }
+      }),
+      /output parent changed during write/
+    );
+    assert.equal(finalTemporaryChecks, 1);
+    assert.equal(swapped, true);
+    assert.equal(publicationAttempts, 0);
+    assert.equal(fs.readFileSync(path.join(displacedPath, 'index.html'), 'utf8'), 'previous complete page');
+    assert.deepEqual(fs.readdirSync(outside), ['sentinel.txt']);
+    assert.equal(fs.readFileSync(path.join(outside, 'sentinel.txt'), 'utf8'), 'outside must remain unchanged');
+  } finally {
+    fs.lstatSync = originalLstatSync;
+    fs.renameSync = originalRenameSync;
+    restoreDisplacedDirectory(parentPath, displacedPath);
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(outside, { recursive: true, force: true });
+  }
+});
+
 test('writeFileNoFollow revalidates a destination replaced with a symlink before publish', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-output-root-'));
   const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-output-outside-'));
@@ -433,6 +490,98 @@ test('writeFileNoFollow removes its exclusive temporary file when a write fails'
   }
 });
 
+test('writeFileNoFollow closes and removes its owned temporary file after a partial EIO write', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-output-root-'));
+  const destination = path.join(root, 'index.html');
+  const foreignPath = path.join(root, '.safe-output-foreign.tmp');
+  const originalWriteFileSync = fs.writeFileSync;
+  const injectedError = Object.assign(new Error('injected EIO after prefix write'), { code: 'EIO' });
+  const prefix = Buffer.from('partial generated prefix');
+  let descriptor;
+  let reservedPath;
+  let writtenPrefix;
+
+  try {
+    fs.writeFileSync(destination, 'previous complete page');
+    fs.writeFileSync(foreignPath, 'foreign temporary file');
+    const previousStats = fs.statSync(destination, { bigint: true });
+    fs.writeFileSync = (file, ...args) => {
+      if (typeof file !== 'number') return Reflect.apply(originalWriteFileSync, fs, [file, ...args]);
+      descriptor = file;
+      const names = fs.readdirSync(root).filter((name) => name.startsWith('.safe-output-') &&
+        name !== path.basename(foreignPath));
+      assert.equal(names.length, 1, 'a real exclusive temporary path must exist before the failure');
+      reservedPath = path.join(root, names[0]);
+      assert.equal(fs.writeSync(file, prefix), prefix.length);
+      assert.equal(fs.fstatSync(file).size, prefix.length);
+      writtenPrefix = fs.readFileSync(reservedPath);
+      throw injectedError;
+    };
+
+    assert.throws(
+      () => writeFileNoFollow(root, destination, 'complete generated payload'),
+      (error) => error === injectedError && error.code === 'EIO'
+    );
+    assert.ok(reservedPath);
+    assert.deepEqual(writtenPrefix, prefix);
+    assert.throws(() => fs.fstatSync(descriptor), { code: 'EBADF' });
+    assert.equal(fs.existsSync(reservedPath), false);
+    assert.equal(fs.readFileSync(destination, 'utf8'), 'previous complete page');
+    assert.equal(fs.statSync(destination, { bigint: true }).ino, previousStats.ino);
+    assert.equal(fs.readFileSync(foreignPath, 'utf8'), 'foreign temporary file');
+    assert.deepEqual(fs.readdirSync(root).sort(), ['.safe-output-foreign.tmp', 'index.html']);
+  } finally {
+    fs.writeFileSync = originalWriteFileSync;
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('writeFileNoFollow preserves a foreign replacement after a partial EIO write', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-output-root-'));
+  const destination = path.join(root, 'index.html');
+  const heldTemporary = path.join(root, 'held-owned-temp');
+  const originalWriteFileSync = fs.writeFileSync;
+  const injectedError = Object.assign(new Error('injected EIO after temporary replacement'), { code: 'EIO' });
+  const prefix = Buffer.from('partial generated prefix');
+  let descriptor;
+  let temporaryPath;
+  let replacementStats;
+
+  try {
+    fs.writeFileSync(destination, 'previous complete page');
+    fs.writeFileSync = (file, ...args) => {
+      if (typeof file !== 'number') return Reflect.apply(originalWriteFileSync, fs, [file, ...args]);
+      descriptor = file;
+      const temporaryNames = fs.readdirSync(root).filter((name) => name.startsWith('.safe-output-'));
+      assert.equal(temporaryNames.length, 1);
+      temporaryPath = path.join(root, temporaryNames[0]);
+      assert.equal(fs.writeSync(file, prefix), prefix.length);
+      assert.deepEqual(fs.readFileSync(temporaryPath), prefix);
+      fs.renameSync(temporaryPath, heldTemporary);
+      Reflect.apply(originalWriteFileSync, fs, [temporaryPath, 'foreign replacement must survive']);
+      replacementStats = fs.statSync(temporaryPath, { bigint: true });
+      throw injectedError;
+    };
+
+    assert.throws(
+      () => writeFileNoFollow(root, destination, 'complete generated payload'),
+      (error) => error === injectedError && error.code === 'EIO'
+    );
+    assert.ok(temporaryPath);
+    assert.throws(() => fs.fstatSync(descriptor), { code: 'EBADF' });
+    assert.equal(fs.readFileSync(destination, 'utf8'), 'previous complete page');
+    assert.deepEqual(fs.readFileSync(heldTemporary), prefix);
+    assert.equal(fs.readFileSync(temporaryPath, 'utf8'), 'foreign replacement must survive');
+    const retainedStats = fs.statSync(temporaryPath, { bigint: true });
+    assert.equal(retainedStats.dev, replacementStats.dev);
+    assert.equal(retainedStats.ino, replacementStats.ino);
+    assert.deepEqual(fs.readdirSync(root).sort(), [path.basename(temporaryPath), 'held-owned-temp', 'index.html'].sort());
+  } finally {
+    fs.writeFileSync = originalWriteFileSync;
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('writeFileNoFollow never removes a colliding temporary file it does not own', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-output-root-'));
   const destination = path.join(root, 'index.html');
@@ -463,32 +612,91 @@ test('concurrent writeFileNoFollow calls publish exactly one complete payload', 
     const marker = String.fromCharCode(65 + index);
     return `payload-${index}\n${marker.repeat(512 * 1024)}\nend-${index}`;
   });
+  const publicationGates = new Int32Array(new SharedArrayBuffer(payloads.length * 2 * Int32Array.BYTES_PER_ELEMENT));
   const workerSource = `
     const { parentPort, workerData } = require('node:worker_threads');
     const { writeFileNoFollow } = require(workerData.modulePath);
+    const gates = new Int32Array(workerData.gates);
+    function waitForReader(offset) {
+      if (Atomics.wait(gates, offset, 0, workerData.timeout) === 'timed-out') {
+        throw new Error('Timed out waiting for publication reader rendezvous');
+      }
+      if (Atomics.load(gates, offset) !== 1) throw new Error('Invalid reader rendezvous release');
+    }
     parentPort.once('message', () => {
-      writeFileNoFollow(workerData.root, workerData.destination, workerData.payload, 'concurrent output');
+      writeFileNoFollow(workerData.root, workerData.destination, workerData.payload, 'concurrent output', {
+        beforeFinalDestinationCheck() {
+          parentPort.postMessage({ type: 'staged' });
+          waitForReader(workerData.index * 2);
+        }
+      });
+      parentPort.postMessage({ type: 'published' });
+      waitForReader(workerData.index * 2 + 1);
       parentPort.postMessage({ type: 'done' });
     });
     parentPort.postMessage({ type: 'ready' });
   `;
   const workers = [];
+  const previousPayload = 'previous complete page';
+  let observationCount = 0;
+  function observePublishedBytes() {
+    const observed = fs.readFileSync(destination, 'utf8');
+    assert.ok(observed === previousPayload || payloads.includes(observed),
+      'every reader snapshot must equal the previous page or one complete writer payload');
+    observationCount += 1;
+    return observed;
+  }
+  function releaseGate(offset) {
+    Atomics.store(publicationGates, offset, 1);
+    Atomics.notify(publicationGates, offset);
+  }
 
   try {
     fs.writeFileSync(destination, 'previous complete page');
-    payloads.forEach((payload) => {
+    payloads.forEach((payload, index) => {
       workers.push(new Worker(workerSource, {
         eval: true,
-        workerData: { destination, modulePath, payload, root }
+        workerData: {
+          destination, gates: publicationGates.buffer, index, modulePath, payload, root,
+          timeout: WORKER_RENDEZVOUS_TIMEOUT_MS
+        }
       }));
     });
     await Promise.all(workers.map((worker) => waitForWorkerMessage(worker, 'ready')));
 
+    const stagedWrites = Promise.all(workers.map((worker) => waitForWorkerMessage(worker, 'staged')));
+    workers.forEach((worker) => worker.postMessage({ type: 'write' }));
+    await stagedWrites;
+    assert.equal(observePublishedBytes(), previousPayload,
+      'all completed temporary writes must leave the old destination visible while publication is blocked');
+    assert.equal(fs.readdirSync(root).filter((name) => name.startsWith('.safe-output-')).length, payloads.length);
+
+    let publicationsFinished = false;
+    const publications = Promise.all(workers.map((worker) =>
+      waitForWorkerMessage(worker, 'published').then(() => observePublishedBytes())));
+    // Install both success and failure handlers before releasing the writers.
+    const observedPublications = publications.then(
+      (values) => { publicationsFinished = true; return { values }; },
+      (error) => { publicationsFinished = true; return { error }; }
+    );
+    workers.forEach((_, index) => releaseGate(index * 2));
+    const observationDeadline = Date.now() + WORKER_RENDEZVOUS_TIMEOUT_MS;
+    do {
+      observePublishedBytes();
+      assert.ok(Date.now() < observationDeadline, 'reader observations must finish within the rendezvous deadline');
+      await new Promise((resolve) => setImmediate(resolve));
+    } while (!publicationsFinished);
+    const publicationOutcome = await observedPublications;
+    if (publicationOutcome.error) throw publicationOutcome.error;
+    assert.equal(publicationOutcome.values.length, payloads.length);
+    assert.ok(publicationOutcome.values.every((value) => payloads.includes(value)),
+      'a reader must observe complete generated bytes after each worker publishes and before it exits');
+    assert.ok(observationCount >= payloads.length + 2);
+
     const exits = Promise.all(workers.map((worker) => waitForWorkerExit(worker)));
     const completions = Promise.all(workers.map((worker) => waitForWorkerMessage(worker, 'done')));
     const completedWrites = Promise.all([completions, exits]);
-    workers.forEach((worker) => worker.postMessage({ type: 'write' }));
-
+    workers.forEach((_, index) => releaseGate(index * 2 + 1));
     const [, exitCodes] = await completedWrites;
     assert.ok(exitCodes.every((code) => code === 0));
 

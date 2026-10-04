@@ -1,0 +1,97 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+  color: #2e241f;
+  background: #f7f1ea;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 2rem 1rem;
+}
+
+main {
+  max-width: 38rem;
+  margin: clamp(1rem, 10vh, 6rem) auto;
+  padding: clamp(1.25rem, 5vw, 2.5rem);
+  background: #ffffff;
+  border: 1px solid #c9b8a9;
+  border-radius: 1rem;
+}
+
+.eyebrow {
+  color: #5d514b;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  line-height: 1.2;
+}
+
+nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+nav a {
+  display: inline-block;
+  padding: 0.65rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+a {
+  color: #9a3518;
+  text-underline-offset: 0.2em;
+}
+
+a:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 1rem;
+  padding: 0.5rem;
+  background: #ffffff;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #f8f4f0;
+    background: #151515;
+  }
+
+  main,
+  .skip-link {
+    background: #222222;
+    border-color: #756a62;
+  }
+
+  .eyebrow {
+    color: #d5c5ba;
+  }
+
+  a {
+    color: #ffc49b;
+  }
+}

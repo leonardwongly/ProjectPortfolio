@@ -3,7 +3,7 @@ name: Release Candidate
 on:
   workflow_dispatch:
   pull_request:
-    types: [ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
@@ -28,6 +28,11 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+
+      - name: Install ripgrep for security smoke tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ripgrep
 
       - name: Install Node dependencies
         run: npm ci --ignore-scripts

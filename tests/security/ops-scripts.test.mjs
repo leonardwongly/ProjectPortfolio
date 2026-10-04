@@ -7,10 +7,34 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 import test from 'node:test';
 
+const PRODUCTION_SECURITY_HEADERS = {
+  'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
+  'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'permissions-policy': 'accelerometer=(), autoplay=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()'
+};
+
 function makeTempRoot(t) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-ops-'));
   t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
   return rootDir;
+}
+
+function makeTelemetryInventoryFixture(t) {
+  const rootDir = makeTempRoot(t);
+  for (const file of [
+    'js', 'src', 'pwabuilder-sw.js', 'index.html', 'work.html', 'reading.html', 'offline.html',
+    'case-study-agentforge.html', 'case-study-agentic.html', 'case-study-apple-calendar-mcp.html',
+    '.well-known/service-doc.html', 'docs/security/vendor-dependencies.json'
+  ]) {
+    const target = path.join(rootDir, file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.cpSync(new URL(`../../${file}`, import.meta.url), target, { recursive: true });
+  }
+  const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'docs/security/vendor-dependencies.json'), 'utf8'));
+  return { rootDir, today: manifest.last_reviewed };
 }
 
 function writeFile(rootDir, relativePath, content = '') {
@@ -29,6 +53,7 @@ function writePerformanceFixture(rootDir, overrides = {}) {
     'reading.html',
     'offline.html',
     'css/custom.css',
+    'css/offline.css',
     'css/case-study.css',
     'js/main.js',
     'js/site.js',
@@ -111,7 +136,9 @@ test('reading metadata audit detects missing fields, duplicate records, missing 
   assert.ok(findings.some((finding) => finding.includes('missing author')));
   assert.ok(findings.some((finding) => finding.includes('duplicate isbn')));
   assert.ok(findings.some((finding) => finding.includes('declared cover is missing')));
-  assert.ok(findings.some((finding) => finding.includes('cover duplicates')));
+  assert.deepEqual(findings.filter((finding) => finding.includes('cover duplicates')), [
+    'reading[3]: cover duplicates reading[2] by content hash: book/2026/c.jpg'
+  ]);
 });
 
 test('reading metadata audit fails closed on malformed entries and unsafe cover files', async (t) => {
@@ -168,6 +195,22 @@ test('reading metadata audit fails closed on malformed entries and unsafe cover 
   assert.equal(fs.readFileSync(path.join(outsideRoot, 'hardlink-source.jpg'), 'utf8'), 'hardlinked-cover');
   assert.equal(fs.lstatSync(path.join(outsideRoot, 'hardlink-source.jpg')).nlink, 2);
   assert.match(sha256SafeCoverFile(rootDir, 'book/valid.jpg', 'valid cover'), /^[a-f\d]{64}$/);
+});
+
+test('cover hashing matches an independent golden digest and distinguishes duplicate groups', async (t) => {
+  const { sha256SafeCoverFile, auditReadingMetadata } = await import('../../scripts/audit-reading-metadata.mjs');
+  const rootDir = makeTempRoot(t);
+  writeFile(rootDir, 'book/a.jpg', 'abc');
+  writeFile(rootDir, 'book/b.jpg', 'abc');
+  writeFile(rootDir, 'book/c.jpg', 'abd');
+  assert.equal(sha256SafeCoverFile(rootDir, 'book/a.jpg', 'golden fixture'),
+    'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+  const entries = ['a', 'b', 'c'].map((name, index) => ({ title: `Title ${name}`, author: 'Author', year: '2026',
+    isbn: `978000000000${index}`, cover: `book/${name}.jpg` }));
+  assert.deepEqual(auditReadingMetadata(entries, { rootDir }), [
+    'reading[1]: cover duplicates reading[0] by content hash: book/b.jpg'
+  ]);
+  assert.deepEqual(auditReadingMetadata([entries[0], entries[2]], { rootDir }), []);
 });
 
 test('reading metadata source reads are bounded and no-follow', async (t) => {
@@ -230,8 +273,6 @@ test('validation readers open every inspected source no-follow and nonblocking',
   assert.deepEqual(collectTelemetryPolicyFindings({
     rootDir,
     runtimeFiles: ['js/main.js'],
-    serviceWorkerFile: null,
-    verifyVendoredScripts: false,
     openSync
   }), []);
 
@@ -332,6 +373,37 @@ test('performance budget check reports clean fixtures and oversized generated fi
   const result = checkPerformanceBudget({ rootDir });
 
   assert.ok(result.failures.some((failure) => failure.includes('index.html')));
+});
+
+test('performance limits distinguish exact file, directory, single-asset and rendered 2x boundaries', async (t) => {
+  const { checkPerformanceBudget } = await import('../../scripts/check-performance-budget.mjs');
+  const rootDir = makeTempRoot(t);
+  writePerformanceFixture(rootDir);
+  writeFile(rootDir, 'index.html', Buffer.alloc(90 * 1024, 'a'));
+  assert.deepEqual(checkPerformanceBudget({ rootDir }).failures, []);
+  fs.appendFileSync(path.join(rootDir, 'index.html'), 'a');
+  assert.match(checkPerformanceBudget({ rootDir }).failures[0], /^index\.html is /);
+  writeFile(rootDir, 'index.html', 'ok');
+  writeFile(rootDir, 'reading.html', '<img srcset="book/cover.jpg 2x">');
+  writeFile(rootDir, 'book/cover.jpg', Buffer.alloc(6 * 1024 * 1024));
+  assert.deepEqual(checkPerformanceBudget({ rootDir }).failures, []);
+  fs.appendFileSync(path.join(rootDir, 'book/cover.jpg'), 'x');
+  const twoX = checkPerformanceBudget({ rootDir }).failures;
+  assert.equal(twoX.length, 1);
+  assert.match(twoX[0], /^rendered reading 2x media is /);
+  writeFile(rootDir, 'book/cover.jpg', 'ok');
+  writeFile(rootDir, 'images/a.png', Buffer.alloc(4 * 1024 * 1024));
+  writeFile(rootDir, 'images/b.png', Buffer.alloc(4 * 1024 * 1024 - fs.statSync(path.join(rootDir, 'images/.keep')).size));
+  assert.deepEqual(checkPerformanceBudget({ rootDir }).failures, []);
+  fs.appendFileSync(path.join(rootDir, 'images/b.png'), 'x');
+  assert.match(checkPerformanceBudget({ rootDir }).failures[0], /^images\/ is /);
+  writeFile(rootDir, 'images/b.png', '');
+  const fd = fs.openSync(path.join(rootDir, 'images/a.png'), 'w');
+  fs.ftruncateSync(fd, 20 * 1024 * 1024);
+  fs.closeSync(fd);
+  assert.equal(checkPerformanceBudget({ rootDir }).failures.some((finding) => finding.includes('single-asset budget')), false);
+  fs.appendFileSync(path.join(rootDir, 'images/a.png'), 'x');
+  assert.ok(checkPerformanceBudget({ rootDir }).failures.some((finding) => finding.startsWith('images/a.png') && finding.includes('single-asset budget')));
 });
 
 test('performance budget rejects unreferenced deployed assets', async (t) => {
@@ -445,6 +517,10 @@ test('link health validator rejects unsafe URL shapes before network access', as
 
 test('link health preflight covers every authored data file and generated page without fetching', async (t) => {
   const { DATA_FILES, GENERATED_HTML_FILES, runLinkHealth } = await import('../../scripts/check-link-health.mjs');
+  assert.deepEqual(DATA_FILES, ['data/profile.json', 'data/certifications.json', 'data/featured-projects.json',
+    'data/reading.json', 'data/experience.json', 'data/case-studies.json', 'data/skills.json', 'data/resume.json']);
+  assert.deepEqual(GENERATED_HTML_FILES, ['index.html', 'work.html', 'case-study-agentforge.html',
+    'case-study-agentic.html', 'case-study-apple-calendar-mcp.html', 'reading.html', 'offline.html']);
   const rootDir = makeTempRoot(t);
   DATA_FILES.forEach((file, index) => {
     writeFile(rootDir, file, JSON.stringify({ url: `https://public.example/data-${index}` }));
@@ -524,6 +600,30 @@ test('link collection reports unsafe URL-valued fields while preserving local re
   assert.ok(results.some((result) => result.category === 'unsafe-url' && result.detail.includes('control or backslash')));
   assert.ok(!results.some((result) => result.url === '#local-section' || result.url === '/local-page'));
   assert.ok(!results.some((result) => result.url.includes('/comment') || result.url.includes('/script')));
+});
+
+test('each unsafe HTML link has its own source and rejection oracle', async (t) => {
+  const { collectExternalUrls } = await import('../../scripts/check-link-health.mjs');
+  const rootDir = makeTempRoot(t);
+  for (const [html, source, url, detail] of [
+    ['<a href="jav&#x61;script:alert(1)">x</a>', 'fixture.html:html:href', 'javascript:alert(1)', /https URLs/],
+    ['<img srcset="javascript:alert(1) 2x">', 'fixture.html:html:srcset[0]', 'javascript:alert(1)', /https URLs/],
+    ['<a href="https:\\private.example/backslash">x</a>', 'fixture.html:html:href', 'https:\\private.example/backslash', /control or backslash/],
+    ['<a href="https://private.example/line\nbreak">x</a>', 'fixture.html:html:href', 'https://private.example/line\nbreak', /control or backslash/]
+  ]) {
+    writeFile(rootDir, 'fixture.html', html);
+    const findings = collectExternalUrls({ rootDir, dataFiles: [], generatedHtmlFiles: ['fixture.html'] });
+    assert.equal(findings.length, 1, html);
+    assert.equal(findings[0].source, source);
+    assert.equal(findings[0].url, url);
+    assert.equal(findings[0].category, 'unsafe-url');
+    assert.match(findings[0].detail, detail);
+  }
+  writeFile(rootDir, 'fixture.html', '<a href="https://public.example/path#fragment">x</a>');
+  const good = collectExternalUrls({ rootDir, dataFiles: [], generatedHtmlFiles: ['fixture.html'] });
+  assert.equal(good.length, 1);
+  assert.equal(good[0].ok, true);
+  assert.equal(good[0].url, 'https://public.example/path');
 });
 
 test('link parsing rejects zero, oversized, deeply nested, and excessive inputs', async () => {
@@ -729,8 +829,7 @@ test('workflow hygiene enforces pinned actions and safe npm installs', async () 
 test('production smoke validator reports missing headers and markers', async () => {
   const { validatePage } = await import('../../scripts/check-production-smoke.mjs');
   const headers = new Headers({
-    'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
-    'x-content-type-options': 'nosniff'
+    ...PRODUCTION_SECURITY_HEADERS
   });
 
   assert.deepEqual(
@@ -759,6 +858,19 @@ test('production smoke validator reports missing headers and markers', async () 
   );
 });
 
+test('production smoke marker and status failures cannot hide behind header failures', async () => {
+  const { validatePage } = await import('../../scripts/check-production-smoke.mjs');
+  const baseline = { url: 'https://public.example/offline', response: { status: 200, headers: new Headers(PRODUCTION_SECURITY_HEADERS) },
+    body: '<h1>Offline</h1>', check: { marker: /Offline/i, headers: Object.keys(PRODUCTION_SECURITY_HEADERS) } };
+  assert.deepEqual(validatePage(baseline), []);
+  const marker = validatePage({ ...baseline, body: '<h1>Unexpected</h1>' });
+  assert.equal(marker.length, 1);
+  assert.match(marker[0], /marker/);
+  const status = validatePage({ ...baseline, response: { ...baseline.response, status: 503 } });
+  assert.equal(status.length, 1);
+  assert.match(status[0], /503/);
+});
+
 test('production smoke arguments require an HTTPS public origin and positive bounded controls', async () => {
   const { PAGE_CHECKS, parseArgs } = await import('../../scripts/check-production-smoke.mjs');
 
@@ -777,7 +889,7 @@ test('production smoke arguments require an HTTPS public origin and positive bou
   assert.throws(() => parseArgs([], { SMOKE_RETRY_DELAY_MS: '-1' }), /positive integer/);
   assert.deepEqual(
     PAGE_CHECKS.map((check) => check.path),
-    ['/', '/work', '/case-study-agentforge', '/reading', '/offline']
+    ['/', '/work', '/case-study-agentforge', '/case-study-agentic', '/case-study-apple-calendar-mcp', '/reading', '/offline', '/.well-known/service-doc']
   );
 });
 
@@ -855,8 +967,11 @@ test('production smoke validates public DNS and fetches every page at least once
     ['/', 'Leonard Wong'],
     ['/work', 'Project Archive'],
     ['/case-study-agentforge', 'AgentForge Merge Guard'],
+    ['/case-study-agentic', 'Agentic Engineering Lab'],
+    ['/case-study-apple-calendar-mcp', 'Apple Calendar MCP'],
     ['/reading', 'Reading'],
-    ['/offline', 'Offline']
+    ['/offline', 'Offline'],
+    ['/.well-known/service-doc', 'Service Documentation']
   ]);
   const options = {
     origin: 'https://public.example',
@@ -874,9 +989,7 @@ test('production smoke validates public DNS and fetches every page at least once
       return new Response(`<main>${marker}</main>`, {
         status: 200,
         headers: {
-          'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
-          'strict-transport-security': 'max-age=31536000; includeSubDomains',
-          'x-content-type-options': 'nosniff'
+          ...PRODUCTION_SECURITY_HEADERS
         }
       });
     }
@@ -915,9 +1028,7 @@ test('production smoke validates public DNS and fetches every page at least once
         {
           status: retryRequestCount <= PAGE_CHECKS.length ? 503 : 200,
           headers: {
-            'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
-            'strict-transport-security': 'max-age=31536000; includeSubDomains',
-            'x-content-type-options': 'nosniff'
+            ...PRODUCTION_SECURITY_HEADERS
           }
         }
       );
@@ -938,8 +1049,11 @@ test('production smoke default transport pins each approved DNS answer into the 
     ['/', 'Leonard Wong'],
     ['/work', 'Project Archive'],
     ['/case-study-agentforge', 'AgentForge Merge Guard'],
+    ['/case-study-agentic', 'Agentic Engineering Lab'],
+    ['/case-study-apple-calendar-mcp', 'Apple Calendar MCP'],
     ['/reading', 'Reading'],
-    ['/offline', 'Offline']
+    ['/offline', 'Offline'],
+    ['/.well-known/service-doc', 'Service Documentation']
   ]);
   const findings = await runProductionSmoke({
     origin: 'https://public.example',
@@ -973,9 +1087,7 @@ test('production smoke default transport pins each approved DNS answer into the 
           response.statusCode = 200;
           response.statusMessage = 'OK';
           response.headers = {
-            'content-security-policy': "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
-            'strict-transport-security': 'max-age=31536000; includeSubDomains',
-            'x-content-type-options': 'nosniff'
+            ...PRODUCTION_SECURITY_HEADERS
           };
           onResponse(response);
         });
@@ -1008,11 +1120,7 @@ test('telemetry policy validates real event calls and detects aliased network ad
     const documentation = 'fetch and sendBeacon are prohibited';
     const documentationPattern = /fetch|sendBeacon|Image|WebSocket|EventSource/;
   `);
-  assert.deepEqual(collectTelemetryPolicyFindings({
-    rootDir,
-    serviceWorkerFile: null,
-    verifyVendoredScripts: false
-  }), []);
+  assert.deepEqual(collectTelemetryPolicyFindings({ rootDir }), []);
   assert.deepEqual(inspectRuntimeSource('const documentationPattern = /fetch|sendBeacon|Image/;'), []);
   assert.deepEqual(inspectRuntimeSource('const msg = `prefetched ${count} records`;'), []);
   assert.deepEqual(inspectRuntimeSource('const msg = `rendered ${imageCount} covers`;'), []);
@@ -1046,11 +1154,7 @@ test('telemetry policy validates real event calls and detects aliased network ad
     trackEvent(getEventName());
     TELEMETRY_ALLOWED_EVENTS.add('late_mutation');
   `);
-  const findings = collectTelemetryPolicyFindings({
-    rootDir,
-    serviceWorkerFile: null,
-    verifyVendoredScripts: false
-  });
+  const findings = collectTelemetryPolicyFindings({ rootDir });
 
   assert.ok(findings.some((finding) => finding.includes('reference fetch')));
   assert.ok(findings.some((finding) => finding.includes('reference sendBeacon')));
@@ -1126,59 +1230,40 @@ test('telemetry source scanning refuses symlinks and oversized runtime files', a
   const linkedRoot = makeTempRoot(t);
   fs.mkdirSync(path.join(linkedRoot, 'js'));
   fs.symlinkSync(path.join(outsideRoot, 'main.js'), path.join(linkedRoot, 'js', 'main.js'));
-  const linkedFindings = collectTelemetryPolicyFindings({
-    rootDir: linkedRoot,
-    runtimeFiles: ['js/main.js'],
-    serviceWorkerFile: null,
-    verifyVendoredScripts: false
-  });
+  const linkedFindings = collectTelemetryPolicyFindings({ rootDir: linkedRoot, runtimeFiles: ['js/main.js'] });
   assert.ok(linkedFindings.some((finding) => finding.includes('refusing to follow a symbolic link')));
 
   const oversizedRoot = makeTempRoot(t);
   writeFile(oversizedRoot, 'js/main.js');
   fs.truncateSync(path.join(oversizedRoot, 'js', 'main.js'), 512 * 1024 + 1);
-  const oversizedFindings = collectTelemetryPolicyFindings({
-    rootDir: oversizedRoot,
-    runtimeFiles: ['js/main.js'],
-    serviceWorkerFile: null,
-    verifyVendoredScripts: false
-  });
+  const oversizedFindings = collectTelemetryPolicyFindings({ rootDir: oversizedRoot, runtimeFiles: ['js/main.js'] });
   assert.ok(oversizedFindings.some((finding) => finding.includes('exceeds the 524288-byte limit')));
 });
 
 test('telemetry policy pins reviewed service worker bytes without rejecting navigation fetch', async (t) => {
-  const { collectTelemetryPolicyFindings, inspectRuntimeSource } = await import('../../scripts/check-telemetry-policy.mjs');
-  const rootDir = makeTempRoot(t);
-  const workerPath = path.join(rootDir, 'pwabuilder-sw.js');
-  fs.copyFileSync(new URL('../../pwabuilder-sw.js', import.meta.url), workerPath);
-  const inspect = () => collectTelemetryPolicyFindings({
-    rootDir,
-    runtimeFiles: [],
-    verifyVendoredScripts: false
-  });
+  const { collectTelemetryPolicyFindings } = await import('../../scripts/check-telemetry-policy.mjs');
+  const fixture = makeTelemetryInventoryFixture(t);
+  const workerPath = path.join(fixture.rootDir, 'pwabuilder-sw.js');
+  const inspect = () => collectTelemetryPolicyFindings({ ...fixture, enforceRuntimeInventory: true });
 
   assert.deepEqual(inspect(), []);
   const workerSource = fs.readFileSync(workerPath, 'utf8');
-  const inspectWorker = (source) => inspectRuntimeSource(source, { allowInterceptedRequestFetch: true });
-  assert.deepEqual(inspectWorker(workerSource), []);
-  for (const [name, addedSource, expected] of [
-    ['extra fetch', "fetch('/collect?event=pageview');", 'reference fetch'],
-    ['computed fetch', "globalThis['fe' + 'tch']('/collect');", 'reference fetch'],
-    ['beacon', "navigator.sendBeacon('/collect', 'pageview');", 'sendBeacon'],
-    ['dynamic global', "self[adapterName]('/collect');", 'dynamic network-capable'],
-    ['duplicate navigation fetch', 'fetch(event.request);', 'reference fetch'],
-    ['request replacement', "event.request = new Request('/collect');", 'must not replace']
+  assert.match(workerSource, /fetch\(event\.request\)/);
+  // The worker is a reviewed byte contract, not page source with a fetch exception.
+  // Every formerly scanned mutation must still fail this stronger change gate.
+  for (const [name, addedSource] of [
+    ['extra fetch', "fetch('/collect?event=pageview');"],
+    ['computed fetch', "globalThis['fe' + 'tch']('/collect');"],
+    ['beacon', "navigator.sendBeacon('/collect', 'pageview');"],
+    ['dynamic global', "self[adapterName]('/collect');"],
+    ['duplicate navigation fetch', 'fetch(event.request);'],
+    ['request replacement', "event.request = new Request('/collect');"],
+    ['message request fetch', 'self.addEventListener("message", event => fetch(event.request));'],
+    ['digest drift', '// unreviewed worker change']
   ]) {
-    assert.ok(
-      inspectWorker(`${workerSource}\n${addedSource}`).some((finding) => finding.includes(expected)),
-      `${name} must fail worker source inspection`
-    );
+    fs.writeFileSync(workerPath, `${workerSource}\n${addedSource}\n`);
+    assert.ok(inspect().some((finding) => finding.includes('source changed since security review')), name);
   }
-  assert.ok(inspectWorker('self.addEventListener("message", event => fetch(event.request));')
-    .some((finding) => finding.includes('reference fetch')));
-  fs.appendFileSync(workerPath, "\nfetch('/collect?event=pageview');\n");
-  assert.ok(inspect().some((finding) => finding.includes('reference fetch')));
-  assert.ok(inspect().some((finding) => finding.includes('source changed since security review')));
 
   fs.unlinkSync(workerPath);
   fs.symlinkSync(new URL('../../pwabuilder-sw.js', import.meta.url), workerPath);
@@ -1187,21 +1272,15 @@ test('telemetry policy pins reviewed service worker bytes without rejecting navi
 
 test('telemetry policy includes vendored script digest and inventory validation', async (t) => {
   const { collectTelemetryPolicyFindings } = await import('../../scripts/check-telemetry-policy.mjs');
-  const rootDir = makeTempRoot(t);
-  fs.mkdirSync(path.join(rootDir, 'js'), { recursive: true });
-  fs.cpSync(new URL('../../js/vendor/', import.meta.url), path.join(rootDir, 'js/vendor'), { recursive: true });
-  fs.mkdirSync(path.join(rootDir, 'docs/security'), { recursive: true });
-  fs.copyFileSync(
-    new URL('../../docs/security/vendor-dependencies.json', import.meta.url),
-    path.join(rootDir, 'docs/security/vendor-dependencies.json')
-  );
-  const inspect = () => collectTelemetryPolicyFindings({
-    rootDir,
-    runtimeFiles: [],
-    serviceWorkerFile: null
-  });
+  const fixture = makeTelemetryInventoryFixture(t);
+  const inspect = () => collectTelemetryPolicyFindings({ ...fixture, enforceRuntimeInventory: true });
 
   assert.deepEqual(inspect(), []);
-  fs.appendFileSync(path.join(rootDir, 'js/vendor/workbox-sw.js'), '\n// unexpected vendored change\n');
+  const workboxPath = path.join(fixture.rootDir, 'js/vendor/workbox-sw.js');
+  const workboxSource = fs.readFileSync(workboxPath);
+  fs.appendFileSync(workboxPath, '\n// unexpected vendored change\n');
   assert.ok(inspect().some((finding) => finding.includes('vendor integrity validation failed') && finding.includes('hash mismatch')));
+  fs.writeFileSync(workboxPath, workboxSource);
+  writeFile(fixture.rootDir, 'js/vendor/unreviewed.js', '// unreviewed vendor file');
+  assert.ok(inspect().some((finding) => finding.includes('vendor integrity validation failed') && finding.includes('Unexpected vendored file')));
 });

@@ -209,7 +209,8 @@ test('fetchVendorFiles downloads upstream content and verifies signatures', asyn
 
   assert.equal(fetched.length, 1);
   assert.equal(fetched[0].path, 'js/vendor/workbox/test-file.js');
-  assert.match(fetched[0].sha256, /^[0-9a-f]{64}$/);
+  assert.deepEqual(fetched[0].bytes, Buffer.from(payload));
+  assert.equal(fetched[0].sha256, crypto.createHash('sha256').update(payload).digest('hex'));
 });
 
 test('fetchVendorFiles bounds injected response bytes and body wall time', { timeout: 2000 }, async (t) => {
@@ -420,6 +421,9 @@ test('updateManifestHashes and runVendorRefresh write deterministic outputs', as
       }
     );
 
+    const expectedSha = crypto.createHash('sha256').update(payload).digest('hex');
+    assert.equal(result.summary[0].sha256, expectedSha);
+    assert.equal(JSON.parse(fs.readFileSync(manifestPath, 'utf8')).dependencies[0].files[0].sha256, expectedSha);
     assert.equal(result.write, true);
     assert.equal(lookupCalls, 1);
     assert.equal(result.summary[0].changed, true);
@@ -434,6 +438,9 @@ test('updateManifestHashes and runVendorRefresh write deterministic outputs', as
       }
     ], '2026-04-09');
     assert.equal(updatedManifest.last_reviewed, '2026-04-09');
+    assert.equal(updatedManifest.dependencies[0].files[0].sha256, expectedSha);
+    assert.equal(manifest.last_reviewed, '2026-04-08');
+    assert.equal(manifest.dependencies[0].files[0].sha256, '0'.repeat(64));
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }
@@ -987,4 +994,31 @@ test('runVendorRefresh rejects a symlinked vendor parent without external writes
     fs.rmSync(tempRoot, { recursive: true, force: true });
     fs.rmSync(externalRoot, { recursive: true, force: true });
   }
+});
+
+test('vendor refresh dry-run leaves every repository byte unchanged and maps multiple hashes', async (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vendor-dry-run-'));
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  const manifest = makeManifest();
+  const second = structuredClone(manifest.dependencies[0]);
+  second.name = 'second';
+  second.files[0].path = 'js/vendor/workbox/second.js';
+  second.files[0].upstream_url = second.source + 'second.js';
+  second.files[0].signatures = ['workbox:test:9.9.9', 'second.js'];
+  manifest.dependencies.push(second);
+  const manifestPath = path.join(rootDir, 'docs/security/vendor-dependencies.json');
+  fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+  fs.mkdirSync(path.join(rootDir, 'js/vendor/workbox'), { recursive: true });
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+  for (const dep of manifest.dependencies) fs.writeFileSync(path.join(rootDir, dep.files[0].path), 'old bytes');
+  const before = snapshotFilesystemTree(rootDir);
+  const payloads = ['/* workbox:test:9.9.9 test-file.js */\nfirst', '/* workbox:test:9.9.9 second.js */\nsecond'];
+  const result = await runVendorRefresh({ write: false, today: '2026-04-09', timeoutMs: 1000 }, {
+    rootDir, manifestPath, lookupImpl: publicLookup,
+    fetchImpl: async (url) => new Response(payloads[url.endsWith('/second.js') ? 1 : 0], { status: 200 })
+  });
+  assert.deepEqual(snapshotFilesystemTree(rootDir), before);
+  assert.equal(vendorRefreshExitCode(result, true), 1);
+  assert.deepEqual(result.manifest.dependencies.map((d) => d.files[0].sha256), payloads.map((payload) => crypto.createHash('sha256').update(payload).digest('hex')));
+  assert.deepEqual(manifest.dependencies.map((d) => d.files[0].sha256), ['0'.repeat(64), '0'.repeat(64)]);
 });

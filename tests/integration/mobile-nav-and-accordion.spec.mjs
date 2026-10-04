@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './browser-fixture.mjs';
+import AxeBuilder from '@axe-core/playwright';
 
 function isMobileProject(testInfo) {
   return testInfo.project.name.startsWith('mobile-');
@@ -162,6 +163,8 @@ test.describe('mobile navigation', () => {
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await expect(collapsePanel).toHaveClass(/\bshow\b/);
 
+    expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations).toEqual([]);
+
     await homeLink.click();
 
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
@@ -196,6 +199,7 @@ test.describe('mobile navigation', () => {
 
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await expect(collapsePanel).not.toHaveClass(/\bshow\b/);
+    await expect(toggle).toBeFocused();
   });
 
   test('navbar closes on Escape when focus remains on the toggle', async ({ page }, testInfo) => {
@@ -347,6 +351,8 @@ test.describe('service worker updates', () => {
     )).toBe(1);
     await expect(updatePrompt).toBeVisible();
 
+    expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations).toEqual([]);
+
     await page.evaluate(() => window.__serviceWorkerHarness.failNextPostMessage());
     await reloadButton.click();
     await expect(updatePrompt).toBeVisible();
@@ -469,9 +475,14 @@ test.describe('command palette', () => {
 
     await expect(palette).toBeVisible();
 
-    await page.keyboard.press('Escape');
+    await page.keyboard.press('Control+K');
 
     await expect(palette).toBeHidden();
+    await expect.poll(() => page.evaluate(() => {
+      const active = document.activeElement;
+      return active.matches('[data-cmdk-open], #content')
+        && active.getClientRects().length > 0 && !active.closest('[hidden]');
+    })).toBe(true);
     await expect.poll(async () => page.evaluate(() => {
       const commandPalette = document.getElementById('commandPalette');
       return commandPalette?.contains(document.activeElement) ?? false;
@@ -568,10 +579,12 @@ test.describe('accordion behavior', () => {
     await cdcButton.click();
     await expect(cdcButton).toHaveAttribute('aria-expanded', 'true');
     await expect(cdcPanel).toHaveClass(/\bshow\b/);
+    await expect(cdcPanel).toBeVisible();
 
     await cdcButton.click();
     await expect(cdcButton).toHaveAttribute('aria-expanded', 'false');
     await expect(cdcPanel).not.toHaveClass(/\bshow\b/);
+    await expect(cdcPanel).toBeHidden();
   });
 
   test('opening second panel collapses the first panel', async ({ page }) => {
@@ -673,10 +686,12 @@ test.describe('reading controls', () => {
 
   test('typing a search does not persist free-form text into the URL', async ({ page }) => {
     await page.goto('/reading.html');
-
+    await page.clock.install();
     await page.locator('#readingSearch').fill('private search text');
-    await page.waitForTimeout(250);
-
+    await expect(page.locator('[data-reading-item]:not([hidden])')).toHaveCount(0);
+    await expect(page.locator('[data-reading-empty]')).toBeVisible();
+    await expect(page.locator('[data-reading-count]')).toHaveText(/^0 of \d+ books shown$/);
+    await page.clock.runFor(121);
     expect(new URL(page.url()).searchParams.has('q')).toBe(false);
   });
 });

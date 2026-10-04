@@ -19,6 +19,7 @@ const integrationPort = parsePort(process.env.PLAYWRIGHT_PORT ?? '4173');
 const integrationBaseURL = `http://127.0.0.1:${integrationPort}`;
 
 const STATIC_FILES = [
+  '.well-known/service-doc.html',
   'case-study-agentforge.html',
   'case-study-agentic.html',
   'case-study-apple-calendar-mcp.html',
@@ -57,14 +58,20 @@ function copyDeploymentPath(sourcePath, targetPath) {
 
 function stageStaticSite() {
   const stagingRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-playwright-'));
-  [...STATIC_FILES, ...STATIC_DIRECTORIES].forEach((relativePath) => {
-    const sourcePath = path.join(projectRoot, relativePath);
-    if (!fs.existsSync(sourcePath)) {
-      throw new Error(`Playwright static artifact is missing: ${sourcePath}`);
-    }
-    copyDeploymentPath(sourcePath, path.join(stagingRoot, relativePath));
-  });
-  return stagingRoot;
+  try {
+    [...STATIC_FILES, ...STATIC_DIRECTORIES].forEach((relativePath) => {
+      const sourcePath = path.join(projectRoot, relativePath);
+      if (!fs.existsSync(sourcePath)) {
+        throw new Error(`Playwright static artifact is missing: ${sourcePath}`);
+      }
+      copyDeploymentPath(sourcePath, path.join(stagingRoot, relativePath));
+    });
+    return stagingRoot;
+  } catch (error) {
+    // Import can fail before the normal process-exit hook is registered.
+    fs.rmSync(stagingRoot, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 function shellQuote(value) {
@@ -85,11 +92,10 @@ function cleanupStagedSite() {
 process.once('exit', cleanupStagedSite);
 
 const webServerCommand = [
-  'python3 -m http.server',
-  String(integrationPort),
-  '--bind 127.0.0.1',
-  '--directory',
-  shellQuote(playwrightStaticRoot)
+  shellQuote(process.execPath),
+  shellQuote(path.join(projectRoot, 'scripts/serve-static.mjs')),
+  shellQuote(playwrightStaticRoot),
+  String(integrationPort)
 ].join(' ');
 
 export default defineConfig({

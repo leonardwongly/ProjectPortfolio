@@ -15,9 +15,70 @@ on:
       - 'created'
 
 concurrency:
-  group: '${{ github.workflow }}-${{ github.event.issue.number }}'
-  cancel-in-progress: |-
-    ${{ github.event.sender.type == 'User' && ( github.event.issue.author_association == 'OWNER' || github.event.issue.author_association == 'MEMBER' || github.event.issue.author_association == 'COLLABORATOR') }}
+  # Only requests accepted by planning or execution can replace shared work.
+  # Other events need unique groups because even cancel-in-progress=false can
+  # replace a pending run in the same group. Issues cannot execute approvals;
+  # comments and reviews can either plan or execute a mention or plan marker.
+  group: >-
+    ${{ (
+    github.event.sender.type == 'User' && (
+      (
+        github.event_name == 'issues' && github.event.action == 'opened' && github.event.issue.number &&
+        (github.event.issue.author_association == 'OWNER' || github.event.issue.author_association == 'MEMBER' || github.event.issue.author_association == 'COLLABORATOR') &&
+        (contains(github.event.issue.body, '@gemini-cli') || contains(github.event.issue.body, 'plan#')) &&
+        !(contains(github.event.issue.body, 'plan#') && contains(github.event.issue.body, 'approved')) &&
+        !contains(github.event.issue.body, '/review') && !contains(github.event.issue.body, '/triage')
+      ) ||
+      (
+        github.event_name == 'issue_comment' && github.event.issue.number &&
+        (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR') &&
+        (contains(github.event.comment.body, '@gemini-cli') || contains(github.event.comment.body, 'plan#')) &&
+        !contains(github.event.comment.body, '/review') && !contains(github.event.comment.body, '/triage')
+      ) ||
+      (
+        github.event_name == 'pull_request_review' && github.event.pull_request.number &&
+        (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'MEMBER' || github.event.review.author_association == 'COLLABORATOR') &&
+        (contains(github.event.review.body, '@gemini-cli') || contains(github.event.review.body, 'plan#')) &&
+        !contains(github.event.review.body, '/review') && !contains(github.event.review.body, '/triage')
+      ) ||
+      (
+        github.event_name == 'pull_request_review_comment' && github.event.pull_request.number &&
+        (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR') &&
+        (contains(github.event.comment.body, '@gemini-cli') || contains(github.event.comment.body, 'plan#')) &&
+        !contains(github.event.comment.body, '/review') && !contains(github.event.comment.body, '/triage')
+      )
+    )
+    ) && format('{0}-subject-{1}', github.workflow, github.event.issue.number || github.event.pull_request.number) || format('{0}-run-{1}', github.workflow, github.run_id) }}
+  cancel-in-progress: >-
+    ${{
+    github.event.sender.type == 'User' && (
+      (
+        github.event_name == 'issues' && github.event.action == 'opened' && github.event.issue.number &&
+        (github.event.issue.author_association == 'OWNER' || github.event.issue.author_association == 'MEMBER' || github.event.issue.author_association == 'COLLABORATOR') &&
+        (contains(github.event.issue.body, '@gemini-cli') || contains(github.event.issue.body, 'plan#')) &&
+        !(contains(github.event.issue.body, 'plan#') && contains(github.event.issue.body, 'approved')) &&
+        !contains(github.event.issue.body, '/review') && !contains(github.event.issue.body, '/triage')
+      ) ||
+      (
+        github.event_name == 'issue_comment' && github.event.issue.number &&
+        (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR') &&
+        (contains(github.event.comment.body, '@gemini-cli') || contains(github.event.comment.body, 'plan#')) &&
+        !contains(github.event.comment.body, '/review') && !contains(github.event.comment.body, '/triage')
+      ) ||
+      (
+        github.event_name == 'pull_request_review' && github.event.pull_request.number &&
+        (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'MEMBER' || github.event.review.author_association == 'COLLABORATOR') &&
+        (contains(github.event.review.body, '@gemini-cli') || contains(github.event.review.body, 'plan#')) &&
+        !contains(github.event.review.body, '/review') && !contains(github.event.review.body, '/triage')
+      ) ||
+      (
+        github.event_name == 'pull_request_review_comment' && github.event.pull_request.number &&
+        (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR') &&
+        (contains(github.event.comment.body, '@gemini-cli') || contains(github.event.comment.body, 'plan#')) &&
+        !contains(github.event.comment.body, '/review') && !contains(github.event.comment.body, '/triage')
+      )
+    )
+    }}
 
 defaults:
   run:

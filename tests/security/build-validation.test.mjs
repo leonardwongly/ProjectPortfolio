@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { createHash } from 'node:crypto';
+import { parseHtmlDocument } from '../../scripts/lib/html-document.mjs';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -406,6 +408,99 @@ test('build input readers enforce the byte boundary and reject linked or malform
   }
 });
 
+for (const sequence of ['$$', '$&', '$`', "$'"]) {
+  test(`buildSite preserves literal ${sequence} in validated page and case-study content`, () => {
+    const { rootDir } = makeSiteBuildFixture();
+    try {
+      const text = `JavaScript replacement sequence ${sequence} stays literal`;
+      const escapedText = text.replaceAll('&', '&amp;').replaceAll("'", '&#39;');
+      const profilePath = path.join(rootDir, 'data/profile.json');
+      const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+      profile.hero.headline = text;
+      fs.writeFileSync(profilePath, JSON.stringify(profile));
+
+      const caseStudiesPath = path.join(rootDir, 'data/case-studies.json');
+      const caseStudies = JSON.parse(fs.readFileSync(caseStudiesPath, 'utf8'));
+      caseStudies[0].title = text;
+      caseStudies[0].summary = text;
+      fs.writeFileSync(caseStudiesPath, JSON.stringify(caseStudies));
+
+      buildSite({ rootDir, log: () => {} });
+
+      const indexHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+      assert.ok(indexHtml.includes(`<h1>${escapedText}</h1>`), 'normal-page content stays literal');
+      const caseHtml = fs.readFileSync(path.join(rootDir, caseStudies[0].slug), 'utf8');
+      assert.ok(caseHtml.includes(`<h1>${escapedText}</h1>`), 'case-study body stays literal');
+      assert.ok(caseHtml.includes(`<title>${escapedText}`), 'case-study title stays literal');
+      assert.ok(caseHtml.includes(`<meta name="description" content="${escapedText}"`),
+        'case-study description stays literal');
+    } finally {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+}
+
+test('buildSite preserves literal template-looking content without changing markup or JSON-LD', () => {
+  const { rootDir } = makeSiteBuildFixture();
+  try {
+    const text = "{{CONTACT}} {{CASE_STUDY}} {{UNKNOWN_TOKEN}} {{CSP_SCRIPT_HASHES}} $$ $& $` $'";
+    const escapedText = text.replaceAll('&', '&amp;').replaceAll("'", '&#39;');
+    const profilePath = path.join(rootDir, 'data/profile.json');
+    const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+    profile.hero.headline = text;
+    profile.person.name = text;
+    fs.writeFileSync(profilePath, JSON.stringify(profile));
+    const caseStudiesPath = path.join(rootDir, 'data/case-studies.json');
+    const caseStudies = JSON.parse(fs.readFileSync(caseStudiesPath, 'utf8'));
+    caseStudies[0].title = text;
+    caseStudies[0].summary = text;
+    fs.writeFileSync(caseStudiesPath, JSON.stringify(caseStudies));
+    const indexTemplatePath = path.join(rootDir, 'src/index.html');
+    fs.writeFileSync(indexTemplatePath, fs.readFileSync(indexTemplatePath, 'utf8').replace('{{PROFILE_SCHEMA}}', '{{PROFILE_SCHEMA}}  '));
+
+    buildSite({ rootDir, log: () => {} });
+
+    const indexHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+    assert.ok(indexHtml.includes(`<h1>${escapedText}</h1>`), 'literal content cannot expand into heading markup');
+    const schema = JSON.parse(indexHtml.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+    assert.equal(schema['@graph'][0].name, text, 'JSON-LD remains valid and keeps the exact authored name');
+    const headers = fs.readFileSync(path.join(rootDir, '_headers'), 'utf8');
+    const scriptBodies = parseHtmlDocument(indexHtml).scripts.filter(({ attributes }) => !attributes.has('src')).map(({ body }) => body);
+    assert.ok(scriptBodies.length > 0, 'generated JSON-LD must be hashed');
+    const independentHashes = scriptBodies.map((body) => `sha256-${createHash('sha256').update(body, 'utf8').digest('base64')}`);
+    assert.deepEqual(collectInlineScriptHashes(indexHtml), [...new Set(independentHashes)]);
+    independentHashes.forEach((hash) => {
+      assert.ok(headers.includes(`'${hash}'`), 'CSP still hashes the exact final inline script');
+      assert.ok(indexHtml.includes(`'${hash}'`), 'the index CSP hashes the final script after whitespace normalization');
+    });
+
+    const caseHtml = fs.readFileSync(path.join(rootDir, caseStudies[0].slug), 'utf8');
+    assert.ok(caseHtml.includes(`<h1>${escapedText}</h1>`), 'case-study body keeps literal content');
+    assert.ok(caseHtml.includes(`<title>${escapedText} | Leonard Wong</title>`), 'case-study title keeps literal content');
+    assert.ok(caseHtml.includes(`<meta name="description" content="${escapedText}"`), 'case-study metadata keeps literal content');
+    const workHtml = fs.readFileSync(path.join(rootDir, 'work.html'), 'utf8');
+    assert.match(workHtml, /href="\/work\.html" aria-current="page"/, 'authored navigation state still resolves');
+    assert.match(caseHtml, /href="\/work\.html" aria-current="page"/);
+    assert.doesNotMatch(indexHtml, /href="\/work\.html" aria-current="page"/);
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
+for (const sourcePath of ['src/index.html', 'src/case-study.html', 'partials/nav.html', 'partials/footer.html', 'src/_headers.template']) {
+  test(`buildSite rejects unknown authored tokens in ${sourcePath} before publication`, () => {
+    const { rootDir, outputNames } = makeSiteBuildFixture();
+    try {
+      fs.appendFileSync(path.join(rootDir, sourcePath), '\n{{UNKNOWN_TEMPLATE_TOKEN}}\n');
+      assert.throws(() => buildSite({ rootDir, log: () => {} }), /Unresolved tokens.*UNKNOWN_TEMPLATE_TOKEN/);
+      outputNames.forEach((name) => assert.equal(fs.existsSync(path.join(rootDir, name)), false));
+      assert.equal(fs.existsSync(path.join(rootDir, 'artifacts/.site-build.lock')), false);
+    } finally {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+}
+
 test('buildSite lock-scopes every rendered page and restores the bundle after an nth-write failure', () => {
   const { rootDir, outputNames } = makeSiteBuildFixture();
   const newlyIntroducedName = outputNames.at(-2);
@@ -689,6 +784,125 @@ test('site publication preflights every target and rejects destination or writer
   }
 });
 
+for (const destinationExists of [true, false]) {
+  test(`site publication preserves an external edit during temp writing (${destinationExists ? 'existing' : 'new'} target)`, () => {
+    const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-site-write-drift-'));
+    const indexPath = path.join(rootDir, 'index.html');
+    const workPath = path.join(rootDir, 'work.html');
+    const priorIndex = Buffer.from('prior owned index\n');
+    const externalWork = Buffer.from('external work edit made during temp writing\n');
+    try {
+      fs.writeFileSync(indexPath, priorIndex);
+      if (destinationExists) fs.writeFileSync(workPath, 'prior work\n');
+      let edited = false;
+      assert.throws(
+        () => publishSiteBundle({
+          rootDir,
+          entries: [
+            { path: indexPath, bytes: 'new index\n', label: 'generated index.html', maxBytes: 1024 },
+            { path: workPath, bytes: 'new work\n', label: 'generated work.html', maxBytes: 1024 }
+          ],
+          writeFileImpl(rootPath, filePath, bytes, label, options) {
+            assert.equal(options.expectedDestination.existed, filePath === indexPath || destinationExists);
+            writeFileNoFollow(rootPath, filePath, bytes, label, {
+              ...options,
+              beforeFinalDestinationCheck(state) {
+                options.beforeFinalDestinationCheck(state);
+                if (filePath === workPath) {
+                  fs.writeFileSync(workPath, externalWork);
+                  edited = true;
+                }
+              }
+            });
+          }
+        }),
+        /destination changed before publish/
+      );
+      assert.equal(edited, true, 'the edit happens after the temporary output is written');
+      assert.deepEqual(fs.readFileSync(workPath), externalWork, 'a failed writer does not claim or roll back the external edit');
+      assert.deepEqual(fs.readFileSync(indexPath), priorIndex, 'previously published owned files still roll back');
+      assert.deepEqual(fs.readdirSync(rootDir).filter((name) => name.startsWith('.safe-output-')), []);
+    } finally {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+}
+
+for (const throwAfterWrite of [true, false]) {
+  test(`site publication preserves a post-write replacement with identical generated bytes (${throwAfterWrite ? 'failed' : 'successful'} writer)`, () => {
+    const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-site-post-write-drift-'));
+    const indexPath = path.join(rootDir, 'index.html');
+    const generated = Buffer.from('generated index bytes\n');
+    try {
+      fs.writeFileSync(indexPath, 'prior index\n');
+      assert.throws(
+        () => publishSiteBundle({
+          rootDir,
+          entries: [{ path: indexPath, bytes: generated, label: 'generated index.html', maxBytes: 1024 }],
+          writeFileImpl(rootPath, filePath, bytes, label, options) {
+            writeFileNoFollow(rootPath, filePath, bytes, label, options);
+            fs.unlinkSync(filePath);
+            fs.writeFileSync(filePath, generated);
+            if (throwAfterWrite) throw new Error('synthetic writer failure after external replacement');
+          }
+        }),
+        throwAfterWrite ? /synthetic writer failure/ : /changed ownership or content before verification/
+      );
+      assert.deepEqual(fs.readFileSync(indexPath), generated, 'identical bytes do not establish ownership of an external replacement');
+      assert.deepEqual(fs.readdirSync(rootDir), ['index.html']);
+    } finally {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+    }
+  });
+}
+
+test('site rollback preserves an external edit made while preparing restoration', () => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-site-rollback-write-drift-'));
+  const indexPath = path.join(rootDir, 'index.html');
+  const workPath = path.join(rootDir, 'work.html');
+  const priorIndex = Buffer.from('prior index rollback snapshot\n');
+  const externalIndex = Buffer.from('external index edit during rollback temp writing\n');
+  const originalWriteFileSync = fs.writeFileSync;
+  let edited = false;
+  try {
+    fs.writeFileSync(indexPath, priorIndex);
+    fs.writeFileSync(workPath, 'prior work\n');
+    fs.writeFileSync = (file, bytes, ...args) => {
+      if (!edited && typeof file === 'number' && Buffer.isBuffer(bytes) && bytes.equals(priorIndex)) {
+        originalWriteFileSync(indexPath, externalIndex);
+        edited = true;
+      }
+      return originalWriteFileSync(file, bytes, ...args);
+    };
+    assert.throws(
+      () => publishSiteBundle({
+        rootDir,
+        entries: [
+          { path: indexPath, bytes: 'new index\n', label: 'generated index.html', maxBytes: 1024 },
+          { path: workPath, bytes: 'new work\n', label: 'generated work.html', maxBytes: 1024 }
+        ],
+        writeFileImpl(rootPath, filePath, bytes, label, options) {
+          if (filePath === workPath) throw new Error('synthetic publication failure');
+          writeFileNoFollow(rootPath, filePath, bytes, label, options);
+        }
+      }),
+      (error) => {
+        assert.ok(error instanceof AggregateError);
+        assert.ok(error.errors.some((nested) => /synthetic publication failure/.test(nested.message)));
+        assert.ok(error.errors.some((nested) => /destination changed before publish/.test(nested.message)));
+        return true;
+      }
+    );
+    assert.equal(edited, true);
+    assert.deepEqual(fs.readFileSync(indexPath), externalIndex, 'restoration cannot overwrite the concurrent edit');
+    assert.equal(fs.readFileSync(workPath, 'utf8'), 'prior work\n');
+    assert.deepEqual(fs.readdirSync(rootDir).filter((name) => name.startsWith('.safe-output-')), []);
+  } finally {
+    fs.writeFileSync = originalWriteFileSync;
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('sanitizeHref allows https and safe relative links', () => {
   assert.equal(sanitizeHref('https://example.com/path?q=1', 'link'), 'https://example.com/path?q=1');
   assert.equal(sanitizeHref('docs/resume.pdf', 'link'), 'docs/resume.pdf');
@@ -836,7 +1050,7 @@ test('renderReadingGrid escapes data attribute filter values', () => {
   assert.doesNotMatch(html, /data-tags="[^"]*" autofocus/);
 });
 
-test('rendered action links include privacy-safe telemetry annotations', () => {
+test('schema has no action telemetry and reading grid includes its count hook', () => {
   const html = renderProfileSchema(makeValidProfile(), []);
   assert.doesNotMatch(html, /data-telemetry/);
 
@@ -1019,3 +1233,148 @@ test('renderProfileSchema escapes script-breaking JSON-LD content', () => {
   assert.doesNotMatch(schema, /<\/script>/i);
   assert.match(schema, /\\u003c\/script\\u003e/);
 });
+
+test('actual hero and contact anchors carry bounded governed telemetry', (t) => {
+  const { rootDir } = makeSiteBuildFixture();
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  const profilePath = path.join(rootDir, 'data/profile.json');
+  const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+  profile.hero.actions = [
+    { label: 'Explore Platform!', href: '/work.html', variant: 'primary' },
+    { label: 'Contact Team', href: '#contact', variant: 'ghost' },
+    { label: 'A'.repeat(80), href: 'https://example.com/private-destination-canary', variant: 'ghost' },
+    { label: 'Download Resume', href: 'docs/resume.pdf', variant: 'ghost' }
+  ];
+  profile.contact.actions = [{ label: 'Discuss Secure Systems', href: 'https://example.com/contact-canary', variant: 'primary' }];
+  fs.writeFileSync(profilePath, JSON.stringify(profile));
+  buildSite({ rootDir, log: () => {} });
+  const anchors = parseHtmlDocument(fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8')).elements
+    .filter(({ tagName, attributes }) => tagName === 'a' && ['hero_actions', 'contact_actions'].includes(attributes.get('data-telemetry-surface')));
+  const expected = [
+    ['Explore Platform!', '/work.html', 'explore_platform', 'hero_actions', 'internal'],
+    ['Contact Team', '#contact', 'contact_team', 'hero_actions', 'section'],
+    ['A'.repeat(80), 'https://example.com/private-destination-canary', 'a'.repeat(80), 'hero_actions', 'external'],
+    ['Download Resume', 'docs/resume.pdf', 'download_resume', 'hero_actions', 'pdf'],
+    ['Discuss Secure Systems', 'https://example.com/contact-canary', 'discuss_secure_systems', 'contact_actions', 'external']
+  ];
+  assert.equal(anchors.length, expected.length);
+  for (const [label, href, action, surface, destination] of expected) {
+    const found = anchors.filter(({ attributes }) => attributes.get('href') === href);
+    assert.equal(found.length, 1);
+    const attrs = found[0].attributes;
+    assert.equal(attrs.get('data-telemetry-event'), 'portfolio_action_clicked');
+    assert.equal(attrs.get('data-telemetry-action'), action);
+    assert.equal(attrs.get('data-telemetry-surface'), surface);
+    assert.equal(attrs.get('data-telemetry-destination'), destination);
+    for (const [name, value] of attrs) if (name.startsWith('data-telemetry-')) {
+      assert.ok(value.length <= 80); assert.notEqual(value, label); assert.notEqual(value, href);
+      assert.doesNotMatch(value, /private-destination-canary|contact-canary|@|https?:/);
+    }
+  }
+});
+
+test('CSP hashes use independent UTF-8 SHA-256 and browser-normalized newlines', () => {
+  assert.equal(hashInlineScript('abc'), 'sha256-ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0=');
+  const raw = 'const message = "你好 café";\r\nmessage;\r';
+  const normalized = 'const message = "你好 café";\nmessage;\n';
+  assert.equal(parseHtmlDocument(`<script>${raw}</script>`).scripts[0].body, normalized);
+  const expected = `sha256-${createHash('sha256').update(normalized, 'utf8').digest('base64')}`;
+  assert.deepEqual(collectInlineScriptHashes(`<script>${raw}</script>`), [expected]);
+  assert.notEqual(expected, `sha256-${createHash('sha256').update(raw, 'utf8').digest('base64')}`);
+});
+
+test('site publication accepts the exact cap and rejects late empty or oversized entries before writes', (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'portfolio-output-edge-'));
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  const target = path.join(rootDir, 'index.html');
+  const exact = Buffer.alloc(MAX_SITE_OUTPUT_BYTES, 65);
+  publishSiteBundle({ rootDir, entries: [{ path: target, label: 'index', bytes: exact, maxBytes: MAX_SITE_OUTPUT_BYTES }] });
+  assert.deepEqual(fs.readFileSync(target), exact);
+  for (const bytes of [Buffer.alloc(0), Buffer.alloc(MAX_SITE_OUTPUT_BYTES + 1)]) {
+    let writes = 0;
+    assert.throws(() => publishSiteBundle({ rootDir, entries: [
+      { path: target, label: 'index', bytes: Buffer.from('changed'), maxBytes: MAX_SITE_OUTPUT_BYTES },
+      { path: path.join(rootDir, 'late.html'), label: 'late', bytes, maxBytes: MAX_SITE_OUTPUT_BYTES }
+    ], writeFileImpl() { writes += 1; } }), /outside the allowed/);
+    assert.equal(writes, 0); assert.deepEqual(fs.readFileSync(target), exact);
+    assert.equal(fs.existsSync(path.join(rootDir, 'late.html')), false);
+  }
+});
+
+test('case-study clean response policies follow a renamed validated slug without stale rules', (t) => {
+  const { rootDir } = makeSiteBuildFixture();
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  buildSite({ rootDir, log: () => {} });
+  const headersPath = path.join(rootDir, '_headers');
+  const before = fs.readFileSync(headersPath, 'utf8');
+  assert.equal(before, fs.readFileSync(path.join(projectRoot, '_headers'), 'utf8'),
+    'current canonical slugs preserve the exact committed response policy bytes');
+
+  const studiesPath = path.join(rootDir, 'data/case-studies.json');
+  const projectsPath = path.join(rootDir, 'data/featured-projects.json');
+  const studies = JSON.parse(fs.readFileSync(studiesPath, 'utf8'));
+  const projects = JSON.parse(fs.readFileSync(projectsPath, 'utf8'));
+  const oldSlug = studies[0].slug;
+  const renamedSlug = 'case-study-renamed-governed-system.html';
+  studies[0].slug = renamedSlug;
+  const project = projects.find((entry) => entry.id === studies[0].project_id);
+  assert.ok(project);
+  project.case_study = `/${renamedSlug}`;
+  fs.writeFileSync(studiesPath, JSON.stringify(studies));
+  fs.writeFileSync(projectsPath, JSON.stringify(projects));
+  buildSite({ rootDir, log: () => {} });
+
+  const headers = fs.readFileSync(headersPath, 'utf8');
+  const oldClean = `/${oldSlug.slice(0, -'.html'.length)}`;
+  const clean = `/${renamedSlug.slice(0, -'.html'.length)}`;
+  assert.equal(headers, before.replace(`${oldClean}\n`, `${clean}\n`),
+    'renaming changes only the exact clean route, retaining all policy and CSP hash bytes');
+  assert.equal(fs.existsSync(path.join(rootDir, renamedSlug)), true);
+  const blocks = headers.trim().split(/\n\s*\n/).map((block) => {
+    const [route, ...lines] = block.split('\n');
+    return { route, lines };
+  });
+  assert.equal(blocks.some(({ route }) => route === oldClean), false);
+  assert.equal(blocks.filter(({ route }) => route === clean).length, 1);
+  assert.doesNotMatch(headers, /\{\{[A-Z_]+}}/);
+  for (const route of [clean, `/${renamedSlug}`]) {
+    const matching = blocks.filter((block) => {
+      const pattern = block.route.split('*')
+        .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
+      return new RegExp(`^${pattern}$`).test(route);
+    });
+    const policies = matching.flatMap(({ lines }) => lines.filter((line) => line.startsWith('  Content-Security-Policy:')));
+    const cors = matching.flatMap(({ lines }) => lines.filter((line) => line.startsWith('  Access-Control-Allow-Origin:')));
+    assert.equal(policies.length, 1, `${route} receives exactly one response CSP`);
+    assert.match(policies[0], /script-src 'self' 'sha256-/);
+    assert.match(policies[0], /frame-ancestors 'none'/);
+    assert.deepEqual(cors, ['  Access-Control-Allow-Origin: https://leonardwong.tech']);
+  }
+});
+
+for (const defect of ['missing', 'duplicate', 'misspelled', 'embedded']) {
+  test(`case-study header generation rejects a ${defect} token before any publication`, (t) => {
+    const { rootDir, outputNames } = makeSiteBuildFixture();
+    t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+    const before = new Map(outputNames.map((name) => {
+      const bytes = Buffer.from(`prior ${name}\n`);
+      fs.writeFileSync(path.join(rootDir, name), bytes);
+      return [name, bytes];
+    }));
+    const templatePath = path.join(rootDir, 'src/_headers.template');
+    const template = fs.readFileSync(templatePath, 'utf8');
+    const token = '{{CASE_STUDY_HEADERS}}';
+    const malformed = defect === 'missing' ? template.replace(token, '') :
+      defect === 'embedded' ? template.replace(token, `  ${token}`) :
+      defect === 'duplicate' ? `${template}\n${token}\n` :
+        template.replace(token, '{{CASE_STUDY_HEADER}}');
+    fs.writeFileSync(templatePath, malformed);
+    let writes = 0;
+    assert.throws(() => buildSite({ rootDir, log: () => assert.fail('failed build cannot log completion'),
+      writeFileImpl() { writes += 1; }
+    }), /exactly one CASE_STUDY_HEADERS token/);
+    assert.equal(writes, 0);
+    for (const [name, bytes] of before) assert.deepEqual(fs.readFileSync(path.join(rootDir, name)), bytes);
+    assert.equal(fs.existsSync(path.join(rootDir, 'artifacts/.site-build.lock')), false);
+  });
+}

@@ -18,6 +18,10 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v7.0.0
         with:
           node-version: '24'
+      - name: Install ripgrep for security smoke tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ripgrep
       - name: Install Node dependencies
         run: npm ci --ignore-scripts
       - name: Build generated pages

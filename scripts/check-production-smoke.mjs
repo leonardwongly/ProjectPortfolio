@@ -1,4 +1,6 @@
-import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import safeInput from './lib/safe-input.cjs';
 
 import {
   assertPublicHttpsUrl,
@@ -15,53 +17,31 @@ const MAX_ATTEMPTS = 10;
 const MAX_RETRY_DELAY_MS = 60000;
 const MAX_RESPONSE_BODY_BYTES = 1024 * 1024;
 const MIN_HSTS_MAX_AGE_SECONDS = 31536000;
+// Build output is reviewed with the source. Additional provider hash sources
+// must not silently authorize previously unapproved inline code.
+const headerArtifact = safeInput.readStableFileNoFollow(
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../_headers'),
+  { label: 'reviewed header artifact', maxBytes: MAX_RESPONSE_BODY_BYTES, minBytes: 1 }
+).toString('utf8');
+const APPROVED_SCRIPT_HASHES = new Set(headerArtifact.match(/'sha(?:256|384|512)-[A-Za-z0-9+/]+={0,2}'/g) ?? []);
 
+const REQUIRED_SECURITY_HEADERS = [
+  'content-security-policy', 'strict-transport-security', 'x-content-type-options',
+  'x-frame-options', 'referrer-policy', 'permissions-policy'
+];
 const PAGE_CHECKS = [
-  {
-    path: '/',
-    marker: /Leonard Wong/i,
-    headers: [
-      'content-security-policy',
-      'strict-transport-security',
-      'x-content-type-options'
-    ]
-  },
-  {
-    path: '/work',
-    marker: /Project Archive/i,
-    headers: [
-      'content-security-policy',
-      'strict-transport-security',
-      'x-content-type-options'
-    ]
-  },
-  {
-    path: '/case-study-agentforge',
-    marker: /AgentForge Merge Guard/i,
-    headers: [
-      'content-security-policy',
-      'strict-transport-security',
-      'x-content-type-options'
-    ]
-  },
-  {
-    path: '/reading',
-    marker: /Reading/i,
-    headers: [
-      'content-security-policy',
-      'strict-transport-security',
-      'x-content-type-options'
-    ]
-  },
-  {
-    path: '/offline',
-    marker: /Offline/i,
-    headers: [
-      'content-security-policy',
-      'strict-transport-security',
-      'x-content-type-options'
-    ]
-  }
+  { path: '/', marker: /Leonard Wong/i },
+  { path: '/work', marker: /Project Archive/i },
+  { path: '/case-study-agentforge', marker: /AgentForge Merge Guard/i },
+  { path: '/case-study-agentic', marker: /Agentic/i },
+  { path: '/case-study-apple-calendar-mcp', marker: /Apple Calendar/i },
+  { path: '/reading', marker: /Reading/i },
+  { path: '/offline', marker: /Offline/i },
+  { path: '/.well-known/service-doc', marker: /Service Documentation/i }
+].map((check) => ({ ...check, headers: REQUIRED_SECURITY_HEADERS }));
+const REQUIRED_DISABLED_FEATURES = [
+  'accelerometer', 'autoplay', 'camera', 'geolocation', 'gyroscope',
+  'magnetometer', 'microphone', 'payment', 'usb', 'interest-cohort'
 ];
 
 function parsePositiveBoundedInteger(rawValue, label, maxValue) {
@@ -158,7 +138,7 @@ function sleep(ms) {
   });
 }
 
-async function readBoundedResponseBody(response, maxBodyBytes, signal) {
+async function readBoundedResponseBody(response, maxBodyBytes, signal, onChunk = () => {}) {
   const declaredLength = response.headers?.get?.('content-length');
   if (declaredLength && /^\d+$/.test(declaredLength) && Number(declaredLength) > maxBodyBytes) {
     throw new Error(`Response body exceeds ${maxBodyBytes} byte limit`);
@@ -188,6 +168,7 @@ async function readBoundedResponseBody(response, maxBodyBytes, signal) {
     try {
       while (true) {
         const { done, value } = await reader.read();
+        signal?.throwIfAborted();
         if (done) break;
         const chunk = value instanceof Uint8Array ? value : new Uint8Array(value);
         totalBytes += chunk.byteLength;
@@ -195,6 +176,7 @@ async function readBoundedResponseBody(response, maxBodyBytes, signal) {
           await reader.cancel('response body limit exceeded').catch(() => {});
           throw new Error(`Response body exceeds ${maxBodyBytes} byte limit`);
         }
+        onChunk(chunk);
         body += decoder.decode(chunk, { stream: true });
       }
       body += decoder.decode();
@@ -228,9 +210,9 @@ async function fetchTextWithTimeout(url, {
   let timer;
   const deadline = new Promise((resolve, reject) => {
     timer = setTimeout(() => {
-      controller.abort();
       const error = new Error(`Request timed out after ${normalizedTimeoutMs}ms`);
       error.name = 'AbortError';
+      controller.abort(error);
       reject(error);
     }, normalizedTimeoutMs);
   });
@@ -245,6 +227,14 @@ async function fetchTextWithTimeout(url, {
             'user-agent': 'ProjectPortfolio-production-smoke/1.0'
           }
         });
+        if (controller.signal.aborted) {
+          try {
+            await response?.body?.cancel?.(controller.signal.reason);
+          } catch {
+            // Cleanup must not replace the deadline error.
+          }
+          controller.signal.throwIfAborted();
+        }
         if (!response || typeof response.status !== 'number' || !response.headers) {
           throw new Error('Production smoke fetch returned an invalid response');
         }
@@ -254,8 +244,10 @@ async function fetchTextWithTimeout(url, {
         if (response.url && new URL(response.url).toString() !== new URL(url).toString()) {
           throw new Error('Production smoke response URL changed unexpectedly');
         }
-        const body = await readBoundedResponseBody(response, normalizedMaxBodyBytes, controller.signal);
-        return { response, body };
+        const chunks = [];
+        const body = await readBoundedResponseBody(response, normalizedMaxBodyBytes, controller.signal,
+          (chunk) => chunks.push(Buffer.from(chunk)));
+        return { response, body, bytes: Buffer.concat(chunks) };
       })(),
       deadline
     ]);
@@ -264,87 +256,95 @@ async function fetchTextWithTimeout(url, {
   }
 }
 
+// A header may carry several enforcing policies. They intersect in browsers;
+// accept additional restrictive policies, but never let malformed or unsafe
+// policy fragments hide behind one valid baseline.
 function validateContentSecurityPolicy(value) {
-  if (typeof value !== 'string' || !value.trim() || /[,\u0000-\u001f\u007f]/.test(value)) {
-    return 'content-security-policy is malformed or contains multiple policies';
+  if (typeof value !== 'string' || !value.trim() || /[^\x20-\x7e\t]/.test(value)) {
+    return 'content-security-policy is malformed';
   }
-
-  const directives = new Map();
-  for (const rawDirective of value.split(';')) {
-    const directive = rawDirective.trim();
-    if (!directive) continue;
-    const [name, ...sources] = directive.split(/\s+/);
-    const normalizedName = name.toLowerCase();
-    if (!/^[a-z][a-z0-9-]*$/.test(normalizedName) || directives.has(normalizedName)) {
-      return 'content-security-policy contains an invalid or duplicate directive';
-    }
-    if (sources.length === 0 && !['upgrade-insecure-requests', 'block-all-mixed-content'].includes(normalizedName)) {
-      return `content-security-policy ${normalizedName} has no value`;
-    }
-    if (sources.length > 0 && ['upgrade-insecure-requests', 'block-all-mixed-content'].includes(normalizedName)) {
-      return `content-security-policy ${normalizedName} must not have a value`;
-    }
-    directives.set(normalizedName, sources);
+  const policies = value.split(',');
+  if (policies.length > 16 || policies.some((policy) => !policy.trim())) {
+    return 'content-security-policy contains an empty or excessive policy list';
   }
-
-  const isExactSource = (name, allowed) => {
-    const sources = directives.get(name);
-    return sources?.length === 1 && allowed.includes(sources[0].toLowerCase());
-  };
-  const hasOnlySources = (name, allowed) => {
-    const sources = directives.get(name);
-    return sources?.length > 0 && sources.every((source) => allowed.includes(source.toLowerCase()));
-  };
-  if (!isExactSource('default-src', ["'self'", "'none'"])) {
-    return "content-security-policy default-src must be 'self' or 'none'";
-  }
-
-  const isRestrictedScriptSource = (source) => {
-    if (source.toLowerCase() === "'self'") return true;
+  const sourceRules = new Map([
+    ['default-src', ["'self'", "'none'"]],
+    ['style-src', ["'self'", "'none'"]],
+    ['style-src-elem', ["'self'", "'none'"]],
+    ['style-src-attr', ["'none'"]],
+    ['img-src', ["'self'", 'data:', "'none'"]],
+    ['font-src', ["'self'", "'none'"]],
+    ['connect-src', ["'self'", "'none'"]],
+    ['worker-src', ["'self'", "'none'"]],
+    ['child-src', ["'self'", "'none'"]],
+    ['manifest-src', ["'self'", "'none'"]],
+    ['object-src', ["'none'"]],
+    ['frame-src', ["'none'"]],
+    ['frame-ancestors', ["'none'"]],
+    ['base-uri', ["'self'", "'none'"]],
+    ['form-action', ["'self'", "'none'"]],
+    ['script-src-attr', ["'none'"]]
+  ]);
+  const isScriptSource = (source) => {
+    if (["'self'", "'none'"].includes(source)) return true;
     const match = /^'sha(256|384|512)-([A-Za-z0-9+/]+={0,2})'$/.exec(source);
-    if (!match) return false;
+    if (!match || !APPROVED_SCRIPT_HASHES.has(source)) return false;
     const digest = Buffer.from(match[2], 'base64');
     return digest.length === Number(match[1]) / 8 && digest.toString('base64') === match[2];
   };
-  for (const name of ['script-src', 'script-src-elem']) {
-    const sources = directives.get(name);
-    if (name === 'script-src-elem' && !sources) continue;
-    if (!sources?.some((source) => source.toLowerCase() === "'self'") ||
-        !sources.every(isRestrictedScriptSource)) {
-      return `content-security-policy ${name} must allow only 'self' and script hashes`;
+  let hasBaseline = false;
+  for (const policy of policies) {
+    const directives = new Map();
+    for (const rawDirective of policy.split(';')) {
+      if (!rawDirective.trim()) continue;
+      const [rawName, ...sources] = rawDirective.trim().split(/[ \t]+/);
+      const name = rawName.toLowerCase();
+      if (!/^[a-z][a-z0-9-]*$/.test(name) || directives.has(name)) {
+        return 'content-security-policy contains an invalid or duplicate directive';
+      }
+      if (['upgrade-insecure-requests', 'block-all-mixed-content'].includes(name)) {
+        if (sources.length) return `content-security-policy ${name} must not have a value`;
+      } else {
+        if (!sources.length || new Set(sources).size !== sources.length ||
+            (sources.includes("'none'") && sources.length !== 1)) {
+          return `content-security-policy ${name} has malformed sources`;
+        }
+        const approved = ['script-src', 'script-src-elem'].includes(name)
+          ? sources.every(isScriptSource)
+          : sourceRules.has(name) && sources.every((source) => sourceRules.get(name).includes(source));
+        if (!approved) return `content-security-policy ${name} contains an unapproved source or directive`;
+      }
+      directives.set(name, sources);
+    }
+    // Required fetch directives may inherit the already restricted default-src.
+    // Navigation and framing directives have no default-src fallback.
+    if (['default-src', 'script-src', 'object-src', 'frame-src', 'base-uri',
+      'form-action', 'frame-ancestors', 'upgrade-insecure-requests',
+      'block-all-mixed-content'].every((name) => directives.has(name))) {
+      hasBaseline = true;
     }
   }
-  if (directives.has('script-src-attr') && !isExactSource('script-src-attr', ["'none'"])) {
-    return "content-security-policy script-src-attr must be 'none'";
+  return hasBaseline ? null : 'content-security-policy is missing a complete enforcing baseline';
+}
+
+function validatePermissionsPolicy(value) {
+  if (typeof value !== 'string' || !value.trim() || /[^\x20-\x7e\t]/.test(value)) {
+    return 'permissions-policy is malformed';
   }
-  if (!isExactSource('object-src', ["'none'"]) || !isExactSource('frame-ancestors', ["'none'"])) {
-    return "content-security-policy must block object embedding and framing with 'none'";
-  }
-  if (!isExactSource('base-uri', ["'self'", "'none'"]) ||
-      !isExactSource('form-action', ["'self'", "'none'"])) {
-    return "content-security-policy must restrict base-uri and form-action to 'self' or 'none'";
-  }
-  for (const [name, allowed] of [
-    ['style-src', ["'self'"]],
-    ['img-src', ["'self'", 'data:']],
-    ['font-src', ["'self'"]],
-    ['connect-src', ["'self'"]],
-    ['worker-src', ["'self'"]],
-    ['manifest-src', ["'self'"]],
-    ['frame-src', ["'none'"]]
-  ]) {
-    if (directives.has(name) && !hasOnlySources(name, allowed)) {
-      return `content-security-policy ${name} contains an unapproved source`;
+  const features = new Set();
+  for (const directive of value.split(',')) {
+    const match = /^([a-z][a-z0-9-]*)[ \t]*=[ \t]*\([ \t]*\)$/.exec(directive.trim());
+    if (!match || features.has(match[1])) {
+      return 'permissions-policy must contain unique disabled feature declarations';
     }
+    features.add(match[1]);
   }
-  if (!directives.has('upgrade-insecure-requests')) {
-    return 'content-security-policy must include upgrade-insecure-requests';
-  }
-  return null;
+  return REQUIRED_DISABLED_FEATURES.every((feature) => features.has(feature))
+    ? null : 'permissions-policy is missing a required disabled feature';
 }
 
 function validateStrictTransportSecurity(value) {
-  if (typeof value !== 'string' || !value.trim() || /[,\u0000-\u001f\u007f]/.test(value)) {
+  if (typeof value !== 'string' || !value.trim() || /,|[^\x20-\x7e\t]/.test(value)) {
     return 'strict-transport-security is malformed';
   }
 
@@ -356,6 +356,9 @@ function validateStrictTransportSecurity(value) {
     if (!match || directives.has(match[1].toLowerCase())) {
       return 'strict-transport-security contains an invalid or duplicate directive';
     }
+    if (!['max-age', 'includesubdomains', 'preload'].includes(match[1].toLowerCase())) {
+      return 'strict-transport-security contains an unapproved directive';
+    }
     directives.set(match[1].toLowerCase(), match[2]);
   }
 
@@ -366,6 +369,7 @@ function validateStrictTransportSecurity(value) {
       Number(maxAge) < MIN_HSTS_MAX_AGE_SECONDS) {
     return `strict-transport-security max-age must be at least ${MIN_HSTS_MAX_AGE_SECONDS}`;
   }
+  if (!directives.has('preload')) return 'strict-transport-security must include preload';
   if (!directives.has('includesubdomains') || directives.get('includesubdomains') !== undefined) {
     return 'strict-transport-security must include includeSubDomains';
   }
@@ -402,6 +406,15 @@ function validatePage({ url, response, body, check }) {
   if (response.headers.get('x-content-type-options')?.toLowerCase() !== 'nosniff') {
     findings.push(`${url}: x-content-type-options must be nosniff`);
   }
+
+  if (response.headers.get('x-frame-options')?.trim().toUpperCase() !== 'DENY') {
+    findings.push(`${url}: x-frame-options must be DENY`);
+  }
+  if (response.headers.get('referrer-policy')?.trim().toLowerCase() !== 'strict-origin-when-cross-origin') {
+    findings.push(`${url}: referrer-policy must be strict-origin-when-cross-origin`);
+  }
+  const permissionsError = validatePermissionsPolicy(response.headers.get('permissions-policy'));
+  if (permissionsError) findings.push(`${url}: ${permissionsError}`);
 
   if (!check.marker.test(body)) {
     findings.push(`${url}: expected page marker was not found`);
@@ -452,6 +465,7 @@ async function requestProductionPage(url, options, useInjectedFetch) {
       redirected: false,
       url: result.url
     },
+    bytes: result.bytes,
     body: result.bytes.toString('utf8')
   };
 }
@@ -463,8 +477,8 @@ async function runProductionSmoke(inputOptions = parseArgs()) {
   if (typeof sleepImpl !== 'function') {
     throw new Error('Production smoke sleep implementation must be a function');
   }
-  if (useInjectedFetch && typeof options.fetchImpl !== 'function') {
-    throw new Error('Injected production smoke fetch implementation must be a function');
+  if (useInjectedFetch && (typeof options.fetchImpl !== 'function' || typeof options.lookupImpl !== 'function')) {
+    throw new Error('Injected production smoke transport requires explicit fetch and DNS implementations');
   }
 
   // The default transport resolves once per request and pins that approved address into each
@@ -521,12 +535,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 }
 
 export {
+  APPROVED_SCRIPT_HASHES,
   MAX_ATTEMPTS,
   MAX_RESPONSE_BODY_BYTES,
   MAX_RETRY_DELAY_MS,
   MAX_TIMEOUT_MS,
   MIN_HSTS_MAX_AGE_SECONDS,
   PAGE_CHECKS,
+  REQUIRED_SECURITY_HEADERS,
+  REQUIRED_DISABLED_FEATURES,
   fetchTextWithTimeout,
   normalizeProductionOrigin,
   normalizeResponseHeaders,
@@ -537,5 +554,6 @@ export {
   runProductionSmoke,
   validateContentSecurityPolicy,
   validateStrictTransportSecurity,
+  validatePermissionsPolicy,
   validatePage
 };

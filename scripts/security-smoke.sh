@@ -5,6 +5,28 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 
+# rg returns 1 only when the search completed without a match.
+# A search error must fail validation rather than look like a clean result.
+assert_no_matches() {
+  local finding_message="$1"
+  shift
+  local status=0
+  rg "$@" || status=$?
+  case "$status" in
+    0)
+      echo "$finding_message" >&2
+      return 1
+      ;;
+    1)
+      return 0
+      ;;
+    *)
+      echo "[security-smoke] Search failed (rg exit $status); validation is incomplete." >&2
+      return "$status"
+      ;;
+  esac
+}
+
 echo "[security-smoke] Validating JSON payloads..."
 for json_file in data/*.json; do
   jq empty "${json_file}" >/dev/null
@@ -20,22 +42,16 @@ echo "[security-smoke] Regenerating static pages..."
 node scripts/build.js >/dev/null
 
 echo "[security-smoke] Ensuring all GitHub Actions are SHA-pinned..."
-if rg -n -P "uses:\\s*[^@\\s]+@(?![0-9a-f]{40}\\b)" .github/workflows/*.yml; then
-  echo "[security-smoke] Found unpinned action reference(s)." >&2
-  exit 1
-fi
+assert_no_matches "[security-smoke] Found unpinned action reference(s)." \
+  -n -P "uses:\\s*[^@\\s]+@(?![0-9a-f]{40}\\b)" .github/workflows/*.yml
 
 echo "[security-smoke] Verifying target=_blank rel protections..."
-if rg -n -P 'target="_blank"(?![^\\n]*rel="[^"]*noopener[^"]*noreferrer)(?![^\\n]*rel="[^"]*noreferrer[^"]*noopener)' src/*.html partials/*.html index.html reading.html offline.html; then
-  echo "[security-smoke] Found target=_blank link without noopener+noreferrer." >&2
-  exit 1
-fi
+assert_no_matches "[security-smoke] Found target=_blank link without noopener+noreferrer." \
+  -n -P 'target="_blank"(?![^\\n]*rel="[^"]*noopener[^"]*noreferrer)(?![^\\n]*rel="[^"]*noreferrer[^"]*noopener)' src/*.html partials/*.html index.html reading.html offline.html
 
 echo "[security-smoke] Checking generated pages for dangerous URL schemes..."
-if rg -n -i 'href="(javascript:|data:|vbscript:)|src="(javascript:|data:text|vbscript:)' index.html reading.html offline.html; then
-  echo "[security-smoke] Found dangerous URL scheme in generated HTML." >&2
-  exit 1
-fi
+assert_no_matches "[security-smoke] Found dangerous URL scheme in generated HTML." \
+  -n -i 'href="(javascript:|data:|vbscript:)|src="(javascript:|data:text|vbscript:)' index.html reading.html offline.html
 
 echo "[security-smoke] Verifying CSP is declared before script tags in source templates..."
 node - <<'NODE'
@@ -57,10 +73,8 @@ for (const file of files) {
 NODE
 
 echo "[security-smoke] Verifying strict style-src policy in source templates..."
-if rg -n "style-src[^\\\"]*'unsafe-inline'" src/*.html; then
-  echo "[security-smoke] Found forbidden style-src 'unsafe-inline' in source templates." >&2
-  exit 1
-fi
+assert_no_matches "[security-smoke] Found forbidden style-src 'unsafe-inline' in source templates." \
+  -n "style-src[^\\\"]*'unsafe-inline'" src/*.html
 
 echo "[security-smoke] Verifying _headers contains required runtime security headers..."
 if ! rg -n "Content-Security-Policy:" _headers >/dev/null; then
@@ -77,10 +91,8 @@ if ! rg -n "X-Frame-Options:\\s*DENY" _headers >/dev/null; then
 fi
 
 echo "[security-smoke] Checking generated HTML for inline style attributes..."
-if rg -n "\\sstyle\\s*=" index.html reading.html offline.html; then
-  echo "[security-smoke] Found inline style attribute in generated HTML." >&2
-  exit 1
-fi
+assert_no_matches "[security-smoke] Found inline style attribute in generated HTML." \
+  -n "\\sstyle\\s*=" index.html reading.html offline.html
 
 echo "[security-smoke] Checking workflow permission baseline..."
 if ! rg -n "contents: 'read'" .github/workflows/gemini-cli.yml >/dev/null; then
