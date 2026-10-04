@@ -80,6 +80,12 @@ The user explicitly authorized commit and push on2026-10-04. The initial 45-seco
 
 The documentation commit records this audit and handoff. Current PR182 status and hosted checks must be inspected on its exact pushed head; local results above do not establish hosted CI, merge, deployment or provider changes. All 134 recorded source/test/config/dependency inputs still match the passing final collection after commit creation. Ignored raw evidence remains local.
 
+### Hosted CI prerequisite repair
+
+The first pushed follow-up head, d43eab58570163324bd378cbceb596b1ec790bb4, failed Build, Scan and Release Candidate because their Ubuntu runners lacked ripgrep. The new real-pattern smoke test correctly failed its executable prerequisite; it was not skipped or weakened. Playwright Integration and both CodeQL checks passed on that head.
+
+Build, Scan and Release Candidate now explicitly install ripgrep before running the security suite. Focused Node 24 smoke/policy/workflow validation passed all 159 cases with no failures or skips; `npm run check:workflows` and `git diff --check` passed. These are local repair checks; the repaired commit's hosted result must be inspected separately. The frozen 496-case/101-browser evidence above precedes this workflow-only repair. Failed hosted logs and the focused repair log remain in the ignored remediation evidence directory.
+
 ## Original audit baseline
 
 ## Result and interpretation

@@ -29,6 +29,11 @@ jobs:
           node-version: '24'
           cache: npm
 
+      - name: Install ripgrep for security smoke tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ripgrep
+
       - name: Install Node dependencies
         run: npm ci --ignore-scripts
 
