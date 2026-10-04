@@ -839,7 +839,11 @@ test('Release Candidate validates each ready PR revision while retaining the dra
   assert.deepEqual(workflow.on.pull_request.types, expectedActions);
   assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
   const job = workflow.jobs['release-candidate'];
-  assert.ok(job.steps.some((step) => step.run === 'npm run validate:full'));
+  const validation = job.steps.filter((step) => step.run === 'npm run validate:full');
+  assert.equal(validation.length, 1);
+  assert.equal(validation[0].if, undefined);
+  assert.equal(validation[0]['continue-on-error'], undefined);
+  assert.equal(job['continue-on-error'], undefined);
   for (const action of expectedActions) {
     for (const draft of [false, true]) {
       assert.equal(Boolean(evaluateWorkflowExpression(job.if, {
@@ -852,4 +856,14 @@ test('Release Candidate validates each ready PR revision while retaining the dra
     event_name: 'workflow_dispatch',
     event: {}
   })), true);
+});
+
+test('workflow hygiene reports malformed and duplicate-key YAML instead of accepting it', async (t) => {
+  for (const content of ['name: [unterminated', 'permissions: {}\npermissions: write-all\n']) {
+    await t.test(content, (t) => {
+      const findings = collectFixtureFindings(t, content);
+      assert.ok(findings.length > 0);
+      assert.ok(findings.every((finding) => finding.startsWith('.github/workflows/adversarial.yml: invalid YAML:')));
+    });
+  }
 });

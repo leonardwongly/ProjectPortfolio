@@ -1,20 +1,22 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import YAML from 'yaml';
+import { parseHtmlDocument } from '../../scripts/lib/html-document.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import { collectTelemetryPolicyFindings, inspectRuntimeSource } from '../../scripts/check-telemetry-policy.mjs';
 import test from 'node:test';
 
-const require = createRequire(import.meta.url);
-const { renderCspScriptHashesDirective } = require('../../scripts/build.js');
 
 const SOURCE_HTML_FILES = [
   'src/index.html',
   'src/work.html',
   'src/case-study.html',
   'src/reading.html',
-  'src/offline.html'
+  'src/offline.html',
+  '.well-known/service-doc.html'
 ];
 
 const GENERATED_HTML_FILES = [
@@ -24,11 +26,72 @@ const GENERATED_HTML_FILES = [
   'case-study-agentic.html',
   'case-study-apple-calendar-mcp.html',
   'reading.html',
-  'offline.html'
+  'offline.html',
+  '.well-known/service-doc.html'
 ];
 
 const HEADERS_FILE = '_headers';
 const GEMINI_ACTION_REFERENCE = /^        uses: 'google-github-actions\/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions\/run-gemini-cli@v0\.1\.22$/m;
+
+
+function cspDirectives(value) {
+  const directives = new Map();
+  for (const directive of value.split(';')) {
+    const [name, ...tokens] = directive.trim().split(/\s+/);
+    if (!name) continue;
+    const normalized = name.toLowerCase();
+    // Browsers use the first directive. Reject duplicates instead of silently
+    // letting a later safe value conceal an earlier unsafe one.
+    if (directives.has(normalized)) throw new Error(`duplicate CSP directive: ${normalized}`);
+    directives.set(normalized, tokens);
+  }
+  return directives;
+}
+function metaPolicies(html) {
+  return parseHtmlDocument(html).elements.filter(({ tagName, attributes }) => tagName === 'meta' && attributes.get('http-equiv')?.toLowerCase() === 'content-security-policy');
+}
+function htmlSecurityFindings(html) {
+  const findings = [];
+  for (const { tagName, attributes } of parseHtmlDocument(html).elements) {
+    if (tagName === 'a' && attributes.get('target')?.toLowerCase() === '_blank') {
+      const rel = new Set((attributes.get('rel') ?? '').toLowerCase().split(/\s+/));
+      if (!rel.has('noopener') || !rel.has('noreferrer')) findings.push('unsafe blank link');
+    }
+    if (attributes.has('style')) findings.push('inline style');
+    for (const name of ['href', 'src', 'xlink:href']) {
+      const value = attributes.get(name);
+      if (value !== undefined) {
+        const normalized = value.trim().replace(/[\t\n\r]/g, '');
+        if (/^(?:javascript:|vbscript:)/i.test(normalized) || (name === 'href' ? /^data:/i : /^data:text/i).test(normalized)) findings.push('dangerous URL');
+      }
+    }
+  }
+  return findings;
+}
+function headerBlocks(file) {
+  const blocks = [];
+  for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+    if (line.startsWith('/')) blocks.push({ route: line.trim(), headers: new Map() });
+    else if (/^\s+[^:]+:/.test(line)) {
+      const colon = line.indexOf(':');
+      const name = line.slice(0, colon).trim().toLowerCase();
+      const values = blocks.at(-1).headers.get(name) ?? [];
+      blocks.at(-1).headers.set(name, [...values, line.slice(colon + 1).trim()]);
+    }
+  }
+  return blocks;
+}
+function routeHeaders(blocks, route, name) {
+  return blocks.filter((block) => new RegExp('^' + block.route.split('*').map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$').test(route)).flatMap((block) => block.headers.get(name) ?? []);
+}
+function requiredRun(job, command) {
+  const steps = job.steps?.filter((step) => step.run === command) ?? [];
+  assert.equal(steps.length, 1, `${command} must occur once in an operative step`);
+  assert.equal(steps[0].if, undefined, `${command} must not be conditionally skipped`);
+  assert.ok([undefined, false].includes(steps[0]['continue-on-error']), `${command} must fail the job on error`);
+  assert.ok([undefined, false].includes(job['continue-on-error']), `${command} must fail the workflow on error`);
+  assert.equal(job.if, undefined, `${command} must not be in a conditionally skipped job`);
+}
 
 test('discovery catalog advertises only static data files that the site serves', () => {
   const catalog = JSON.parse(fs.readFileSync('.well-known/openapi.json', 'utf8'));
@@ -72,11 +135,15 @@ test('discovery catalog advertises only static data files that the site serves',
 });
 
 test('scan workflow enforces dependency audit and vendor governance gates', () => {
-  const content = fs.readFileSync('.github/workflows/scan.yml', 'utf8');
+  const workflow = YAML.parse(fs.readFileSync('.github/workflows/scan.yml', 'utf8'));
+  const jobs = Object.values(workflow.jobs);
+  for (const command of ['npm run audit:high', 'npm run validate:vendor:governance']) {
+    const job = jobs.find((candidate) => candidate.steps?.some((step) => step.run === command));
+    assert.ok(job, command);
+    requiredRun(job, command);
+  }
+  assert.equal(jobs.some((job) => job.steps?.some((step) => step.run === 'npm run validate:vendor')), false);
 
-  assert.match(content, /npm run audit:high/);
-  assert.match(content, /npm run validate:vendor:governance/);
-  assert.doesNotMatch(content, /npm run validate:vendor(?:\s|$)/);
 });
 
 test('Gemini workflow keeps model sessions separate from GitHub and Git authority', () => {
@@ -201,43 +268,30 @@ test('the security coverage contract and required CI workflows enforce exact thr
 
 test('CSP is declared in source pages and appears before script tags when present', () => {
   for (const file of SOURCE_HTML_FILES) {
-    const lines = fs.readFileSync(file, 'utf8').split('\n');
-    const cspLine = lines.findIndex((line) => line.includes('Content-Security-Policy'));
-    const scriptLine = lines.findIndex((line) => line.includes('<script'));
-
-    assert.ok(cspLine >= 0, `Missing CSP in ${file}`);
-    if (scriptLine >= 0) {
-      assert.ok(cspLine < scriptLine, `CSP appears after script tags in ${file}`);
-    }
+    const { elements } = parseHtmlDocument(fs.readFileSync(file, 'utf8'));
+    const cspIndex = elements.findIndex(({ tagName, attributes }) => tagName === 'meta' && attributes.get('http-equiv')?.toLowerCase() === 'content-security-policy');
+    const scriptIndex = elements.findIndex(({ tagName }) => tagName === 'script');
+    assert.ok(cspIndex >= 0, `Missing CSP in ${file}`);
+    if (scriptIndex >= 0) assert.ok(cspIndex < scriptIndex, `CSP appears after script tags in ${file}`);
   }
+
 });
 
 test('source CSP style-src does not permit unsafe-inline', () => {
-  const offenders = [];
-
   for (const file of SOURCE_HTML_FILES) {
-    const content = fs.readFileSync(file, 'utf8');
-    if (/style-src[^"]*'unsafe-inline'/i.test(content)) {
-      offenders.push(file);
+    for (const { attributes } of metaPolicies(fs.readFileSync(file, 'utf8'))) {
+      assert.equal(cspDirectives(attributes.get('content')).get('style-src')?.includes("'unsafe-inline'") ?? false, false, file);
     }
   }
 
-  assert.deepEqual(offenders, [], `Found unsafe-inline style-src directives in: ${offenders.join(', ')}`);
 });
 
 test('frame ancestor protection is delivered through enforceable headers', () => {
-  const metaOffenders = [];
-
   for (const file of SOURCE_HTML_FILES) {
-    const content = fs.readFileSync(file, 'utf8');
-    if (/http-equiv="Content-Security-Policy"[^>]*frame-ancestors/i.test(content)) {
-      metaOffenders.push(file);
-    }
+    for (const { attributes } of metaPolicies(fs.readFileSync(file, 'utf8'))) assert.equal(cspDirectives(attributes.get('content')).has('frame-ancestors'), false, file);
   }
+  assert.match(fs.readFileSync('src/_headers.template', 'utf8'), /frame-ancestors 'none'/);
 
-  const headersContent = fs.readFileSync('src/_headers.template', 'utf8');
-  assert.deepEqual(metaOffenders, [], `Found ignored frame-ancestors directives in meta CSP: ${metaOffenders.join(', ')}`);
-  assert.match(headersContent, /frame-ancestors 'none'/);
 });
 
 test('every generated HTML page has a CSP on its clean URL', () => {
@@ -263,27 +317,37 @@ test('every generated HTML page has a CSP on its clean URL', () => {
 });
 
 test('generated index CSP hashes match inline scripts in both HTML and runtime headers', () => {
-  const sourceContent = fs.readFileSync('src/index.html', 'utf8');
-  const generatedContent = fs.readFileSync('index.html', 'utf8');
-  const headersContent = fs.readFileSync(HEADERS_FILE, 'utf8');
-  const expectedDirective = renderCspScriptHashesDirective(generatedContent);
-  const escapedDirective = expectedDirective.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const generated = fs.readFileSync('index.html', 'utf8');
+  const expected = [...new Set(parseHtmlDocument(generated).scripts.filter(({ attributes, body }) => !attributes.has('src') && body.trim()).map(({ body }) => "'sha256-" + createHash('sha256').update(body).digest('base64') + "'"))].sort();
+  assert.ok(expected.length > 0);
+  assert.match(fs.readFileSync('src/index.html', 'utf8'), /\{\{CSP_SCRIPT_HASHES}}/);
+  const actualHashes = (policy) => (cspDirectives(policy).get('script-src') ?? []).filter((token) => /^'sha(?:256|384|512)-/.test(token)).sort();
+  assert.equal(metaPolicies(generated).length, 1);
+  for (const { attributes } of metaPolicies(generated)) assert.deepEqual(actualHashes(attributes.get('content')), expected);
+  const blocks = headerBlocks(HEADERS_FILE);
+  for (const route of ['/', '/index.html']) {
+    const policies = routeHeaders(blocks, route, 'content-security-policy');
+    assert.equal(policies.length, 1);
+    assert.deepEqual(actualHashes(policies[0]), expected, route);
+  }
 
-  assert.match(sourceContent, /\{\{CSP_SCRIPT_HASHES}}/);
-  assert.ok(expectedDirective.includes('sha256-'));
-  assert.match(generatedContent, new RegExp(`script-src 'self'${escapedDirective};`));
-  assert.match(headersContent, new RegExp(`script-src 'self'${escapedDirective};`));
 });
 
 test('_headers includes required runtime security headers', () => {
-  const content = fs.readFileSync(HEADERS_FILE, 'utf8');
+  const blocks = headerBlocks(HEADERS_FILE);
+  const required = {
+    'x-frame-options': 'DENY', 'x-content-type-options': 'nosniff',
+    'referrer-policy': 'strict-origin-when-cross-origin', vary: 'Accept'
+  };
+  for (const file of GENERATED_HTML_FILES) {
+    const routes = file === 'index.html' ? ['/', '/index.html'] : [`/${file}`, `/${file.slice(0, -5)}`];
+    for (const route of routes) {
+      for (const [name, value] of Object.entries(required)) assert.deepEqual(routeHeaders(blocks, route, name), [value], `${route}: ${name}`);
+      assert.equal(routeHeaders(blocks, route, 'permissions-policy').length, 1, route);
+      assert.equal(routeHeaders(blocks, route, 'content-security-policy').length, 1, route);
+    }
+  }
 
-  assert.match(content, /Content-Security-Policy:/);
-  assert.match(content, /Permissions-Policy:/);
-  assert.match(content, /X-Frame-Options:\s*DENY/i);
-  assert.match(content, /X-Content-Type-Options:\s*nosniff/i);
-  assert.match(content, /Referrer-Policy:\s*strict-origin-when-cross-origin/i);
-  assert.match(content, /Vary:\s*Accept/i);
 });
 
 test('CSP monitoring fallback and rollout requirements are documented', () => {
@@ -298,35 +362,13 @@ test('CSP monitoring fallback and rollout requirements are documented', () => {
 });
 
 test('target=_blank always includes noopener and noreferrer', () => {
-  const missingRel = [];
-  const linkRegex = /<a[^>]*target="_blank"[^>]*>/g;
+  for (const file of [...SOURCE_HTML_FILES, ...GENERATED_HTML_FILES]) assert.deepEqual(htmlSecurityFindings(fs.readFileSync(file, 'utf8')).filter((finding) => finding === 'unsafe blank link'), [], file);
 
-  for (const file of [...SOURCE_HTML_FILES, ...GENERATED_HTML_FILES]) {
-    const content = fs.readFileSync(file, 'utf8');
-    const matches = content.match(linkRegex) || [];
-    matches.forEach((anchor) => {
-      const hasRel = /rel="[^"]*noopener[^"]*noreferrer[^"]*"|rel="[^"]*noreferrer[^"]*noopener[^"]*"/.test(anchor);
-      if (!hasRel) {
-        missingRel.push(`${file}: ${anchor}`);
-      }
-    });
-  }
-
-  assert.deepEqual(missingRel, [], `Found target=_blank links without rel protection:\n${missingRel.join('\n')}`);
 });
 
 test('generated pages do not contain dangerous href/src schemes', () => {
-  const offenders = [];
-  const dangerousPattern = /\b(?:href|src)="(?:javascript:|data:text|vbscript:)/ig;
+  for (const file of GENERATED_HTML_FILES) assert.deepEqual(htmlSecurityFindings(fs.readFileSync(file, 'utf8')).filter((finding) => finding === 'dangerous URL'), [], file);
 
-  for (const file of GENERATED_HTML_FILES) {
-    const content = fs.readFileSync(file, 'utf8');
-    if (dangerousPattern.test(content)) {
-      offenders.push(file);
-    }
-  }
-
-  assert.deepEqual(offenders, [], `Found dangerous schemes in generated pages: ${offenders.join(', ')}`);
 });
 
 test('public content does not reference retired unreachable vanity domains', () => {
@@ -356,17 +398,8 @@ test('public content does not reference retired unreachable vanity domains', () 
 });
 
 test('generated pages do not contain inline style attributes', () => {
-  const offenders = [];
-  const inlineStylePattern = /\sstyle\s*=/i;
+  for (const file of GENERATED_HTML_FILES) assert.deepEqual(htmlSecurityFindings(fs.readFileSync(file, 'utf8')).filter((finding) => finding === 'inline style'), [], file);
 
-  for (const file of GENERATED_HTML_FILES) {
-    const content = fs.readFileSync(file, 'utf8');
-    if (inlineStylePattern.test(content)) {
-      offenders.push(file);
-    }
-  }
-
-  assert.deepEqual(offenders, [], `Found inline style attributes in generated pages: ${offenders.join(', ')}`);
 });
 
 test('reading page exposes share controls with accessible status messaging', () => {
@@ -570,4 +603,79 @@ test('runtime inventory rejects additional executables, script references, inlin
   fs.writeFileSync(page, originalPage);
   fs.appendFileSync(path.join(rootDir, 'pwabuilder-sw.js'), '\n// unreviewed change\n');
   assert.ok(collect().some((finding) => finding.includes('source changed since security review')));
+});
+
+test('parsed HTML security oracles handle browser attribute normalization and exact rel tokens', () => {
+  const duplicatePolicy = metaPolicies("<meta http-equiv='Content-Security-Policy' content=\"style-src 'unsafe-inline'; STYLE-SRC 'self'\">")[0];
+  assert.throws(() => cspDirectives(duplicatePolicy.attributes.get('content')), /duplicate CSP directive: style-src/);
+  assert.deepEqual(htmlSecurityFindings("<!doctype html><A TARGET='_blank' REL='noreferrer noopener' href=/safe>Safe</A>"), []);
+  for (const html of [
+    "<A TARGET=_blank REL='xnoopener noreferrer'>Bad</A>",
+    '<a href=javascript:alert(1)>Bad</a>',
+    '<a href="java&#x73;cript:alert(1)">Bad</a>',
+    '<a href="java&#x09;script:alert(1)">Bad</a>',
+    "<img src='DATA:text/html,unsafe'>",
+    '<p STYLE=color:red>Bad</p>'
+  ]) assert.ok(htmlSecurityFindings(html).length, html);
+  assert.deepEqual(htmlSecurityFindings('<!-- <a target=_blank href=javascript:bad> --><p>Safe text</p><img src="data:image/png;base64,AAAA">'), []);
+});
+
+test('parsed workflow gates use operative steps and restrict model authority', () => {
+  for (const file of ['.github/workflows/build.yml', '.github/workflows/scan.yml']) {
+    const workflow = YAML.parse(fs.readFileSync(file, 'utf8'));
+    for (const command of ['npm run check:generated', 'npm run test:security:coverage']) {
+      const job = Object.values(workflow.jobs).find((job) => job.steps?.some((step) => step.run === command));
+      assert.ok(job, `${file}: ${command}`);
+      requiredRun(job, command);
+    }
+  }
+  const workflow = YAML.parse(fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8'));
+  for (const job of Object.values(workflow.jobs)) {
+    const modelIndex = job.steps.findIndex((step) => step.uses?.startsWith('google-github-actions/run-gemini-cli@'));
+    assert.ok(modelIndex >= 0);
+    const model = job.steps[modelIndex];
+    assert.deepEqual(JSON.parse(model.with.settings).coreTools, ['write_file']);
+    assert.equal(model.env.GITHUB_TOKEN, undefined);
+    assert.equal(model.env.GH_TOKEN, undefined);
+    assert.equal(job.steps.some((step) => step.uses?.startsWith('actions/checkout@')), false);
+    const publish = job.steps.findIndex((step) => ['Post validated planning response', 'Validate and publish implementation guidance'].includes(step.name));
+    assert.ok(publish > modelIndex);
+    assert.equal(job.steps[publish].if, undefined);
+    assert.ok([undefined, false].includes(job.steps[publish]['continue-on-error']));
+    assert.match(job.steps[publish].env.GH_CONFIG_DIR, /^\$\{\{ runner\.temp }}/);
+  }
+});
+
+test('actual Gemini publish scripts reject invalid responses before any comment effect', async (t) => {
+  const workflow = YAML.parse(fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8'));
+  for (const job of Object.values(workflow.jobs)) {
+    const publish = job.steps.find((step) => ['Post validated planning response', 'Validate and publish implementation guidance'].includes(step.name));
+    assert.ok(publish);
+    for (const fixture of ['missing', 'directory', 'symlink', 'oversized', 'exact limit', 'valid issue']) {
+      await t.test(`${publish.name}: ${fixture}`, (t) => {
+        const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gemini-response-contract-'));
+        t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+        const response = path.join(rootDir, 'response.md');
+        const trace = path.join(rootDir, 'gh-trace');
+        const bin = path.join(rootDir, 'bin');
+        fs.mkdirSync(bin);
+        fs.writeFileSync(path.join(bin, 'gh'), '#!/usr/bin/env bash\nprintf \'%s\\n\' "$@" > "$GH_TEST_TRACE"\n', { mode: 0o755 });
+        if (fixture === 'directory') fs.mkdirSync(response);
+        else if (fixture === 'symlink') {
+          fs.writeFileSync(path.join(rootDir, 'target'), 'target must not be published');
+          fs.symlinkSync('target', response);
+        } else if (fixture !== 'missing') fs.writeFileSync(response, 'x'.repeat(fixture === 'oversized' ? 60001 : fixture === 'exact limit' ? 60000 : 10));
+        const valid = ['exact limit', 'valid issue'].includes(fixture);
+        const result = spawnSync('/bin/bash', ['--noprofile', '--norc', '-c', '[[ $(command -v gh) == "$GH_TEST_BINARY" ]] || exit 24\n' + publish.run], {
+          cwd: rootDir, encoding: 'utf8', timeout: 5000,
+          env: { PATH: bin + path.delimiter + '/usr/bin:/bin', GH_TEST_BINARY: path.join(bin, 'gh'), GH_TEST_TRACE: trace, IS_PR: fixture === 'valid issue' ? 'false' : 'true', ISSUE_NUMBER: '42', REPOSITORY: 'owner/repo', GH_CONFIG_DIR: path.join(rootDir, 'gh-config') }
+        });
+        assert.equal(result.error, undefined);
+        assert.equal(result.status, valid ? 0 : 1, result.stdout + result.stderr);
+        assert.equal(fs.existsSync(trace), valid);
+        if (valid) assert.deepEqual(fs.readFileSync(trace, 'utf8').trimEnd().split('\n'), [fixture === 'valid issue' ? 'issue' : 'pr', 'comment', '42', '--repo', 'owner/repo', '--body-file', 'response.md']);
+        else assert.match(result.stderr, fixture === 'oversized' ? /60,000-byte comment limit/ : /regular file/);
+      });
+    }
+  }
 });

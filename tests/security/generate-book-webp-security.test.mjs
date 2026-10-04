@@ -320,7 +320,7 @@ test('run converts an exact-budget private snapshot and skips empty or max-plus-
   }
 });
 
-test('run isolates conversion from source-path replacement races', () => {
+test('run isolates conversion from in-place source edits', () => {
   const relativeSource = 'book/racy.jpg';
   const { root, temporaryRoot } = createRunFixture([{ cover: relativeSource }]);
   const source = path.join(root, relativeSource);
@@ -329,6 +329,7 @@ test('run isolates conversion from source-path replacement races', () => {
   try {
     fs.mkdirSync(path.dirname(source));
     fs.writeFileSync(source, originalBytes);
+    const originalIdentity = fs.statSync(source, { bigint: true });
 
     const result = run({
       projectRoot: root,
@@ -340,6 +341,7 @@ test('run isolates conversion from source-path replacement races', () => {
         }
         const paths = conversionPaths(args);
         fs.writeFileSync(source, replacementBytes);
+        assert.equal(fs.statSync(source, { bigint: true }).ino, originalIdentity.ino);
         assert.deepEqual(fs.readFileSync(paths.source), originalBytes);
         fs.writeFileSync(paths.output, 'converted');
       }
@@ -348,6 +350,142 @@ test('run isolates conversion from source-path replacement races', () => {
     assert.deepEqual(result.converted, ['book/racy.webp']);
     assert.deepEqual(fs.readFileSync(source), replacementBytes);
     assert.equal(fs.readFileSync(path.join(root, 'book', 'racy.webp'), 'utf8'), 'converted');
+    assert.deepEqual(fs.readdirSync(temporaryRoot), []);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(temporaryRoot, { recursive: true, force: true });
+  }
+});
+
+test('run isolates conversion from a source renamed and recreated at the same path', () => {
+  const relativeSource = 'book/replaced.jpg';
+  const { root, temporaryRoot } = createRunFixture([{ cover: relativeSource }]);
+  const source = path.join(root, relativeSource);
+  const displacedSource = path.join(root, 'book', 'displaced-source.jpg');
+  const originalBytes = Buffer.from('original-source');
+  const replacementBytes = Buffer.from('replacement-source');
+  const expectedOutput = Buffer.concat([Buffer.from('converted:'), originalBytes]);
+  let conversionCalls = 0;
+  let capturedTemporaryDirectory;
+  try {
+    fs.mkdirSync(path.dirname(source));
+    fs.writeFileSync(source, originalBytes);
+    const originalIdentity = fs.statSync(source, { bigint: true });
+
+    const result = run({
+      projectRoot: root,
+      temporaryRoot,
+      logger: silentLogger,
+      execFileSync(command, args) {
+        assert.equal(command, 'cwebp');
+        if (args[0] === '-version') return;
+        conversionCalls += 1;
+        const paths = conversionPaths(args);
+        capturedTemporaryDirectory = path.dirname(paths.source);
+        assert.notEqual(paths.source, source);
+        fs.renameSync(source, displacedSource);
+        fs.writeFileSync(source, replacementBytes);
+
+        const displacedIdentity = fs.statSync(displacedSource, { bigint: true });
+        const replacementIdentity = fs.statSync(source, { bigint: true });
+        assert.equal(displacedIdentity.dev, originalIdentity.dev);
+        assert.equal(displacedIdentity.ino, originalIdentity.ino);
+        assert.notEqual(replacementIdentity.ino, originalIdentity.ino);
+        const snapshotBytes = fs.readFileSync(paths.source);
+        assert.deepEqual(snapshotBytes, originalBytes);
+        fs.writeFileSync(paths.output, Buffer.concat([Buffer.from('converted:'), snapshotBytes]));
+      }
+    });
+
+    assert.equal(conversionCalls, 1);
+    assert.deepEqual(result, { converted: ['book/replaced.webp'], skipped: [], missing: [] });
+    assert.deepEqual(fs.readFileSync(source), replacementBytes);
+    assert.deepEqual(fs.readFileSync(displacedSource), originalBytes);
+    assert.deepEqual(fs.readFileSync(path.join(root, 'book', 'replaced.webp')), expectedOutput);
+    assert.equal(fs.existsSync(capturedTemporaryDirectory), false);
+    assert.deepEqual(fs.readdirSync(temporaryRoot), []);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(temporaryRoot, { recursive: true, force: true });
+  }
+});
+
+test('run deduplicates covers and derived sources and reports converted, skipped, and missing paths', () => {
+  const { root, temporaryRoot } = createRunFixture([
+    { cover: 'book/derived-300.jpg' },
+    { cover: 'book/derived-300.jpg' },
+    { cover: 'book/already.jpg' },
+    { cover: 'book/missing-300.jpg' },
+    { cover: 'book/derived.jpg' }
+  ]);
+  const sourceBytes = new Map([
+    ['book/derived-300.jpg', Buffer.from('small-source')],
+    ['book/derived.jpg', Buffer.from('full-size-source')],
+    ['book/already.jpg', Buffer.from('already-converted-source')]
+  ]);
+  const convertedSnapshotBytes = [];
+  const temporaryDirectories = [];
+  let versionCalls = 0;
+  try {
+    fs.mkdirSync(path.join(root, 'book'));
+    for (const [relativePath, bytes] of sourceBytes) {
+      fs.writeFileSync(path.join(root, relativePath), bytes);
+    }
+    const existingTarget = path.join(root, 'book', 'already.webp');
+    fs.writeFileSync(existingTarget, 'existing-target');
+
+    const result = run({
+      projectRoot: root,
+      temporaryRoot,
+      logger: silentLogger,
+      execFileSync(command, args) {
+        assert.equal(command, 'cwebp');
+        if (args[0] === '-version') {
+          versionCalls += 1;
+          assert.deepEqual(args, ['-version']);
+          return;
+        }
+        const paths = conversionPaths(args);
+        assert.deepEqual(args, ['-q', '80', '-mt', paths.source, '-o', paths.output]);
+        const temporaryDirectory = path.dirname(paths.source);
+        const relativeTemporaryDirectory = path.relative(fs.realpathSync(temporaryRoot), temporaryDirectory);
+        assert.equal(path.isAbsolute(relativeTemporaryDirectory), false);
+        assert.notEqual(relativeTemporaryDirectory, '..');
+        assert.equal(relativeTemporaryDirectory.startsWith(`..${path.sep}`), false);
+        assert.notEqual(relativeTemporaryDirectory, '');
+        assert.equal(path.basename(paths.source), 'source.jpg');
+        assert.equal(paths.output, path.join(temporaryDirectory, 'output.webp'));
+        temporaryDirectories.push(temporaryDirectory);
+        const snapshotBytes = fs.readFileSync(paths.source);
+        convertedSnapshotBytes.push(snapshotBytes);
+        fs.writeFileSync(paths.output, Buffer.concat([Buffer.from('converted:'), snapshotBytes]));
+      }
+    });
+
+    assert.deepEqual(result, {
+      converted: ['book/derived-300.webp', 'book/derived.webp'],
+      skipped: ['book/already.webp'],
+      missing: ['book/missing-300.jpg', 'book/missing.jpg']
+    });
+    assert.equal(versionCalls, 1);
+    assert.deepEqual(convertedSnapshotBytes, [
+      sourceBytes.get('book/derived-300.jpg'),
+      sourceBytes.get('book/derived.jpg')
+    ]);
+    for (const relativePath of ['book/derived-300.jpg', 'book/derived.jpg']) {
+      assert.deepEqual(
+        fs.readFileSync(path.join(root, toWebpPath(relativePath))),
+        Buffer.concat([Buffer.from('converted:'), sourceBytes.get(relativePath)])
+      );
+    }
+    for (const [relativePath, bytes] of sourceBytes) {
+      assert.deepEqual(fs.readFileSync(path.join(root, relativePath)), bytes);
+    }
+    assert.equal(fs.readFileSync(existingTarget, 'utf8'), 'existing-target');
+    assert.equal(fs.existsSync(path.join(root, 'book', 'missing-300.webp')), false);
+    assert.equal(fs.existsSync(path.join(root, 'book', 'missing.webp')), false);
+    assert.equal(temporaryDirectories.length, 2);
+    for (const directory of temporaryDirectories) assert.equal(fs.existsSync(directory), false);
     assert.deepEqual(fs.readdirSync(temporaryRoot), []);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
@@ -591,44 +729,67 @@ test('run removes private snapshots and leaves no target when cwebp fails', () =
 });
 
 test('run removes its partial target and temp files after an injected publication failure', () => {
-  const relativeSource = 'book/publication-failure.jpg';
-  const { root, temporaryRoot } = createRunFixture([{ cover: relativeSource }]);
-  const externalDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-external-'));
-  const source = path.join(root, relativeSource);
-  const target = path.join(root, 'book', 'publication-failure.webp');
-  const outsideSentinel = path.join(externalDirectory, 'sentinel.webp');
-  try {
-    fs.mkdirSync(path.dirname(source));
-    fs.writeFileSync(source, 'source-bytes');
-    fs.writeFileSync(outsideSentinel, 'outside-sentinel');
+  for (const replaceTarget of [false, true]) {
+    const relativeSource = 'book/publication-failure.jpg';
+    const { root, temporaryRoot } = createRunFixture([{ cover: relativeSource }]);
+    const externalDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-webp-external-'));
+    const source = path.join(root, relativeSource);
+    const target = path.join(root, 'book', 'publication-failure.webp');
+    const displacedTarget = path.join(root, 'displaced-partial.webp');
+    const outsideSentinel = path.join(externalDirectory, 'sentinel.webp');
+    const publicationError = new Error('synthetic publication failure');
+    let failureInjected = false;
+    try {
+      fs.mkdirSync(path.dirname(source));
+      fs.writeFileSync(source, 'source-bytes');
+      if (replaceTarget) fs.writeFileSync(outsideSentinel, 'outside-sentinel');
 
-    assert.throws(
-      () => run({
-        projectRoot: root,
-        temporaryRoot,
-        logger: silentLogger,
-        execFileSync(command, args) {
-          if (args[0] === '-version') {
-            return;
+      assert.throws(
+        () => run({
+          projectRoot: root,
+          temporaryRoot,
+          logger: silentLogger,
+          execFileSync(command, args) {
+            if (args[0] === '-version') return;
+            const paths = conversionPaths(args);
+            fs.writeFileSync(paths.output, 'generated-output');
+          },
+          writeGeneratedFileSync(descriptor, bytes) {
+            fs.writeFileSync(descriptor, bytes.subarray(0, 4));
+            assert.equal(fs.readFileSync(target, 'utf8'), 'gene');
+            if (replaceTarget) {
+              const ownedIdentity = fs.fstatSync(descriptor, { bigint: true });
+              fs.renameSync(target, displacedTarget);
+              fs.linkSync(outsideSentinel, target);
+              assert.equal(fs.statSync(displacedTarget, { bigint: true }).ino, ownedIdentity.ino);
+              assert.notEqual(fs.statSync(target, { bigint: true }).ino, ownedIdentity.ino);
+            }
+            failureInjected = true;
+            throw publicationError;
           }
-          const paths = conversionPaths(args);
-          fs.writeFileSync(paths.output, 'generated-output');
-        },
-        writeGeneratedFileSync(descriptor, bytes) {
-          fs.writeFileSync(descriptor, bytes.subarray(0, 4));
-          throw new Error('synthetic publication failure');
-        }
-      }),
-      /synthetic publication failure/
-    );
+        }),
+        (error) => error === publicationError
+      );
 
-    assert.equal(fs.existsSync(target), false);
-    assert.deepEqual(fs.readdirSync(temporaryRoot), []);
-    assert.equal(fs.readFileSync(outsideSentinel, 'utf8'), 'outside-sentinel');
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true });
-    fs.rmSync(temporaryRoot, { recursive: true, force: true });
-    fs.rmSync(externalDirectory, { recursive: true, force: true });
+      assert.equal(failureInjected, true, 'failure follows a real partial publication');
+      if (replaceTarget) {
+        assert.equal(fs.readFileSync(target, 'utf8'), 'outside-sentinel');
+        assert.equal(fs.readFileSync(outsideSentinel, 'utf8'), 'outside-sentinel');
+        assert.equal(fs.readFileSync(displacedTarget, 'utf8'), 'gene');
+        const replacementIdentity = fs.statSync(target, { bigint: true });
+        const outsideIdentity = fs.statSync(outsideSentinel, { bigint: true });
+        assert.equal(replacementIdentity.dev, outsideIdentity.dev);
+        assert.equal(replacementIdentity.ino, outsideIdentity.ino);
+      } else {
+        assert.equal(fs.existsSync(target), false);
+      }
+      assert.equal(fs.readFileSync(source, 'utf8'), 'source-bytes');
+      assert.deepEqual(fs.readdirSync(temporaryRoot), []);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+      fs.rmSync(temporaryRoot, { recursive: true, force: true });
+      fs.rmSync(externalDirectory, { recursive: true, force: true });
+    }
   }
 });
 

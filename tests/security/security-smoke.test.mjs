@@ -66,6 +66,7 @@ function smokeFixture(t) {
   ].join('\n'), true);
   const counter = path.join(root, 'rg-counter');
   return {
+    write,
     run(overrides = {}) {
       fs.rmSync(counter, { force: true });
       const result = spawnSync('bash', [path.join(root, 'scripts/security-smoke.sh')], {
@@ -81,7 +82,7 @@ function smokeFixture(t) {
           SMOKE_TEST_RG_ERROR_STATUS: '2',
           SMOKE_TEST_RG_FINDING_CALL: '0',
           SMOKE_TEST_RG_NO_MATCH_CALL: '0',
-          SMOKE_TEST_REAL_RG: process.env.SMOKE_TEST_REAL_RG ?? '',
+          SMOKE_TEST_REAL_RG: '',
           ...overrides
         }
       });
@@ -152,4 +153,44 @@ test('security smoke CLI retains required positive-match failures', (t) => {
     assert.doesNotMatch(result.stdout, /All checks passed/);
     assert.equal(fixture.calls(), call);
   }
+});
+
+test('security smoke forwards real rg patterns over clean and unsafe fixture data', async (t) => {
+  const located = spawnSync('which', ['rg'], { encoding: 'utf8' });
+  assert.equal(located.status, 0, 'real rg is required for the pattern contract');
+  const realRg = located.stdout.trim();
+  const fixtures = [
+    { name: 'clean', expected: 0 },
+    { name: 'unpinned action', file: '.github/workflows/unsafe.yml', body: 'steps:\n  - uses: actions/checkout@main\n', message: /unpinned action/ },
+    { name: 'blank link', file: 'reading.html', body: '<a target="_blank" href="https://example.com">Bad</a>', message: /without noopener/ },
+    { name: 'unsafe URL', file: 'index.html', body: '<a href="javascript:alert(1)">Bad</a>', message: /dangerous URL/ },
+    { name: 'unsafe CSP', file: 'src/index.html', body: '<meta http-equiv="Content-Security-Policy" content="style-src \'unsafe-inline\'">', message: /forbidden style-src/ },
+    { name: 'inline style', file: 'offline.html', body: '<p style="color:red">Bad</p>', message: /inline style/ },
+    { name: 'missing required header', file: '_headers', body: '/*\n  Content-Security-Policy: default-src \'self\'\n  X-Frame-Options: DENY\n', message: /Missing Permissions-Policy/ },
+    { name: 'missing permission', file: '.github/workflows/gemini-cli.yml', body: 'permissions: {}\n', message: /contents: read/ }
+  ];
+  for (const definition of fixtures) await t.test(definition.name, (t) => {
+    const fixture = smokeFixture(t);
+    if (definition.file) fixture.write(definition.file, definition.body);
+    const result = fixture.run({ SMOKE_TEST_REAL_RG: realRg });
+    assert.equal(result.status, definition.expected ?? 1, result.stdout + result.stderr);
+    if (definition.message) {
+      assert.match(result.stderr, definition.message);
+      assert.doesNotMatch(result.stdout, /All checks passed/);
+    } else {
+      assert.match(result.stdout, /All checks passed/);
+      assert.equal(fixture.calls(), 9);
+    }
+  });
+});
+
+test('security smoke stops when JSON or a node validation phase fails', async (t) => {
+  for (const tool of ['jq', 'node']) await t.test(tool, (t) => {
+    const fixture = smokeFixture(t);
+    fixture.write(`bin/${tool}`, '#!/usr/bin/env bash\necho "injected validation failure" >&2\nexit 23\n', true);
+    const result = fixture.run();
+    assert.equal(result.status, 23);
+    assert.match(result.stderr, /injected validation failure/);
+    assert.doesNotMatch(result.stdout, /All checks passed|Ensuring all GitHub Actions/);
+  });
 });

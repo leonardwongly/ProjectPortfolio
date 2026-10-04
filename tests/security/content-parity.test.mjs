@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { parse } from 'parse5';
 
 const projectRoot = path.resolve(new URL('../..', import.meta.url).pathname);
 
@@ -352,5 +353,72 @@ test('generated flagship case studies preserve governed evidence and cross-links
       `next case-study link mismatch after ${study.id}`
     );
     assert.doesNotMatch(html, /\{\{[A-Z_]+}}/);
+  });
+});
+
+function descendants(node, predicate) {
+  const result = [];
+  function visit(current) { if (predicate(current)) result.push(current); for (const child of current.childNodes || []) visit(child); if (current.content) visit(current.content); }
+  visit(node); return result;
+}
+const attr = (node, name) => node.attrs?.find((item) => item.name === name)?.value;
+const hasClass = (node, name) => (attr(node, 'class') || '').split(/\s+/).includes(name);
+const domText = (node) => descendants(node, (item) => item.nodeName === '#text').map((item) => item.value).join('').replace(/\s+/g, ' ').trim();
+function one(node, predicate) { const found = descendants(node, predicate); assert.equal(found.length, 1); return found[0]; }
+
+test('canonical records retain their own DOM fields, links and accordion relationships', () => {
+  const document = parse(readGeneratedIndex());
+  const profile = readJson('data/profile.json');
+  const section = (id) => one(document, (node) => node.tagName === 'section' && attr(node, 'id') === id);
+  const communitySection = section('community');
+  assert.equal(descendants(communitySection, (node) => hasClass(node, 'accordion-item')).length, profile.community.length);
+  for (const entry of profile.community) {
+    const button = one(communitySection, (node) => node.tagName === 'button' && attr(node, 'aria-controls') === `collapse${entry.id}`);
+    assert.equal(attr(button, 'data-bs-target'), `#collapse${entry.id}`);
+    assert.equal(domText(one(button, (node) => node.tagName === 'strong')), entry.organization);
+    const image = one(button, (node) => node.tagName === 'img');
+    assert.equal(attr(image, 'src'), entry.logo); assert.equal(attr(image, 'alt'), entry.logo_alt);
+    const panel = one(communitySection, (node) => attr(node, 'id') === `collapse${entry.id}`);
+    assert.equal(attr(panel, 'aria-labelledby'), `heading${entry.id}`);
+    const lists = descendants(panel, (node) => node.tagName === 'ul'); assert.equal(lists.length, 2);
+    assert.deepEqual(descendants(lists[0], (node) => node.tagName === 'li').map(domText), entry.roles.map((role) => `${role.dates} · ${role.title}`));
+    assert.deepEqual(descendants(lists[1], (node) => node.tagName === 'li').map(domText), entry.responsibilities);
+  }
+  const credentials = section('credentials');
+  const educationCard = one(credentials, (node) => hasClass(node, 'card') && descendants(node, (item) => item.tagName === 'h3' && domText(item) === 'Education').length === 1);
+  assert.deepEqual(descendants(educationCard, (node) => node.tagName === 'li').map(domText), profile.education.map((entry) => `${entry.institution} — ${entry.credential}, ${entry.dates}`));
+  const certifications = readJson('data/certifications.json');
+  assert.equal(descendants(credentials, (node) => hasClass(node, 'cert-row')).length, certifications.length);
+  for (const cert of certifications) {
+    const group = one(credentials, (node) => hasClass(node, 'cert-group') && descendants(node, (item) => hasClass(item, 'cert-group__issuer') && domText(item) === cert.issuer).length === 1);
+    const row = one(group, (node) => hasClass(node, 'cert-row') && descendants(node, (item) => hasClass(item, 'cert-row__name') && domText(item) === cert.title).length === 1);
+    assert.equal(domText(one(row, (node) => hasClass(node, 'cert-row__date'))), String(cert.issued).replace(/^Issued\s+/i, '').replace(/\s*[-·].*$/, ''));
+    const links = descendants(row, (node) => node.tagName === 'a');
+    assert.equal(links.length, cert.link ? 1 : 0); if (cert.link) assert.equal(attr(links[0], 'href'), cert.link);
+  }
+  const groups = readJson('data/skills.json');
+  const cards = descendants(section('skills'), (node) => hasClass(node, 'skill-card')); assert.equal(cards.length, groups.length);
+  groups.forEach((group, index) => {
+    assert.equal(domText(one(cards[index], (node) => node.tagName === 'h3')), group.category);
+    assert.deepEqual(descendants(cards[index], (node) => hasClass(node, 'chip')).map(domText), group.items);
+  });
+  const articles = descendants(section('writing'), (node) => node.tagName === 'article' && hasClass(node, 'article-card'));
+  assert.equal(articles.length, profile.articles.length);
+  profile.articles.forEach((article, index) => {
+    assert.equal(domText(one(articles[index], (node) => node.tagName === 'h3')), article.title);
+    const links = descendants(articles[index], (node) => node.tagName === 'a');
+    assert.deepEqual(links.map((node) => attr(node, 'href')), article.link ? [article.link] : []);
+  });
+  const work = parse(readGeneratedWork());
+  const archive = one(work, (node) => node.tagName === 'section' && attr(node, 'id') === 'projects');
+  const projects = readJson('data/featured-projects.json');
+  const projectCards = descendants(archive, (node) => node.tagName === 'article' && hasClass(node, 'featured-card'));
+  assert.equal(projectCards.length, projects.length);
+  projects.forEach((project, index) => {
+    assert.equal(domText(one(projectCards[index], (node) => node.tagName === 'h3')), project.title);
+    for (const link of project.links || []) {
+      const anchor = one(projectCards[index], (node) => node.tagName === 'a' && domText(node).startsWith(link.label));
+      assert.equal(attr(anchor, 'href'), link.url);
+    }
   });
 });

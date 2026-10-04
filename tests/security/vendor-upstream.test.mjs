@@ -305,3 +305,66 @@ test('formatSummary distinguishes clean and stale states', () => {
     /pinned 5\.1\.2, latest 5\.2\.0/
   );
 });
+
+test('upstream arguments accept exact bounds and reject malformed or zero limits', () => {
+  assert.deepEqual(parseArgs(['--timeout-ms', '1', '--max-attempts', '1']), { timeoutMs: 1, maxAttempts: 1 });
+  assert.deepEqual(parseArgs(['--timeout-ms', '60000', '--max-attempts', '5']), { timeoutMs: 60000, maxAttempts: 5 });
+  for (const flag of ['--timeout-ms', '--max-attempts']) {
+    for (const value of [undefined, '0', '-1', '1.5', 'NaN']) {
+      assert.throws(() => parseArgs(value === undefined ? [flag] : [flag, value]), /integer/);
+    }
+  }
+});
+
+test('upstream metadata validates UTF-8, object shape and latest SemVer without retries', async (t) => {
+  const cases = [
+    { name: 'UTF-8', body: Buffer.from([0xc3, 0x28]), error: /expected valid UTF-8 JSON/ },
+    { name: 'array', body: '[]', error: /expected object/ },
+    { name: 'null', body: 'null', error: /expected object/ },
+    { name: 'missing tag', body: '{}', error: /dist-tags\.latest/ },
+    { name: 'invalid SemVer', body: '{"dist-tags":{"latest":"01.2.3"}}', error: /valid SemVer/ }
+  ];
+  for (const fixture of cases) await t.test(fixture.name, async () => {
+    let attempts = 0;
+    const sleeps = [];
+    await assert.rejects(() => fetchRegistryVersion('workbox-sw', {
+      lookupImpl: publicRegistryLookup,
+      fetchImpl: async () => { attempts += 1; return new Response(fixture.body, { status: 200 }); },
+      maxAttempts: 3, timeoutMs: 1000, sleepImpl: async (ms) => sleeps.push(ms)
+    }), fixture.error);
+    assert.equal(attempts, 1);
+    assert.deepEqual(sleeps, []);
+  });
+});
+
+test('upstream transient responses and transport errors exhaust only the configured attempts', async (t) => {
+  for (const kind of ['503 response', 'transport failure']) await t.test(kind, async () => {
+    let attempts = 0;
+    const sleeps = [];
+    await assert.rejects(() => fetchRegistryVersion('workbox-sw', {
+      requestBytesImpl: async () => {
+        attempts += 1;
+        if (kind === 'transport failure') throw Object.assign(new Error('connection reset'), { code: 'ECONNRESET' });
+        return { status: 503, statusText: 'Service Unavailable', bytes: Buffer.alloc(0) };
+      },
+      maxAttempts: 3, timeoutMs: 1000, sleepImpl: async (ms) => sleeps.push(ms)
+    }), kind === 'transport failure' ? /connection reset/ : /503 Service Unavailable/);
+    assert.equal(attempts, 3);
+    assert.deepEqual(sleeps, [500, 1000]);
+  });
+});
+
+test('upstream reporting compares equal, ahead and prerelease versions independently', async () => {
+  const manifest = { dependencies: [
+    { name: 'equal', registry_package: 'equal', version: '1.2.3' },
+    { name: 'ahead', registry_package: 'ahead', version: '2.0.0' },
+    { name: 'prerelease', registry_package: 'prerelease', version: '1.2.3-beta.1' }
+  ] };
+  const results = await checkVendorUpstreamVersions({ maxAttempts: 1, timeoutMs: 1000 }, {
+    loadManifest: () => manifest,
+    requestBytesImpl: async () => ({ status: 200, bytes: Buffer.from('{"dist-tags":{"latest":"1.2.3"}}') })
+  });
+  assert.deepEqual(results.map(({ name, updateAvailable }) => ({ name, updateAvailable })), [
+    { name: 'equal', updateAvailable: false }, { name: 'ahead', updateAvailable: false }, { name: 'prerelease', updateAvailable: true }
+  ]);
+});

@@ -295,7 +295,7 @@ test('vendor governance rejects files added after its initial inventory snapshot
   }
 });
 
-test('vendor governance rejects a declared file overwritten after its validated read', (t) => {
+test('vendor governance rejects a declared file overwritten during its read', (t) => {
   const fixture = makeGovernanceFixture(t);
   const originalReadSync = fs.readSync;
   let injected = false;
@@ -343,4 +343,58 @@ test('vendor governance rejects special filesystem nodes', (t) => {
   } finally {
     fs.lstatSync = originalLstatSync;
   }
+});
+
+test('vendor governance rechecks an already validated file after another declared file is read', (t) => {
+  const fixture = makeGovernanceFixture(t);
+  const secondPath = path.join(path.dirname(fixture.absolutePath), 'second.js');
+  const bytes = Buffer.from('/* package:1.2.3 unique-signature second */\n');
+  fs.writeFileSync(secondPath, bytes);
+  fixture.manifest.dependencies[0].files.push({
+    ...fixture.manifest.dependencies[0].files[0],
+    path: 'js/vendor/package/second.js',
+    upstream_url: 'https://storage.googleapis.com/package/releases/1.2.3/second.js',
+    sha256: crypto.createHash('sha256').update(bytes).digest('hex')
+  });
+  assert.doesNotThrow(() => validateVendorGovernance(fixture.manifest, { rootDir: fixture.rootDir, today: '2026-07-01' }));
+  const originalOpen = fs.openSync;
+  const originalRead = fs.readSync;
+  let secondFd;
+  let injected = false;
+  fs.openSync = function (...args) {
+    const fd = originalOpen.apply(fs, args);
+    if (path.resolve(String(args[0])) === secondPath) secondFd = fd;
+    return fd;
+  };
+  fs.readSync = function (...args) {
+    const count = originalRead.apply(fs, args);
+    if (!injected && args[0] === secondFd && count > 0) {
+      injected = true;
+      fs.writeFileSync(fixture.absolutePath, 'changed after first validation');
+    }
+    return count;
+  };
+  try {
+    assert.throws(() => validateVendorGovernance(fixture.manifest, { rootDir: fixture.rootDir, today: '2026-07-01' }), /Vendored file changed during validation: js\/vendor\/package\/file\.js/);
+    assert.equal(injected, true);
+  } finally {
+    fs.openSync = originalOpen;
+    fs.readSync = originalRead;
+  }
+});
+
+test('vendor governance enforces review date boundaries and exact file declarations', async (t) => {
+  const cases = [
+    { name: 'accepted exact age', today: '2026-08-15' },
+    { name: 'future review', today: '2026-06-30', error: /in the future/ },
+    { name: 'invalid calendar date', change: (m) => { m.last_reviewed = '2026-02-30'; }, error: /invalid calendar date/ },
+    { name: 'duplicate path', change: (m) => { m.dependencies[0].files.push({ ...m.dependencies[0].files[0] }); }, error: /Duplicate vendored file/ },
+    { name: 'digest mismatch', change: (m) => { m.dependencies[0].files[0].sha256 = '0'.repeat(64); }, error: /hash mismatch/ }
+  ];
+  for (const c of cases) await t.test(c.name, (t) => {
+    const fixture = makeGovernanceFixture(t);
+    c.change?.(fixture.manifest);
+    const validate = () => validateVendorGovernance(fixture.manifest, { rootDir: fixture.rootDir, today: c.today ?? '2026-07-01' });
+    if (c.error) assert.throws(validate, c.error); else assert.equal(validate().reviewAgeDays, 45);
+  });
 });
