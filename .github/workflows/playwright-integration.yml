@@ -31,5 +31,5 @@ jobs:
       - name: Install Chromium for Playwright
         run: ./node_modules/.bin/playwright install --with-deps chromium
 
-      - name: Run navigation and offline integration specs
-        run: ./node_modules/.bin/playwright test tests/integration/mobile-nav-and-accordion.spec.mjs tests/integration/offline-fallback.spec.mjs --config=playwright.config.mjs
+      - name: Run navigation, offline, and browser contract integration specs
+        run: ./node_modules/.bin/playwright test tests/integration/mobile-nav-and-accordion.spec.mjs tests/integration/offline-fallback.spec.mjs tests/integration/browser-contracts.spec.mjs --config=playwright.config.mjs

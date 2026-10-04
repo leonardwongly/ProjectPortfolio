@@ -13,7 +13,7 @@
     "test:security": "node --test tests/security/*.test.mjs",
     "test:security:coverage": "node --experimental-test-coverage --test-coverage-include='scripts/**/*.js' --test-coverage-include='scripts/**/*.mjs' --test-coverage-include='scripts/**/*.cjs' --test-coverage-include='playwright.config.mjs' --test-coverage-include='pwabuilder-sw.js' --test-coverage-lines=75 --test-coverage-branches=75 --test-coverage-functions=85 --test tests/security/*.test.mjs",
     "test:content": "node --test tests/security/content-parity.test.mjs",
-    "test:integration": "npx --no-install playwright install chromium && npx --no-install playwright test tests/integration/mobile-nav-and-accordion.spec.mjs tests/integration/offline-fallback.spec.mjs --config=playwright.config.mjs",
+    "test:integration": "npx --no-install playwright install chromium && npx --no-install playwright test tests/integration/mobile-nav-and-accordion.spec.mjs tests/integration/offline-fallback.spec.mjs tests/integration/browser-contracts.spec.mjs --config=playwright.config.mjs",
     "audit:high": "npm audit --audit-level=high",
     "check:generated": "git diff --exit-code -- index.html work.html case-study-agentforge.html case-study-agentic.html case-study-apple-calendar-mcp.html reading.html offline.html _headers .well-known/http-message-signatures-directory",
     "check:hygiene": "node scripts/check-repository-hygiene.mjs",
