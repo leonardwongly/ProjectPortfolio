@@ -58,14 +58,20 @@ function copyDeploymentPath(sourcePath, targetPath) {
 
 function stageStaticSite() {
   const stagingRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'projectportfolio-playwright-'));
-  [...STATIC_FILES, ...STATIC_DIRECTORIES].forEach((relativePath) => {
-    const sourcePath = path.join(projectRoot, relativePath);
-    if (!fs.existsSync(sourcePath)) {
-      throw new Error(`Playwright static artifact is missing: ${sourcePath}`);
-    }
-    copyDeploymentPath(sourcePath, path.join(stagingRoot, relativePath));
-  });
-  return stagingRoot;
+  try {
+    [...STATIC_FILES, ...STATIC_DIRECTORIES].forEach((relativePath) => {
+      const sourcePath = path.join(projectRoot, relativePath);
+      if (!fs.existsSync(sourcePath)) {
+        throw new Error(`Playwright static artifact is missing: ${sourcePath}`);
+      }
+      copyDeploymentPath(sourcePath, path.join(stagingRoot, relativePath));
+    });
+    return stagingRoot;
+  } catch (error) {
+    // Import can fail before the normal process-exit hook is registered.
+    fs.rmSync(stagingRoot, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 function shellQuote(value) {

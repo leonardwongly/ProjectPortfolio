@@ -83,3 +83,16 @@ test('foreign script bodies include descendant text without unbounded duplicate 
   const source = `<svg>${'<script>'.repeat(4)}${'x'.repeat(80)}${'</script>'.repeat(4)}</svg>`;
   assert.throws(() => parseHtmlDocument(source, { maxBytes: 200 }), /script text exceeds 200 byte limit/);
 });
+
+test('HTML byte and node limits accept the exact edge and reject the next unit', () => {
+  assert.equal(parseHtmlDocument('é'.repeat(5), { maxBytes: 10 }).elements.length, 3);
+  assert.throws(() => parseHtmlDocument('é'.repeat(5), { maxBytes: 9 }), /within 9 bytes/);
+  // Document + doctype + html/head/body + i: six nodes, with no whitespace text nodes.
+  const source = '<!DOCTYPE html><html><head></head><body><i></i></body></html>';
+  assert.equal(parseHtmlDocument(source, { maxNodes: 6 }).elements.length, 4);
+  assert.throws(() => parseHtmlDocument(source, { maxNodes: 5 }), /nodes exceed 5/);
+  // A template adds its own document fragment as well as its descendant span.
+  const template = '<!DOCTYPE html><html><head></head><body><template><span></span></template></body></html>';
+  assert.equal(parseHtmlDocument(template, { maxNodes: 8 }).elements.length, 5);
+  assert.throws(() => parseHtmlDocument(template, { maxNodes: 7 }), /nodes exceed 7/);
+});
