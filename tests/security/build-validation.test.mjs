@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { createHash } from 'node:crypto';
+import { parseHtmlDocument } from '../../scripts/lib/html-document.mjs';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -463,7 +465,11 @@ test('buildSite preserves literal template-looking content without changing mark
     const schema = JSON.parse(indexHtml.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
     assert.equal(schema['@graph'][0].name, text, 'JSON-LD remains valid and keeps the exact authored name');
     const headers = fs.readFileSync(path.join(rootDir, '_headers'), 'utf8');
-    collectInlineScriptHashes(indexHtml).forEach((hash) => {
+    const scriptBodies = parseHtmlDocument(indexHtml).scripts.filter(({ attributes }) => !attributes.has('src')).map(({ body }) => body);
+    assert.ok(scriptBodies.length > 0, 'generated JSON-LD must be hashed');
+    const independentHashes = scriptBodies.map((body) => `sha256-${createHash('sha256').update(body, 'utf8').digest('base64')}`);
+    assert.deepEqual(collectInlineScriptHashes(indexHtml), [...new Set(independentHashes)]);
+    independentHashes.forEach((hash) => {
       assert.ok(headers.includes(`'${hash}'`), 'CSP still hashes the exact final inline script');
       assert.ok(indexHtml.includes(`'${hash}'`), 'the index CSP hashes the final script after whitespace normalization');
     });
@@ -1044,7 +1050,7 @@ test('renderReadingGrid escapes data attribute filter values', () => {
   assert.doesNotMatch(html, /data-tags="[^"]*" autofocus/);
 });
 
-test('rendered action links include privacy-safe telemetry annotations', () => {
+test('schema has no action telemetry and reading grid includes its count hook', () => {
   const html = renderProfileSchema(makeValidProfile(), []);
   assert.doesNotMatch(html, /data-telemetry/);
 
@@ -1226,4 +1232,71 @@ test('renderProfileSchema escapes script-breaking JSON-LD content', () => {
 
   assert.doesNotMatch(schema, /<\/script>/i);
   assert.match(schema, /\\u003c\/script\\u003e/);
+});
+
+test('actual hero and contact anchors carry bounded governed telemetry', (t) => {
+  const { rootDir } = makeSiteBuildFixture();
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  const profilePath = path.join(rootDir, 'data/profile.json');
+  const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+  profile.hero.actions = [
+    { label: 'Explore Platform!', href: '/work.html', variant: 'primary' },
+    { label: 'Contact Team', href: '#contact', variant: 'ghost' },
+    { label: 'A'.repeat(80), href: 'https://example.com/private-destination-canary', variant: 'ghost' },
+    { label: 'Download Resume', href: 'docs/resume.pdf', variant: 'ghost' }
+  ];
+  profile.contact.actions = [{ label: 'Discuss Secure Systems', href: 'https://example.com/contact-canary', variant: 'primary' }];
+  fs.writeFileSync(profilePath, JSON.stringify(profile));
+  buildSite({ rootDir, log: () => {} });
+  const anchors = parseHtmlDocument(fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8')).elements
+    .filter(({ tagName, attributes }) => tagName === 'a' && ['hero_actions', 'contact_actions'].includes(attributes.get('data-telemetry-surface')));
+  const expected = [
+    ['Explore Platform!', '/work.html', 'explore_platform', 'hero_actions', 'internal'],
+    ['Contact Team', '#contact', 'contact_team', 'hero_actions', 'section'],
+    ['A'.repeat(80), 'https://example.com/private-destination-canary', 'a'.repeat(80), 'hero_actions', 'external'],
+    ['Download Resume', 'docs/resume.pdf', 'download_resume', 'hero_actions', 'pdf'],
+    ['Discuss Secure Systems', 'https://example.com/contact-canary', 'discuss_secure_systems', 'contact_actions', 'external']
+  ];
+  assert.equal(anchors.length, expected.length);
+  for (const [label, href, action, surface, destination] of expected) {
+    const found = anchors.filter(({ attributes }) => attributes.get('href') === href);
+    assert.equal(found.length, 1);
+    const attrs = found[0].attributes;
+    assert.equal(attrs.get('data-telemetry-event'), 'portfolio_action_clicked');
+    assert.equal(attrs.get('data-telemetry-action'), action);
+    assert.equal(attrs.get('data-telemetry-surface'), surface);
+    assert.equal(attrs.get('data-telemetry-destination'), destination);
+    for (const [name, value] of attrs) if (name.startsWith('data-telemetry-')) {
+      assert.ok(value.length <= 80); assert.notEqual(value, label); assert.notEqual(value, href);
+      assert.doesNotMatch(value, /private-destination-canary|contact-canary|@|https?:/);
+    }
+  }
+});
+
+test('CSP hashes use independent UTF-8 SHA-256 and browser-normalized newlines', () => {
+  assert.equal(hashInlineScript('abc'), 'sha256-ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0=');
+  const raw = 'const message = "你好 café";\r\nmessage;\r';
+  const normalized = 'const message = "你好 café";\nmessage;\n';
+  assert.equal(parseHtmlDocument(`<script>${raw}</script>`).scripts[0].body, normalized);
+  const expected = `sha256-${createHash('sha256').update(normalized, 'utf8').digest('base64')}`;
+  assert.deepEqual(collectInlineScriptHashes(`<script>${raw}</script>`), [expected]);
+  assert.notEqual(expected, `sha256-${createHash('sha256').update(raw, 'utf8').digest('base64')}`);
+});
+
+test('site publication accepts the exact cap and rejects late empty or oversized entries before writes', (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'portfolio-output-edge-'));
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  const target = path.join(rootDir, 'index.html');
+  const exact = Buffer.alloc(MAX_SITE_OUTPUT_BYTES, 65);
+  publishSiteBundle({ rootDir, entries: [{ path: target, label: 'index', bytes: exact, maxBytes: MAX_SITE_OUTPUT_BYTES }] });
+  assert.deepEqual(fs.readFileSync(target), exact);
+  for (const bytes of [Buffer.alloc(0), Buffer.alloc(MAX_SITE_OUTPUT_BYTES + 1)]) {
+    let writes = 0;
+    assert.throws(() => publishSiteBundle({ rootDir, entries: [
+      { path: target, label: 'index', bytes: Buffer.from('changed'), maxBytes: MAX_SITE_OUTPUT_BYTES },
+      { path: path.join(rootDir, 'late.html'), label: 'late', bytes, maxBytes: MAX_SITE_OUTPUT_BYTES }
+    ], writeFileImpl() { writes += 1; } }), /outside the allowed/);
+    assert.equal(writes, 0); assert.deepEqual(fs.readFileSync(target), exact);
+    assert.equal(fs.existsSync(path.join(rootDir, 'late.html')), false);
+  }
 });

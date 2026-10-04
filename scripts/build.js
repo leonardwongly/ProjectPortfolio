@@ -273,7 +273,10 @@ function collectInlineScriptHashes(html) {
 
     const attrs = html.slice(start + '<script'.length, openEnd);
     if (!hasScriptSrcAttribute(attrs)) {
-      hashes.push(hashInlineScript(html.slice(openEnd + 1, endTag.start)));
+      // HTML preprocessing normalizes CRLF and lone CR before the browser
+      // evaluates CSP hashes against the parsed inline script text.
+      const scriptText = html.slice(openEnd + 1, endTag.start).replace(/\r\n?/g, '\n');
+      hashes.push(hashInlineScript(scriptText));
     }
 
     fromIndex = endTag.end;
