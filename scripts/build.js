@@ -295,6 +295,35 @@ function injectCspScriptHashes(template, html) {
   return template.replaceAll(CSP_INLINE_SCRIPT_HASH_TOKEN, renderCspScriptHashesDirective(html));
 }
 
+function renderCaseStudyHeaderRules(template, caseStudies) {
+  const token = '{{CASE_STUDY_HEADERS}}';
+  if (template.split(token).length !== 2 ||
+      template.split(/\r?\n/).filter((line) => line === token).length !== 1) {
+    throw new Error('Expected exactly one CASE_STUDY_HEADERS token on its own line in src/_headers.template.');
+  }
+  // Clean routes inherit the same authored policy as their .html responses.
+  // Keep one policy body in the template so CSP and CORS cannot drift apart.
+  const htmlRules = template.split(/\r?\n[ \t]*\r?\n/)
+    .filter((block) => block.split(/\r?\n/, 1)[0] === '/*.html');
+  if (htmlRules.length !== 1) {
+    throw new Error('Expected exactly one HTML policy rule in src/_headers.template.');
+  }
+  const policyLines = htmlRules[0].split(/\r?\n/).slice(1);
+  if (policyLines.some((line) => line.includes(token))) {
+    throw new Error('CASE_STUDY_HEADERS must be a separate block from the HTML policy rule.');
+  }
+  for (const name of ['Content-Security-Policy', 'Access-Control-Allow-Origin']) {
+    if (policyLines.filter((line) => line.startsWith(`  ${name}:`)).length !== 1) {
+      throw new Error(`Expected exactly one ${name} in the HTML policy rule.`);
+    }
+  }
+  const policy = policyLines.join('\n');
+  const rules = caseStudies.map((study) =>
+    `/${study.slug.slice(0, -'.html'.length)}\n${policy}`).join('\n\n');
+  return renderAuthoredTemplate(template, { CASE_STUDY_HEADERS: rules },
+    'src/_headers.template', { preserveCspToken: true });
+}
+
 function renderAuthoredTemplate(template, tokens, label, { preserveCspToken = false } = {}) {
   const tokenPattern = /\{\{([A-Z_]+)}}/g;
   const unresolved = Array.from(template.matchAll(tokenPattern))
@@ -2322,7 +2351,8 @@ function buildSite({
       throw new Error('Missing rendered index page content');
     }
     const headersTemplate = readBuildText('src/_headers.template', { rootDir: resolvedRoot });
-    const headersContent = injectCspScriptHashes(headersTemplate, indexPage);
+    const headersContent = injectCspScriptHashes(
+      renderCaseStudyHeaderRules(headersTemplate, data.caseStudies), indexPage);
 
     const entries = [];
     renderedPages.forEach((content, page) => {

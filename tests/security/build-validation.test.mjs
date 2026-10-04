@@ -487,7 +487,7 @@ test('buildSite preserves literal template-looking content without changing mark
   }
 });
 
-for (const sourcePath of ['src/index.html', 'src/case-study.html', 'partials/nav.html', 'partials/footer.html']) {
+for (const sourcePath of ['src/index.html', 'src/case-study.html', 'partials/nav.html', 'partials/footer.html', 'src/_headers.template']) {
   test(`buildSite rejects unknown authored tokens in ${sourcePath} before publication`, () => {
     const { rootDir, outputNames } = makeSiteBuildFixture();
     try {
@@ -1300,3 +1300,81 @@ test('site publication accepts the exact cap and rejects late empty or oversized
     assert.equal(fs.existsSync(path.join(rootDir, 'late.html')), false);
   }
 });
+
+test('case-study clean response policies follow a renamed validated slug without stale rules', (t) => {
+  const { rootDir } = makeSiteBuildFixture();
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  buildSite({ rootDir, log: () => {} });
+  const headersPath = path.join(rootDir, '_headers');
+  const before = fs.readFileSync(headersPath, 'utf8');
+  assert.equal(before, fs.readFileSync(path.join(projectRoot, '_headers'), 'utf8'),
+    'current canonical slugs preserve the exact committed response policy bytes');
+
+  const studiesPath = path.join(rootDir, 'data/case-studies.json');
+  const projectsPath = path.join(rootDir, 'data/featured-projects.json');
+  const studies = JSON.parse(fs.readFileSync(studiesPath, 'utf8'));
+  const projects = JSON.parse(fs.readFileSync(projectsPath, 'utf8'));
+  const oldSlug = studies[0].slug;
+  const renamedSlug = 'case-study-renamed-governed-system.html';
+  studies[0].slug = renamedSlug;
+  const project = projects.find((entry) => entry.id === studies[0].project_id);
+  assert.ok(project);
+  project.case_study = `/${renamedSlug}`;
+  fs.writeFileSync(studiesPath, JSON.stringify(studies));
+  fs.writeFileSync(projectsPath, JSON.stringify(projects));
+  buildSite({ rootDir, log: () => {} });
+
+  const headers = fs.readFileSync(headersPath, 'utf8');
+  const oldClean = `/${oldSlug.slice(0, -'.html'.length)}`;
+  const clean = `/${renamedSlug.slice(0, -'.html'.length)}`;
+  assert.equal(headers, before.replace(`${oldClean}\n`, `${clean}\n`),
+    'renaming changes only the exact clean route, retaining all policy and CSP hash bytes');
+  assert.equal(fs.existsSync(path.join(rootDir, renamedSlug)), true);
+  const blocks = headers.trim().split(/\n\s*\n/).map((block) => {
+    const [route, ...lines] = block.split('\n');
+    return { route, lines };
+  });
+  assert.equal(blocks.some(({ route }) => route === oldClean), false);
+  assert.equal(blocks.filter(({ route }) => route === clean).length, 1);
+  assert.doesNotMatch(headers, /\{\{[A-Z_]+}}/);
+  for (const route of [clean, `/${renamedSlug}`]) {
+    const matching = blocks.filter((block) => {
+      const pattern = block.route.split('*')
+        .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
+      return new RegExp(`^${pattern}$`).test(route);
+    });
+    const policies = matching.flatMap(({ lines }) => lines.filter((line) => line.startsWith('  Content-Security-Policy:')));
+    const cors = matching.flatMap(({ lines }) => lines.filter((line) => line.startsWith('  Access-Control-Allow-Origin:')));
+    assert.equal(policies.length, 1, `${route} receives exactly one response CSP`);
+    assert.match(policies[0], /script-src 'self' 'sha256-/);
+    assert.match(policies[0], /frame-ancestors 'none'/);
+    assert.deepEqual(cors, ['  Access-Control-Allow-Origin: https://leonardwong.tech']);
+  }
+});
+
+for (const defect of ['missing', 'duplicate', 'misspelled', 'embedded']) {
+  test(`case-study header generation rejects a ${defect} token before any publication`, (t) => {
+    const { rootDir, outputNames } = makeSiteBuildFixture();
+    t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+    const before = new Map(outputNames.map((name) => {
+      const bytes = Buffer.from(`prior ${name}\n`);
+      fs.writeFileSync(path.join(rootDir, name), bytes);
+      return [name, bytes];
+    }));
+    const templatePath = path.join(rootDir, 'src/_headers.template');
+    const template = fs.readFileSync(templatePath, 'utf8');
+    const token = '{{CASE_STUDY_HEADERS}}';
+    const malformed = defect === 'missing' ? template.replace(token, '') :
+      defect === 'embedded' ? template.replace(token, `  ${token}`) :
+      defect === 'duplicate' ? `${template}\n${token}\n` :
+        template.replace(token, '{{CASE_STUDY_HEADER}}');
+    fs.writeFileSync(templatePath, malformed);
+    let writes = 0;
+    assert.throws(() => buildSite({ rootDir, log: () => assert.fail('failed build cannot log completion'),
+      writeFileImpl() { writes += 1; }
+    }), /exactly one CASE_STUDY_HEADERS token/);
+    assert.equal(writes, 0);
+    for (const [name, bytes] of before) assert.deepEqual(fs.readFileSync(path.join(rootDir, name)), bytes);
+    assert.equal(fs.existsSync(path.join(rootDir, 'artifacts/.site-build.lock')), false);
+  });
+}

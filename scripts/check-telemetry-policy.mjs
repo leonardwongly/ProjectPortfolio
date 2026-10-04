@@ -28,6 +28,13 @@ const RUNTIME_HTML_FILES = [
   'case-study-agentforge.html', 'case-study-agentic.html', 'case-study-apple-calendar-mcp.html',
   '.well-known/service-doc.html'
 ];
+// Tooling, local reports and authored fragments are not deployable page roots.
+// Other directories (including .well-known and docs) must remain inventoried.
+const RUNTIME_HTML_EXCLUDED_DIRECTORIES = new Set([
+  '.git', '.agents', '.codex', '.aws', '.idea', '.claude',
+  'node_modules', 'artifacts', 'test-results', 'playwright-report'
+]);
+const RUNTIME_HTML_FRAGMENTS = new Set(['partials/nav.html', 'partials/footer.html']);
 
 const MAX_RUNTIME_SOURCE_BYTES = 512 * 1024;
 const MAX_RUNTIME_TOKENS = 100000;
@@ -767,11 +774,27 @@ function inspectRuntimeInventory(rootDir, runtimeFiles, { openSync = fs.openSync
     }
   };
   try { visit('js'); } catch (error) { findings.push(error.message); }
+  let htmlVisited = 0;
+  const visitHtml = (relativePath = '') => {
+    const directory = path.resolve(rootDir, relativePath);
+    for (const name of fs.readdirSync(directory)) {
+      if (++htmlVisited > 20000) throw new Error('runtime HTML inventory exceeds entry limit');
+      const relativeFile = relativePath ? `${relativePath}/${name}` : name;
+      if (!relativePath && RUNTIME_HTML_EXCLUDED_DIRECTORIES.has(name)) continue;
+      const stats = fs.lstatSync(path.resolve(rootDir, relativeFile));
+      if (stats.isSymbolicLink()) throw new Error(`${relativeFile}: runtime HTML inventory must not follow symbolic links`);
+      if (stats.isDirectory()) visitHtml(relativeFile);
+      else if (/\.html$/i.test(name)) {
+        if (!stats.isFile()) throw new Error(`${relativeFile}: runtime HTML inventory requires regular files`);
+        if (!RUNTIME_HTML_FILES.includes(relativeFile) && !RUNTIME_HTML_FRAGMENTS.has(relativeFile)) {
+          findings.push(`${relativeFile}: HTML page is not classified in the telemetry runtime inventory`);
+        }
+      }
+    }
+  };
+  try { visitHtml(); } catch (error) { findings.push(error.message); }
   // Root workers and scripts cannot silently bypass the js/ inventory.
   for (const name of fs.readdirSync(rootDir)) {
-    if (/\.html$/i.test(name) && !RUNTIME_HTML_FILES.includes(name)) {
-      findings.push(`${name}: HTML page is not classified in the telemetry runtime inventory`);
-    }
     if (/\.(?:js|mjs|cjs)$/i.test(name) && name !== SERVICE_WORKER_FILE && name !== 'playwright.config.mjs') {
       findings.push(`${name}: executable source is not classified in the telemetry runtime inventory`);
     }

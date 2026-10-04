@@ -295,7 +295,7 @@ test('frame ancestor protection is delivered through enforceable headers', () =>
 });
 
 test('every generated HTML page has a CSP on its clean URL', () => {
-  const rules = fs.readFileSync('src/_headers.template', 'utf8')
+  const rules = fs.readFileSync('_headers', 'utf8')
     .trim()
     .split(/\n\s*\n/)
     .map((block) => {
@@ -456,10 +456,10 @@ test('reading page avoids oversized 2x cover variants for known heavy assets', (
 test('each canonical clean and HTML route matches exactly one response CSP rule', () => {
   const routes = ['/', '/index.html', '/work', '/work.html', '/reading', '/reading.html', '/offline', '/offline.html',
     '/.well-known/service-doc', '/.well-known/service-doc.html'];
-  for (const name of ['agentforge', 'agentic', 'apple-calendar-mcp']) {
-    routes.push(`/case-study-${name}`, `/case-study-${name}.html`);
+  for (const { slug } of JSON.parse(fs.readFileSync('data/case-studies.json', 'utf8'))) {
+    routes.push(`/${slug.slice(0, -'.html'.length)}`, `/${slug}`);
   }
-  for (const file of ['src/_headers.template', '_headers']) {
+  for (const file of ['_headers']) {
     const blocks = [];
     for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
       if (line.startsWith('/')) blocks.push({ route: line.trim(), csp: [], cors: [] });
@@ -572,6 +572,21 @@ test('runtime inventory rejects additional executables, script references, inlin
   fs.writeFileSync(path.join(rootDir, 'js/extra.js'), 'document.createElement("img").src="/collect";');
   assert.ok(collect().some((finding) => finding.includes('js/extra.js') && finding.includes('not classified')));
   fs.unlinkSync(path.join(rootDir, 'js/extra.js'));
+  for (const relativeFile of ['.well-known/alternate.html', 'docs/nested/alternate.html', 'public/nested/alternate.HTML']) {
+    const extraPage = path.join(rootDir, relativeFile);
+    fs.mkdirSync(path.dirname(extraPage), { recursive: true });
+    fs.writeFileSync(extraPage, '<!doctype html><script src="/unreviewed.js"></script>');
+    assert.ok(collect().some((finding) => finding.includes(relativeFile) && finding.includes('not classified')), relativeFile);
+    fs.unlinkSync(extraPage);
+  }
+  const ignoredPage = path.join(rootDir, 'artifacts', 'report.html');
+  fs.mkdirSync(path.dirname(ignoredPage), { recursive: true });
+  fs.writeFileSync(ignoredPage, '<!doctype html><p>Local audit report</p>');
+  assert.deepEqual(collect(), [], 'local artifacts and known authored fragments remain outside the page inventory');
+  const linkedDirectory = path.join(rootDir, '.well-known', 'linked-pages');
+  fs.symlinkSync(path.join(rootDir, 'src'), linkedDirectory, process.platform === 'win32' ? 'junction' : 'dir');
+  assert.ok(collect().some((finding) => finding.includes('linked-pages') && finding.includes('must not follow symbolic links')));
+  fs.unlinkSync(linkedDirectory);
   const page = path.join(rootDir, 'src/work.html');
   const originalPage = fs.readFileSync(page, 'utf8');
   fs.writeFileSync(page, originalPage + '<script src="/unreviewed.js"></script>');
