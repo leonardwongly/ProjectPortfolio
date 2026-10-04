@@ -86,6 +86,20 @@ The first pushed follow-up head, d43eab58570163324bd378cbceb596b1ec790bb4, faile
 
 Build, Scan and Release Candidate now explicitly install ripgrep before running the security suite. Focused Node 24 smoke/policy/workflow validation passed all 159 cases with no failures or skips; `npm run check:workflows` and `git diff --check` passed. These are local repair checks; the repaired commit's hosted result must be inspected separately. The frozen 496-case/101-browser evidence above precedes this workflow-only repair. Failed hosted logs and the focused repair log remain in the ignored remediation evidence directory.
 
+### Pre-merge review remediation
+
+The merge-readiness check found new review comments on 818c49a4 despite green CI. The confirmed gaps are corrected before merging:
+
+- The build generates exact clean case-study CSP/CORS blocks from validated data and the shared authored HTML policy. A renamed-slug regression proves new clean/HTML coverage and removal of the stale route rule; current canonical output remains byte-identical. Missing, duplicate, misspelled, embedded and unknown authored tokens fail before publication.
+- Runtime inventory recursively classifies HTML, including nested `.well-known`, docs and other page directories. Only exact known authored fragments and local metadata/dependency/report roots are excluded. Nested unknown pages and symlinked directories fail closed.
+- The fixture server permits only the exact staged service-document clean/HTML paths. GET/HEAD regressions preserve hidden-file, traversal and no-follow/containment protection; unrelated discovery paths remain blocked.
+- Both `test:integration` and the hosted Playwright workflow include `browser-contracts.spec.mjs`. The accessibility gate remains intact.
+- The CodeQL fixture construction finding is addressed by constant child JavaScript and config URLs passed as argv. Fixtures copy unchanged configuration and link dependencies rather than rewriting import source.
+
+The reported HTML-byte decoding defect is not present: `readStableFileNoFollow` returns a decoded string when `fatalUtf8: true` is supplied (`scripts/lib/safe-input.cjs`), as the existing runtime HTML caller does. The passing telemetry gate and clean inventory fixture confirm that path; no redundant conversion or weakened parser was added.
+
+Fresh local Node 24 coverage validation passes **503 cases**, no failures/skips, **89.52% lines / 81.58% branches / 94.24% functions**, with the original includes and 75/75/85 thresholds. Build, generated-file, telemetry, repository/workflow hygiene and diff checks pass. Raw build/security logs are under ignored `artifacts/test-quality-audit-2026-10-04/merge-readiness/`. The focused independent review found no actionable regression in the recursive inventory or narrow fixture-server exception. These local results precede the new hosted checks and do not claim a merge or production deployment.
+
 ## Original audit baseline
 
 ## Result and interpretation
