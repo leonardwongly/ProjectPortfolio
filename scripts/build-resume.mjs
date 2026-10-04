@@ -46,7 +46,8 @@ const {
   validateProfileData,
   validateSkillsData,
   validateExperienceData,
-  validateCertificationData
+  validateCertificationData,
+  publishSiteBundle
 } = require('./build.js');
 
 const __filename = fileURLToPath(import.meta.url);
@@ -775,87 +776,11 @@ function getResumePaths(rootDir = projectRoot) {
   };
 }
 
-function publicationByteLength(bytes) {
-  if (Buffer.isBuffer(bytes) || ArrayBuffer.isView(bytes)) return bytes.byteLength;
-  return Buffer.byteLength(String(bytes), 'utf8');
-}
-
+// Resume and site outputs use the same snapshot-bound publication contract.
+// A failed build may restore only files whose published identity and bytes it
+// still owns; a later external edit must survive publication and rollback.
 function publishResumeBundle({ rootDir, entries, writeFileImpl = writeFileNoFollow }) {
-  if (!Array.isArray(entries) || entries.length === 0) {
-    throw new TypeError('Resume publication entries must be a non-empty array.');
-  }
-
-  const seenPaths = new Set();
-  const snapshots = entries.map((entry) => {
-    if (!entry || typeof entry !== 'object' || typeof entry.path !== 'string' ||
-        typeof entry.label !== 'string' || !Object.hasOwn(entry, 'bytes') ||
-        !Number.isSafeInteger(entry.maxBytes) || entry.maxBytes < 1) {
-      throw new TypeError('Each resume publication entry requires a path, bytes, label, and positive maxBytes.');
-    }
-    const resolvedPath = assertSafeOutputPath(rootDir, entry.path, entry.label);
-    if (seenPaths.has(resolvedPath)) {
-      throw new Error(`Duplicate resume publication path: ${resolvedPath}`);
-    }
-    seenPaths.add(resolvedPath);
-    const byteLength = publicationByteLength(entry.bytes);
-    if (byteLength < 1 || byteLength > entry.maxBytes) {
-      throw new Error(`Generated ${entry.label} is outside the allowed 1-${entry.maxBytes} byte range.`);
-    }
-    try {
-      return {
-        existed: true,
-        bytes: readStableFileNoFollow(entry.path, {
-          rootDir,
-          label: entry.label,
-          maxBytes: entry.maxBytes
-        })
-      };
-    } catch (error) {
-      if (error instanceof StableFileReadError && error.reason === 'missing') {
-        return { existed: false, bytes: null };
-      }
-      throw error;
-    }
-  });
-
-  const published = [];
-  try {
-    entries.forEach((entry, index) => {
-      writeFileImpl(rootDir, entry.path, entry.bytes, entry.label);
-      const stats = fs.lstatSync(entry.path, { bigint: true });
-      if (!stats.isFile() || stats.isSymbolicLink()) {
-        throw new Error(`Published ${entry.label} is not a regular file.`);
-      }
-      published.push({ index, stats });
-    });
-  } catch (publicationError) {
-    const rollbackErrors = [];
-    for (let cursor = published.length - 1; cursor >= 0; cursor -= 1) {
-      const { index, stats: publishedStats } = published[cursor];
-      const entry = entries[index];
-      const snapshot = snapshots[index];
-      try {
-        if (snapshot.existed) {
-          writeFileNoFollow(rootDir, entry.path, snapshot.bytes, `rollback ${entry.label}`);
-        } else {
-          const currentStats = fs.lstatSync(entry.path, { bigint: true });
-          if (!currentStats.isFile() || !sameFileIdentity(publishedStats, currentStats)) {
-            throw new Error(`Published ${entry.label} changed before rollback; refusing to remove it.`);
-          }
-          fs.unlinkSync(entry.path);
-        }
-      } catch (error) {
-        rollbackErrors.push(error);
-      }
-    }
-    if (rollbackErrors.length > 0) {
-      throw new AggregateError(
-        [publicationError, ...rollbackErrors],
-        `Resume publication failed and ${rollbackErrors.length} rollback operation(s) also failed.`
-      );
-    }
-    throw publicationError;
-  }
+  return publishSiteBundle({ rootDir, entries, writeFileImpl });
 }
 
 function acquireResumeBuildLock({ rootDir = projectRoot } = {}) {
@@ -1121,6 +1046,7 @@ export {
   RESUME_MANIFEST_DESCRIPTION,
   RESUME_SOURCE_FILES,
   MAX_RESUME_SOURCE_BYTES,
+  MAX_RESUME_ARTIFACT_BYTES,
   RESUME_EXPORT_TIMEOUT_MS,
   MAX_RESUME_EXPORT_TIMEOUT_MS,
   MAX_PANDOC_DIAGNOSTIC_BYTES
