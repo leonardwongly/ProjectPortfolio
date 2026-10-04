@@ -59,6 +59,179 @@ test('DNS validation rejects empty, malformed, invalid, mismatched, and unsafe a
   }
 });
 
+test('every DNS answer is validated before either transport starts', async () => {
+  for (const records of [[PUBLIC_RECORD, { address: '127.0.0.1', family: 4 }],
+    [{ address: '127.0.0.1', family: 4 }, PUBLIC_RECORD], [PUBLIC_RECORD, { address: 'bad', family: 4 }]]) {
+    let calls = 0;
+    const transport = () => { calls += 1; assert.fail('denied DNS must not start transport'); };
+    await assert.rejects(() => requestPinnedHttpsBytes('https://public.example/', {
+      lookupImpl: async () => records, requestImpl: transport
+    }), /blocked address|invalid IP/);
+    await assert.rejects(() => fetchInjectedHttpsBytes('https://public.example/', {
+      lookupImpl: async () => records, fetchImpl: transport
+    }), /blocked address|invalid IP/);
+    assert.equal(calls, 0);
+  }
+  const records = [PUBLIC_RECORD, { address: '2606:4700:4700::1111', family: 6 }];
+  assert.deepEqual(await assertPublicDnsResolution(new URL('https://public.example/'), {
+    lookupImpl: async () => records
+  }), records);
+});
+
+test('pinned byte accounting is cumulative and destroys both streams on overflow', async () => {
+  for (const { chunks, headers, overflow } of [
+    { chunks: [Buffer.alloc(32, 'a'), Buffer.alloc(32, 'b')], headers: { 'content-length': '64' }, overflow: false },
+    { chunks: [Buffer.alloc(32, 'a'), Buffer.alloc(33, 'b')], headers: {}, overflow: true },
+    { chunks: [Buffer.from('small')], headers: { 'content-length': '65' }, overflow: true }
+  ]) {
+    let requestDestroyed = 0;
+    let responseDestroyed = 0;
+    const operation = requestPinnedHttpsBytes('https://public.example/', {
+      lookupImpl: async () => [PUBLIC_RECORD], maxBytes: 64, timeoutMs: 1000,
+      requestImpl: (_url, _options, onResponse) => {
+        const request = new EventEmitter();
+        request.destroy = () => { requestDestroyed += 1; };
+        request.end = () => {
+          const response = new EventEmitter();
+          response.statusCode = 200;
+          response.headers = headers;
+          response.destroy = () => { responseDestroyed += 1; };
+          onResponse(response);
+          for (const chunk of chunks) response.emit('data', chunk);
+          response.emit('end');
+        };
+        return request;
+      }
+    });
+    if (overflow) {
+      await assert.rejects(() => operation, /exceeds 64 byte limit/);
+      assert.equal(requestDestroyed, 1);
+      assert.equal(responseDestroyed, 1);
+    } else {
+      assert.deepEqual((await operation).bytes, Buffer.concat(chunks));
+      assert.equal(requestDestroyed, 0);
+      assert.equal(responseDestroyed, 0);
+    }
+  }
+});
+
+test('timeouts prevent late DNS transport and destroy late headers and pending bodies', { timeout: 2000 }, async () => {
+  for (const injected of [false, true]) {
+    let resolveDns;
+    let calls = 0;
+    const options = { timeoutMs: 10, lookupImpl: () => new Promise((resolve) => { resolveDns = resolve; }) };
+    const operation = injected
+      ? fetchInjectedHttpsBytes('https://public.example/', { ...options, fetchImpl: async () => { calls += 1; return new Response('late'); } })
+      : requestPinnedHttpsBytes('https://public.example/', { ...options, requestImpl: () => { calls += 1; assert.fail('late DNS'); } });
+    await assert.rejects(() => operation, { name: 'AbortError' });
+    resolveDns([PUBLIC_RECORD]);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(calls, 0, `late DNS transport injected=${injected}`);
+  }
+  for (const earlyBody of [false, true]) {
+    let deliver;
+    let requestsDestroyed = 0;
+    let responsesDestroyed = 0;
+    const response = new EventEmitter();
+    response.statusCode = 200;
+    response.headers = {};
+    response.destroy = () => { responsesDestroyed += 1; };
+    await assert.rejects(() => requestPinnedHttpsBytes('https://public.example/', {
+      timeoutMs: 10, lookupImpl: async () => [PUBLIC_RECORD],
+      requestImpl: (_url, _options, onResponse) => {
+        deliver = onResponse;
+        const request = new EventEmitter();
+        request.destroy = () => { requestsDestroyed += 1; };
+        request.end = () => { if (earlyBody) { onResponse(response); response.emit('data', Buffer.from('partial')); } };
+        return request;
+      }
+    }), { name: 'AbortError' });
+    assert.equal(requestsDestroyed, 1);
+    if (!earlyBody) deliver(response);
+    assert.equal(responsesDestroyed, 1);
+  }
+});
+
+test('injected HTTPS preserves bytes, options and transport failures with bounded reader cleanup', async () => {
+  const bytes = Buffer.from([0xff, 0x00, 0x61]);
+  const base = { lookupImpl: async () => [PUBLIC_RECORD], maxBytes: 64, timeoutMs: 1000 };
+  const result = await fetchInjectedHttpsBytes('https://public.example/file', { ...base, method: 'POST', headers: { accept: 'application/octet-stream' },
+    fetchImpl: async (url, options) => {
+      assert.equal(url, 'https://public.example/file');
+      assert.equal(options.method, 'POST');
+      assert.equal(options.redirect, 'error');
+      assert.equal(options.headers.accept, 'application/octet-stream');
+      assert.equal(options.signal.aborted, false);
+      return new Response(bytes, { status: 201 });
+    }
+  });
+  assert.deepEqual(result.bytes, bytes);
+  assert.equal(result.status, 201);
+  for (const [length, pattern] of [['65', /exceeds 64 byte limit/], ['invalid', /malformed Content-Length/]]) {
+    await assert.rejects(() => fetchInjectedHttpsBytes('https://public.example/', { ...base,
+      fetchImpl: async () => new Response('small', { headers: { 'content-length': length } })
+    }), pattern);
+  }
+  const cause = Object.assign(new Error('transport failed'), { code: 'ECONNRESET' });
+  await assert.rejects(() => fetchInjectedHttpsBytes('https://public.example/', {
+    ...base, fetchImpl: async () => { throw cause; }
+  }), (error) => error.cause === cause && error.code === 'ECONNRESET' && error.networkTransportError === true);
+  for (const overflow of [false, true]) {
+    let cancelled = 0;
+    let released = 0;
+    let reads = 0;
+    let signal;
+    const bounded = await fetchInjectedHttpsBytes('https://public.example/', { ...base,
+      fetchImpl: async (_url, options) => {
+        signal = options.signal;
+        return { status: 200, headers: new Headers(), body: { getReader: () => ({
+          read: async () => reads++ < 2 ? { value: Buffer.alloc(reads === 2 && overflow ? 33 : 32), done: false } : { done: true },
+          cancel: async () => { cancelled += 1; }, releaseLock: () => { released += 1; }
+        }) } };
+      }
+    }).then((value) => value, (error) => error);
+    assert.equal(released, 1);
+    assert.equal(cancelled, overflow ? 1 : 0);
+    assert.equal(signal.aborted, overflow);
+    if (overflow) assert.match(bounded.message, /exceeds 64 byte limit/);
+    else assert.equal(bounded.bytes.length, 64);
+  }
+  let deliver;
+  let cancelled = 0;
+  let reads = 0;
+  await assert.rejects(() => fetchInjectedHttpsBytes('https://public.example/', { ...base, timeoutMs: 10,
+    fetchImpl: () => new Promise((resolve) => { deliver = resolve; })
+  }), { name: 'AbortError' });
+  deliver({ status: 200, headers: new Headers(), body: {
+    cancel: async () => { cancelled += 1; }, getReader: () => { reads += 1; assert.fail('late response must not be read'); }
+  } });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(cancelled, 1);
+  assert.equal(reads, 0);
+  let activeCancelled = 0;
+  let activeReleased = 0;
+  let activeSignal;
+  await assert.rejects(() => fetchInjectedHttpsBytes('https://public.example/', { ...base, timeoutMs: 10,
+    fetchImpl: async (_url, options) => {
+      activeSignal = options.signal;
+      return { status: 200, headers: new Headers(), body: { getReader: () => ({
+        read: () => new Promise(() => {}), cancel: async (reason) => {
+          assert.equal(reason, activeSignal.reason);
+          activeCancelled += 1;
+        }, releaseLock: () => { activeReleased += 1; }
+      }) } };
+    }
+  }), { name: 'AbortError' });
+  assert.equal(activeCancelled, 1);
+  assert.equal(activeReleased, 1);
+  assert.equal(activeSignal.reason.name, 'AbortError');
+  for (const options of [{ maxBytes: 0 }, { timeoutMs: 0 }]) {
+    await assert.rejects(() => fetchInjectedHttpsBytes('https://public.example/', { ...base, ...options,
+      fetchImpl: () => assert.fail('invalid options must not fetch')
+    }), /positive safe integer/);
+  }
+});
+
 test('IP policy blocks special-purpose ranges that are not globally reachable', () => {
   for (const address of [
     '192.88.99.0',

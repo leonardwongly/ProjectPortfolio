@@ -54,20 +54,22 @@ test('production HSTS requires a valid one-year policy covering subdomains', () 
   assert.equal(validateStrictTransportSecurity('max-age=63072000; includeSubDomains; preload'), null);
   assert.equal(validateStrictTransportSecurity('max-age="31536000"; includeSubDomains; preload'), null);
   for (const policy of [
-    'max-age=0; includeSubDomains',
-    'max-age=31535999; includeSubDomains',
-    'max-age=31536000',
-    'max-age=abc; includeSubDomains',
-    'max-age=999999999999999999999999; includeSubDomains',
-    'max-age=31536000; includeSubDomains=1',
-    'max-age=31536000; includeSubDomains; max-age=0',
-    'max-age=31536000; includeSubDomains, max-age=0',
+    'max-age=0; includeSubDomains; preload',
+    'max-age=31535999; includeSubDomains; preload',
+    'max-age=31536000; preload',
+    'max-age=31536000; includeSubDomains',
+    'max-age=abc; includeSubDomains; preload',
+    'max-age=999999999999999999999999; includeSubDomains; preload',
+    'max-age=31536000; includeSubDomains=1; preload',
+    'max-age=31536000; includeSubDomains; preload; max-age=0',
+    'max-age=31536000; includeSubDomains; preload, max-age=0',
     'max-age=31536000; includeSubDomains; preload=1',
     'max-age=31536000; includeSubDomains; preload; unknown=1',
     'max-age=31536000\u00a0; includeSubDomains; preload'
   ]) {
     assert.notEqual(validateStrictTransportSecurity(policy), null, policy);
   }
+  assert.equal(validateStrictTransportSecurity('max-age=31536001; includeSubDomains; preload'), null);
 });
 
 test('production page validation reports weak CSP and HSTS values', () => {
@@ -125,6 +127,8 @@ test('all eight published clean pages require the complete header set', () => {
     'referrer-policy': 'strict-origin-when-cross-origin', 'permissions-policy': PERMISSIONS
   });
   for (const check of PAGE_CHECKS) {
+    assert.deepEqual(validatePage({ url: `https://public.example${check.path}`, check,
+      response: { status: 200, headers: validHeaders }, body: check.marker.source }), [], check.path);
     for (const [header, value] of [
       ['content-security-policy', `${CSP}, script-src *`], ['strict-transport-security', 'max-age=0'],
       ['x-content-type-options', 'nosniff, nosniff'], ['x-frame-options', 'DENY, SAMEORIGIN'],
@@ -133,11 +137,37 @@ test('all eight published clean pages require the complete header set', () => {
     ]) {
       const headers = new Headers(validHeaders);
       headers.set(header, value);
-      assert.ok(validatePage({ url: `https://public.example${check.path}`, check,
-        response: { status: 200, headers }, body: check.marker.source }).length, header);
+      const invalid = validatePage({ url: `https://public.example${check.path}`, check,
+        response: { status: 200, headers }, body: check.marker.source });
+      assert.equal(invalid.length, 1, invalid.join('\n'));
+      assert.ok(invalid[0].includes(header), invalid[0]);
       headers.delete(header);
-      assert.ok(validatePage({ url: `https://public.example${check.path}`, check,
-        response: { status: 200, headers }, body: check.marker.source }).length, header);
+      const missing = validatePage({ url: `https://public.example${check.path}`, check,
+        response: { status: 200, headers }, body: check.marker.source });
+      assert.ok(missing.every((finding) => finding.includes(header)), missing.join('\n'));
+      assert.ok(missing.length > 0, header);
     }
+  }
+});
+
+test('CSP single-fault required directives and policy count preserve valid controls', () => {
+  assert.equal(validateContentSecurityPolicy(CSP), null);
+  for (const source of ["'unsafe-eval'", "'unsafe-inline'", '*', 'https:',
+    "'sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='"]) {
+    assert.notEqual(validateContentSecurityPolicy(CSP.replace("script-src 'self'", `script-src 'self' ${source}`)), null, source);
+  }
+  assert.notEqual(validateContentSecurityPolicy(`${CSP}; script-src 'self'`), null);
+  assert.notEqual(validateContentSecurityPolicy(CSP.replace("connect-src 'self'", "connect-src 'self' 'self'")), null);
+  for (const directive of ["default-src 'self'", "script-src 'self' 'sha256-RBh5ZtcP26aZFp/EGYy/BT1gSD595lvp8sWO2T9xesI='", "object-src 'none'", "frame-src 'none'", "base-uri 'self'",
+    "form-action 'self'", "frame-ancestors 'none'", 'upgrade-insecure-requests', 'block-all-mixed-content']) {
+    const policy = CSP.split(';').map((part) => part.trim()).filter((part) => part !== directive).join('; ');
+    assert.notEqual(policy, CSP, directive);
+    assert.notEqual(validateContentSecurityPolicy(policy), null, directive);
+  }
+  assert.equal(validateContentSecurityPolicy([CSP, ...Array(15).fill("default-src 'none'")].join(', ')), null);
+  assert.notEqual(validateContentSecurityPolicy([CSP, ...Array(16).fill("default-src 'none'")].join(', ')), null);
+  for (const directive of ['camera', 'microphone', 'geolocation', 'payment', 'usb']) {
+    const policy = PERMISSIONS.split(', ').filter((part) => !part.startsWith(`${directive}=`)).join(', ');
+    assert.notEqual(validatePermissionsPolicy(policy), null, directive);
   }
 });

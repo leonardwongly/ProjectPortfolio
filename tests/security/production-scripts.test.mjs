@@ -16,6 +16,14 @@ import {
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ORIGIN = 'https://public.example';
+const EXPECTED_PAGES = [
+  ['/', 'index.html'], ['/work', 'work.html'],
+  ['/case-study-agentforge', 'case-study-agentforge.html'],
+  ['/case-study-agentic', 'case-study-agentic.html'],
+  ['/case-study-apple-calendar-mcp', 'case-study-apple-calendar-mcp.html'],
+  ['/reading', 'reading.html'], ['/offline', 'offline.html'],
+  ['/.well-known/service-doc', '.well-known/service-doc.html']
+];
 const localPage = (pagePath) => fs.readFileSync(path.join(ROOT_DIR, PAGE_FILES.get(pagePath)), 'utf8');
 const validate = (html, pagePath = '/work') => validateScripts({
   html,
@@ -25,6 +33,7 @@ const validate = (html, pagePath = '/work') => validateScripts({
 });
 
 test('committed pages have the approved script inventory', () => {
+  assert.deepEqual([...PAGE_FILES], EXPECTED_PAGES);
   for (const pagePath of PAGE_FILES.keys()) {
     assert.deepEqual(validate(localPage(pagePath), pagePath), [], pagePath);
   }
@@ -91,6 +100,7 @@ test('script extraction skips comments and raw text but accepts HTML attribute s
 test('script source aliases and duplicate attributes fail closed', () => {
   const work = localPage('/work');
   const sourceTag = '<script src="js/main.js" defer></script>';
+  assert.ok(work.includes(sourceTag));
   for (const replacement of [
     '<script src="//evil.example/main.js" defer></script>',
     '<script src="/.webmcp/bridge.js" defer></script>',
@@ -232,18 +242,123 @@ test('private DNS destinations and unsafe local baseline inputs fail before tran
 
 test('script monitor bounds retries and surfaces page, asset and transport errors', async () => {
   let sleeps = 0;
+  const requested = [];
   const options = { origin: ORIGIN, timeoutMs: 100, attempts: 2, retryDelayMs: 1,
-    sleepImpl: async () => { sleeps += 1; }, lookupImpl: async () => [{ address: '93.184.216.34', family: 4 }],
-    fetchImpl: async (url) => { if (new URL(url).pathname.startsWith('/js/')) throw new Error('asset transport failed');
+    sleepImpl: async (delay) => { assert.equal(delay, 1); sleeps += 1; }, lookupImpl: async () => [{ address: '93.184.216.34', family: 4 }],
+    fetchImpl: async (url) => { requested.push(new URL(url).pathname); if (new URL(url).pathname.startsWith('/js/')) throw new Error(`asset transport failed attempt ${sleeps + 1}`);
       return new Response('unavailable', { status: 503, headers: { 'content-type': 'text/html' } }); }
   };
   const findings = await runProductionScriptCheck(options);
   assert.equal(findings.length, PAGE_FILES.size + 2);
   assert.equal(sleeps, 1);
+  const vector = [...EXPECTED_PAGES.map(([page]) => page), '/js/main.js', '/js/site.js'];
+  assert.deepEqual(requested, [...vector, ...vector]);
+  assert.ok(findings.filter((finding) => finding.includes('asset transport failed')).every((finding) => finding.includes('attempt 2')));
   assert.ok(findings.some((finding) => finding.includes('asset transport failed')));
   assert.ok(findings.some((finding) => finding.includes('503')));
   await assert.rejects(() => runProductionScriptCheck({ ...options, sleepImpl: 'bad' }), /sleep implementation/);
   await assert.rejects(() => runProductionScriptCheck({ ...options, lookupImpl: undefined }), /explicit fetch and DNS/);
+  assert.equal(requested.length, vector.length * 2);
+  let calls = 0;
+  sleeps = 0;
+  assert.deepEqual(await runProductionScriptCheck({ ...options, fetchImpl: async (url) => {
+    const page = new URL(url).pathname;
+    const firstAttempt = calls++ < vector.length;
+    if (firstAttempt) return new Response('unavailable', { status: 503 });
+    return new Response(page.startsWith('/js/') ? fs.readFileSync(path.join(ROOT_DIR, page.slice(1))) : localPage(page), {
+      headers: { 'content-type': page.startsWith('/js/') ? 'Text/JavaScript; charset=utf-8' : 'Text/HTML; charset=utf-8' }
+    });
+  } }), []);
+  assert.equal(calls, vector.length * 2);
+  assert.equal(sleeps, 1);
+});
+
+test('default asset integrity distinguishes unequal bytes with identical UTF-8 decoding', async (t) => {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'production-byte-integrity-'));
+  t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
+  for (const [, file] of EXPECTED_PAGES) {
+    fs.mkdirSync(path.dirname(path.join(rootDir, file)), { recursive: true });
+    fs.copyFileSync(path.join(ROOT_DIR, file), path.join(rootDir, file));
+  }
+  fs.mkdirSync(path.join(rootDir, 'js'));
+  fs.writeFileSync(path.join(rootDir, 'js/main.js'), Buffer.from([0x80]));
+  fs.writeFileSync(path.join(rootDir, 'js/site.js'), 'safe');
+  assert.equal(Buffer.from([0x80]).toString('utf8'), Buffer.from([0x81]).toString('utf8'));
+  const options = { rootDir, origin: ORIGIN, attempts: 1, timeoutMs: 1000, retryDelayMs: 1,
+    lookupImpl: async () => [{ address: '93.184.216.34', family: 4 }],
+    requestImpl: (url, _options, onResponse) => {
+      const page = new URL(url).pathname;
+      const request = new EventEmitter();
+      request.destroy = () => {};
+      request.end = () => {
+        const response = Readable.from([page === '/js/main.js' ? Buffer.from([0x81]) : fs.readFileSync(path.join(rootDir, page.startsWith('/js/') ? page.slice(1) : PAGE_FILES.get(page)))]);
+        response.statusCode = 200;
+        response.headers = { 'content-type': page.startsWith('/js/') ? 'application/javascript' : 'text/html' };
+        onResponse(response);
+      };
+      return request;
+    }
+  };
+  assert.deepEqual(await runProductionScriptCheck(options), [`${ORIGIN}/js/main.js: JavaScript bytes differ from the reviewed local asset`]);
+  for (const byte of [0x80, 0x81]) {
+    await t.test(`injected raw byte ${byte.toString(16)}`, async () => {
+      const findings = await runProductionScriptCheck({ ...options, fetchImpl: async (url) => {
+        const page = new URL(url).pathname;
+        return new Response(page === '/js/main.js' ? Buffer.from([byte]) : fs.readFileSync(path.join(rootDir,
+          page.startsWith('/js/') ? page.slice(1) : PAGE_FILES.get(page))), {
+          headers: { 'content-type': page.startsWith('/js/') ? 'application/javascript' : 'text/html' }
+        });
+      } });
+      assert.deepEqual(findings, byte === 0x80 ? [] : [`${ORIGIN}/js/main.js: JavaScript bytes differ from the reviewed local asset`]);
+    });
+  }
+  fs.writeFileSync(path.join(rootDir, 'js/main.js'), 'valid UTF-8 script');
+  for (const [target, status, mime, expected] of [
+    ['/js/site.js', 503, 'application/javascript', 'expected HTTP 200 JavaScript response'],
+    ['/work', 200, 'text/plain', 'expected HTTP 200 HTML response, received 200']
+  ]) {
+    assert.deepEqual(await runProductionScriptCheck({ ...options, fetchImpl: async (url) => {
+      const page = new URL(url).pathname;
+      return new Response(fs.readFileSync(path.join(rootDir, page.startsWith('/js/') ? page.slice(1) : PAGE_FILES.get(page))), {
+        status: page === target ? status : 200,
+        headers: { 'content-type': page === target ? mime : page.startsWith('/js/') ? 'Application/JavaScript; charset=utf-8' : 'Text/HTML; charset=utf-8' }
+      });
+    } }), [`${ORIGIN}${target}: ${expected}`]);
+  }
+});
+
+test('injected late production responses never open readers after timeout', async () => {
+  const { fetchTextWithTimeout } = await import('../../scripts/check-production-smoke.mjs');
+  let deliver;
+  let cancelled = 0;
+  let reads = 0;
+  await assert.rejects(() => fetchTextWithTimeout(`${ORIGIN}/work`, { timeoutMs: 10,
+    fetchImpl: () => new Promise((resolve) => { deliver = resolve; })
+  }), { name: 'AbortError' });
+  deliver({ status: 200, headers: new Headers(), body: {
+    cancel: async (reason) => { assert.equal(reason.name, 'AbortError'); cancelled += 1; },
+    getReader: () => { reads += 1; assert.fail('late body must not be read'); }
+  } });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(cancelled, 1);
+  assert.equal(reads, 0);
+});
+
+test('injected response capture retains decoded text, exact chunks and cumulative bounds', async () => {
+  const { fetchTextWithTimeout, readBoundedResponseBody } = await import('../../scripts/check-production-smoke.mjs');
+  assert.equal(await readBoundedResponseBody(new Response('text'), 4), 'text');
+  const stream = (chunks) => new ReadableStream({ start(controller) {
+    for (const chunk of chunks) controller.enqueue(Uint8Array.from(chunk));
+    controller.close();
+  } });
+  const options = { timeoutMs: 1000, maxBodyBytes: 3,
+    fetchImpl: async () => new Response(stream([[0xe2], [0x82, 0xac]])) };
+  const result = await fetchTextWithTimeout(`${ORIGIN}/work`, options);
+  assert.equal(result.body, '€');
+  assert.deepEqual(result.bytes, Buffer.from([0xe2, 0x82, 0xac]));
+  await assert.rejects(() => fetchTextWithTimeout(`${ORIGIN}/work`, { ...options,
+    fetchImpl: async () => new Response(stream([[0xe2], [0x82, 0xac], [0x61]]))
+  }), /exceeds 3 byte limit/);
 });
 
 
