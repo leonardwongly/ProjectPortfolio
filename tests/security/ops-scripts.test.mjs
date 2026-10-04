@@ -136,7 +136,9 @@ test('reading metadata audit detects missing fields, duplicate records, missing 
   assert.ok(findings.some((finding) => finding.includes('missing author')));
   assert.ok(findings.some((finding) => finding.includes('duplicate isbn')));
   assert.ok(findings.some((finding) => finding.includes('declared cover is missing')));
-  assert.ok(findings.some((finding) => finding.includes('cover duplicates')));
+  assert.deepEqual(findings.filter((finding) => finding.includes('cover duplicates')), [
+    'reading[3]: cover duplicates reading[2] by content hash: book/2026/c.jpg'
+  ]);
 });
 
 test('reading metadata audit fails closed on malformed entries and unsafe cover files', async (t) => {
@@ -193,6 +195,22 @@ test('reading metadata audit fails closed on malformed entries and unsafe cover 
   assert.equal(fs.readFileSync(path.join(outsideRoot, 'hardlink-source.jpg'), 'utf8'), 'hardlinked-cover');
   assert.equal(fs.lstatSync(path.join(outsideRoot, 'hardlink-source.jpg')).nlink, 2);
   assert.match(sha256SafeCoverFile(rootDir, 'book/valid.jpg', 'valid cover'), /^[a-f\d]{64}$/);
+});
+
+test('cover hashing matches an independent golden digest and distinguishes duplicate groups', async (t) => {
+  const { sha256SafeCoverFile, auditReadingMetadata } = await import('../../scripts/audit-reading-metadata.mjs');
+  const rootDir = makeTempRoot(t);
+  writeFile(rootDir, 'book/a.jpg', 'abc');
+  writeFile(rootDir, 'book/b.jpg', 'abc');
+  writeFile(rootDir, 'book/c.jpg', 'abd');
+  assert.equal(sha256SafeCoverFile(rootDir, 'book/a.jpg', 'golden fixture'),
+    'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+  const entries = ['a', 'b', 'c'].map((name, index) => ({ title: `Title ${name}`, author: 'Author', year: '2026',
+    isbn: `978000000000${index}`, cover: `book/${name}.jpg` }));
+  assert.deepEqual(auditReadingMetadata(entries, { rootDir }), [
+    'reading[1]: cover duplicates reading[0] by content hash: book/b.jpg'
+  ]);
+  assert.deepEqual(auditReadingMetadata([entries[0], entries[2]], { rootDir }), []);
 });
 
 test('reading metadata source reads are bounded and no-follow', async (t) => {
@@ -357,6 +375,37 @@ test('performance budget check reports clean fixtures and oversized generated fi
   assert.ok(result.failures.some((failure) => failure.includes('index.html')));
 });
 
+test('performance limits distinguish exact file, directory, single-asset and rendered 2x boundaries', async (t) => {
+  const { checkPerformanceBudget } = await import('../../scripts/check-performance-budget.mjs');
+  const rootDir = makeTempRoot(t);
+  writePerformanceFixture(rootDir);
+  writeFile(rootDir, 'index.html', Buffer.alloc(90 * 1024, 'a'));
+  assert.deepEqual(checkPerformanceBudget({ rootDir }).failures, []);
+  fs.appendFileSync(path.join(rootDir, 'index.html'), 'a');
+  assert.match(checkPerformanceBudget({ rootDir }).failures[0], /^index\.html is /);
+  writeFile(rootDir, 'index.html', 'ok');
+  writeFile(rootDir, 'reading.html', '<img srcset="book/cover.jpg 2x">');
+  writeFile(rootDir, 'book/cover.jpg', Buffer.alloc(6 * 1024 * 1024));
+  assert.deepEqual(checkPerformanceBudget({ rootDir }).failures, []);
+  fs.appendFileSync(path.join(rootDir, 'book/cover.jpg'), 'x');
+  const twoX = checkPerformanceBudget({ rootDir }).failures;
+  assert.equal(twoX.length, 1);
+  assert.match(twoX[0], /^rendered reading 2x media is /);
+  writeFile(rootDir, 'book/cover.jpg', 'ok');
+  writeFile(rootDir, 'images/a.png', Buffer.alloc(4 * 1024 * 1024));
+  writeFile(rootDir, 'images/b.png', Buffer.alloc(4 * 1024 * 1024 - fs.statSync(path.join(rootDir, 'images/.keep')).size));
+  assert.deepEqual(checkPerformanceBudget({ rootDir }).failures, []);
+  fs.appendFileSync(path.join(rootDir, 'images/b.png'), 'x');
+  assert.match(checkPerformanceBudget({ rootDir }).failures[0], /^images\/ is /);
+  writeFile(rootDir, 'images/b.png', '');
+  const fd = fs.openSync(path.join(rootDir, 'images/a.png'), 'w');
+  fs.ftruncateSync(fd, 20 * 1024 * 1024);
+  fs.closeSync(fd);
+  assert.equal(checkPerformanceBudget({ rootDir }).failures.some((finding) => finding.includes('single-asset budget')), false);
+  fs.appendFileSync(path.join(rootDir, 'images/a.png'), 'x');
+  assert.ok(checkPerformanceBudget({ rootDir }).failures.some((finding) => finding.startsWith('images/a.png') && finding.includes('single-asset budget')));
+});
+
 test('performance budget rejects unreferenced deployed assets', async (t) => {
   const { checkPerformanceBudget, walkFiles } = await import('../../scripts/check-performance-budget.mjs');
   const rootDir = makeTempRoot(t);
@@ -468,6 +517,10 @@ test('link health validator rejects unsafe URL shapes before network access', as
 
 test('link health preflight covers every authored data file and generated page without fetching', async (t) => {
   const { DATA_FILES, GENERATED_HTML_FILES, runLinkHealth } = await import('../../scripts/check-link-health.mjs');
+  assert.deepEqual(DATA_FILES, ['data/profile.json', 'data/certifications.json', 'data/featured-projects.json',
+    'data/reading.json', 'data/experience.json', 'data/case-studies.json', 'data/skills.json', 'data/resume.json']);
+  assert.deepEqual(GENERATED_HTML_FILES, ['index.html', 'work.html', 'case-study-agentforge.html',
+    'case-study-agentic.html', 'case-study-apple-calendar-mcp.html', 'reading.html', 'offline.html']);
   const rootDir = makeTempRoot(t);
   DATA_FILES.forEach((file, index) => {
     writeFile(rootDir, file, JSON.stringify({ url: `https://public.example/data-${index}` }));
@@ -547,6 +600,30 @@ test('link collection reports unsafe URL-valued fields while preserving local re
   assert.ok(results.some((result) => result.category === 'unsafe-url' && result.detail.includes('control or backslash')));
   assert.ok(!results.some((result) => result.url === '#local-section' || result.url === '/local-page'));
   assert.ok(!results.some((result) => result.url.includes('/comment') || result.url.includes('/script')));
+});
+
+test('each unsafe HTML link has its own source and rejection oracle', async (t) => {
+  const { collectExternalUrls } = await import('../../scripts/check-link-health.mjs');
+  const rootDir = makeTempRoot(t);
+  for (const [html, source, url, detail] of [
+    ['<a href="jav&#x61;script:alert(1)">x</a>', 'fixture.html:html:href', 'javascript:alert(1)', /https URLs/],
+    ['<img srcset="javascript:alert(1) 2x">', 'fixture.html:html:srcset[0]', 'javascript:alert(1)', /https URLs/],
+    ['<a href="https:\\private.example/backslash">x</a>', 'fixture.html:html:href', 'https:\\private.example/backslash', /control or backslash/],
+    ['<a href="https://private.example/line\nbreak">x</a>', 'fixture.html:html:href', 'https://private.example/line\nbreak', /control or backslash/]
+  ]) {
+    writeFile(rootDir, 'fixture.html', html);
+    const findings = collectExternalUrls({ rootDir, dataFiles: [], generatedHtmlFiles: ['fixture.html'] });
+    assert.equal(findings.length, 1, html);
+    assert.equal(findings[0].source, source);
+    assert.equal(findings[0].url, url);
+    assert.equal(findings[0].category, 'unsafe-url');
+    assert.match(findings[0].detail, detail);
+  }
+  writeFile(rootDir, 'fixture.html', '<a href="https://public.example/path#fragment">x</a>');
+  const good = collectExternalUrls({ rootDir, dataFiles: [], generatedHtmlFiles: ['fixture.html'] });
+  assert.equal(good.length, 1);
+  assert.equal(good[0].ok, true);
+  assert.equal(good[0].url, 'https://public.example/path');
 });
 
 test('link parsing rejects zero, oversized, deeply nested, and excessive inputs', async () => {
@@ -779,6 +856,19 @@ test('production smoke validator reports missing headers and markers', async () 
       }
     }).length > 0
   );
+});
+
+test('production smoke marker and status failures cannot hide behind header failures', async () => {
+  const { validatePage } = await import('../../scripts/check-production-smoke.mjs');
+  const baseline = { url: 'https://public.example/offline', response: { status: 200, headers: new Headers(PRODUCTION_SECURITY_HEADERS) },
+    body: '<h1>Offline</h1>', check: { marker: /Offline/i, headers: Object.keys(PRODUCTION_SECURITY_HEADERS) } };
+  assert.deepEqual(validatePage(baseline), []);
+  const marker = validatePage({ ...baseline, body: '<h1>Unexpected</h1>' });
+  assert.equal(marker.length, 1);
+  assert.match(marker[0], /marker/);
+  const status = validatePage({ ...baseline, response: { ...baseline.response, status: 503 } });
+  assert.equal(status.length, 1);
+  assert.match(status[0], /503/);
 });
 
 test('production smoke arguments require an HTTPS public origin and positive bounded controls', async () => {
