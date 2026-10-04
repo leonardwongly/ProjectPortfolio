@@ -45,8 +45,9 @@ function createStaticServer(rootDir) {
       // Decode the raw request target before resolving it. URL normalization
       // would erase traversal segments before we could reject them.
       const pathname = decodeURIComponent(request.url.split(/[?#]/, 1)[0]);
+      const discoveryDocument = pathname === '/.well-known/service-doc' || pathname === '/.well-known/service-doc.html';
       if (!pathname.startsWith('/') || pathname.startsWith('//') || /[\u0000-\u001f\u007f\\]/.test(pathname) ||
-          pathname.split('/').some((segment) => segment.startsWith('.'))) {
+          (!discoveryDocument && pathname.split('/').some((segment) => segment.startsWith('.')))) {
         throw new Error('Invalid static path');
       }
       const relativePath = pathname === '/' ? 'index.html' : pathname.slice(1);

@@ -70,6 +70,30 @@ test('static server serves deployment bytes, clean URLs, MIME types and HEAD rel
   assert.ok(responses.every((response) => response.status === 200 && response.body === home.body));
 });
 
+test('static server serves only the staged service-document discovery routes', async (t) => {
+  const { root, request } = await fixture(t);
+  fs.mkdirSync(path.join(root, '.well-known'));
+  const document = '<!doctype html><h1>Service documentation</h1>';
+  fs.writeFileSync(path.join(root, '.well-known/service-doc.html'), document);
+  fs.writeFileSync(path.join(root, '.well-known/private.html'), 'private canary');
+  for (const route of ['/.well-known/service-doc', '/.well-known/service-doc.html']) {
+    const result = await request(route);
+    assert.equal(result.status, 200, route);
+    assert.equal(result.body, document);
+    assert.equal(result.headers['content-type'], 'text/html; charset=utf-8');
+    const head = await request(route, 'HEAD');
+    assert.equal(head.status, 200);
+    assert.equal(head.body, '');
+    assert.equal(head.headers['content-length'], String(Buffer.byteLength(document)));
+  }
+  for (const route of ['/.well-known/private.html', '/.well-known/.env', '/.well-known/../index.html',
+    '/.well-known/%2e%2e/index.html', '/.well-known/service-doc/../index.html', '/.well-known//service-doc']) {
+    const result = await request(route);
+    assert.equal(result.status, 404, route);
+    assert.equal(result.body, '');
+  }
+});
+
 test('static server rejects absolute URL paths and prefix siblings before entering the file reader', async (t) => {
   const { root, request } = await fixture(t);
   const sibling = `${root}-sibling`;
