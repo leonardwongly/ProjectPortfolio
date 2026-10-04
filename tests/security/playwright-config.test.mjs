@@ -33,8 +33,10 @@ test('Playwright rejects invalid listener ports before constructing the server c
 
 test('Playwright rejects an explicitly empty configured port and cleans staging on exit', () => {
   const configUrl = new URL('../../playwright.config.mjs', import.meta.url).href;
-  const command = `import { playwrightStaticRoot } from ${JSON.stringify(configUrl)}; process.stdout.write(JSON.stringify({ path: playwrightStaticRoot, exists: (await import('node:fs')).existsSync(playwrightStaticRoot) }));`;
-  const emptyPort = spawnSync(process.execPath, ['--input-type=module', '--eval', command], {
+  const command = `import fs from 'node:fs';
+    const { playwrightStaticRoot } = await import(process.argv[1]);
+    process.stdout.write(JSON.stringify({ path: playwrightStaticRoot, exists: fs.existsSync(playwrightStaticRoot) }));`;
+  const emptyPort = spawnSync(process.execPath, ['--input-type=module', '--eval', command, configUrl], {
     encoding: 'utf8',
     timeout: 15000,
     env: { ...process.env, PLAYWRIGHT_PORT: '' }
@@ -45,7 +47,7 @@ test('Playwright rejects an explicitly empty configured port and cleans staging 
   assert.notEqual(emptyPort.status, 0);
   assert.match(`${emptyPort.stdout}${emptyPort.stderr}`, /range 1\.\.65535/);
 
-  const stagedSite = spawnSync(process.execPath, ['--input-type=module', '--eval', command], {
+  const stagedSite = spawnSync(process.execPath, ['--input-type=module', '--eval', command, configUrl], {
     encoding: 'utf8',
     timeout: 15000,
     env: { ...process.env, PLAYWRIGHT_PORT: '4173' }
@@ -77,11 +79,20 @@ for (const failure of ['missing', 'symlink', ...(process.platform === 'win32' ? 
       assert.ifError(fifo.error); assert.equal(fifo.status, 0);
     }
     const configPath = path.join(fixture, 'playwright.config.mjs');
-    const source = fs.readFileSync(new URL('../../playwright.config.mjs', import.meta.url), 'utf8')
-      .replace("from '@playwright/test'", `from ${JSON.stringify(pathToFileURL(path.resolve('node_modules/@playwright/test/index.mjs')).href)}`);
-    fs.writeFileSync(configPath, source);
-    const command = `import fs from 'node:fs'; const original = fs.mkdtempSync; let stage; fs.mkdtempSync = (...args) => { stage = original(...args); return stage; }; try { await import(${JSON.stringify(pathToFileURL(configPath).href)}); process.exitCode = 99; } catch (error) { process.stdout.write(JSON.stringify({ stage, message: error.message })); process.exitCode = 1; }`;
-    const child = spawnSync(process.execPath, ['--input-type=module', '--eval', command], {
+    fs.copyFileSync(new URL('../../playwright.config.mjs', import.meta.url), configPath);
+    fs.symlinkSync(path.resolve('node_modules'), path.join(fixture, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
+    const command = `import fs from 'node:fs';
+      const original = fs.mkdtempSync;
+      let stage;
+      fs.mkdtempSync = (...args) => { stage = original(...args); return stage; };
+      try {
+        await import(process.argv[1]);
+        process.exitCode = 99;
+      } catch (error) {
+        process.stdout.write(JSON.stringify({ stage, message: error.message }));
+        process.exitCode = 1;
+      }`;
+    const child = spawnSync(process.execPath, ['--input-type=module', '--eval', command, pathToFileURL(configPath).href], {
       encoding: 'utf8', timeout: 15000, env: { ...process.env, PLAYWRIGHT_PORT: '4173' }
     });
     assert.ifError(child.error); assert.equal(child.signal, null); assert.equal(child.status, 1, child.stderr);
