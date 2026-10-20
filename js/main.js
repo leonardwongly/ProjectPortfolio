@@ -422,20 +422,20 @@ function initThemeToggle() {
     document.documentElement.removeAttribute('data-theme');
   }
 
-  updateThemeToggleLabels(getEffectiveTheme(), toggles);
+  updateThemeToggleState(getEffectiveTheme(), toggles);
 
   toggles.forEach((toggle) => {
     toggle.addEventListener('click', () => {
       const next = getEffectiveTheme() === 'dark' ? 'light' : 'dark';
       applyTheme(next);
-      updateThemeToggleLabels(next, toggles);
+      updateThemeToggleState(next, toggles);
     });
   });
 
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
   const handleSystemChange = () => {
     if (!readStoredTheme()) {
-      updateThemeToggleLabels(getEffectiveTheme(), toggles);
+      updateThemeToggleState(getEffectiveTheme(), toggles);
     }
   };
 
@@ -473,17 +473,10 @@ function applyTheme(theme) {
   }
 }
 
-function updateThemeToggleLabels(theme, toggles) {
+function updateThemeToggleState(theme, toggles) {
+  // Keep the visible and accessible name stable; pressed means dark theme is on.
   toggles.forEach((toggle) => {
-    const label = toggle.querySelector('[data-theme-label]');
-    if (label) {
-      label.textContent = theme === 'dark' ? 'Dark' : 'Light';
-    }
     toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
-    toggle.setAttribute(
-      'aria-label',
-      theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-    );
   });
 }
 

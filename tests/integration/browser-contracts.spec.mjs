@@ -141,6 +141,55 @@ for (const outcome of ['success', 'abort']) {
   });
 }
 
+for (const initialTheme of ['light', 'dark']) {
+  test(`theme toggle keeps its visible name and pressed state in sync from ${initialTheme}`, async ({ page }) => {
+    const otherTheme = initialTheme === 'dark' ? 'light' : 'dark';
+    await page.emulateMedia({ colorScheme: initialTheme, reducedMotion: 'reduce' });
+    await page.goto('/index.html');
+    const toggle = page.locator('[data-theme-toggle]');
+    const openNavigation = async () => {
+      if (!(await toggle.isVisible())) {
+        await page.getByRole('button', { name: 'Toggle navigation' }).click();
+      }
+    };
+    const expectTheme = async (theme) => {
+      await expect(toggle).toBeVisible();
+      await expect(toggle).toHaveText('Dark theme');
+      await expect(toggle).toHaveAccessibleName('Dark theme');
+      await expect(toggle).toHaveAttribute('aria-pressed', String(theme === 'dark'));
+      const results = await new AxeBuilder({ page })
+        .include('[data-theme-toggle]')
+        .withRules(['label-content-name-mismatch'])
+        .analyze();
+      expect(results.violations).toEqual([]);
+    };
+    await openNavigation();
+    await expectTheme(initialTheme);
+
+    // Follow live system preferences until the user makes an explicit choice.
+    await page.emulateMedia({ colorScheme: otherTheme });
+    await expectTheme(otherTheme);
+    await page.emulateMedia({ colorScheme: initialTheme });
+    await expectTheme(initialTheme);
+
+    await toggle.press('Space');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', otherTheme);
+    await expectTheme(otherTheme);
+    await page.reload();
+    await openNavigation();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', otherTheme);
+    await expectTheme(otherTheme);
+
+    // A stored choice takes precedence over subsequent system changes.
+    await page.emulateMedia({ colorScheme: otherTheme });
+    await page.emulateMedia({ colorScheme: initialTheme });
+    await expectTheme(otherTheme);
+    await toggle.press('Enter');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', initialTheme);
+    await expectTheme(initialTheme);
+  });
+}
+
 test('theme choice persists and reduced motion exposes cards without pointer effects', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   await page.goto('/index.html');
@@ -180,8 +229,11 @@ for (const storage of ['invalid', 'unavailable']) {
       }
     }, storage);
     await page.goto('/index.html');
+    if (await page.getByRole('button', { name: 'Toggle navigation' }).isVisible()) {
+      await page.getByRole('button', { name: 'Toggle navigation' }).click();
+    }
     await expect(page.locator('[data-theme-toggle]').first()).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('[data-theme-toggle]').first()).toHaveAttribute('aria-label', 'Switch to light mode');
+    await expect(page.locator('[data-theme-toggle]').first()).toHaveAccessibleName('Dark theme');
     await expect(page.locator('.hero-section')).toHaveClass(/is-visible/);
     await expect(page.locator('.hero-section')).not.toHaveClass(/reveal-delay-/);
     await expect(page.locator('.hero-section')).toBeVisible();
