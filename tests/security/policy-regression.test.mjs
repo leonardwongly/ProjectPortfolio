@@ -134,6 +134,31 @@ test('discovery catalog advertises only static data files that the site serves',
   }
 });
 
+test('browser CI retains only failure diagnostics with bounded retention and no hidden files', () => {
+  const artifactNames = new Set();
+  for (const file of ['playwright-integration.yml', 'release-candidate.yml']) {
+    const workflow = YAML.parse(fs.readFileSync(`.github/workflows/${file}`, 'utf8'));
+    assert.deepEqual(workflow.permissions, { contents: 'read' });
+    for (const job of Object.values(workflow.jobs)) {
+      const uploads = job.steps.filter((step) => step.uses?.startsWith('actions/upload-artifact@'));
+      assert.equal(uploads.length, 1);
+      const upload = uploads[0];
+      assert.equal(upload.if, '${{ failure() }}');
+      assert.match(upload.uses, /^actions\/upload-artifact@[0-9a-f]{40}$/);
+      assert.deepEqual(upload.with.path.trim().split('\n'), [
+        'test-results/**/trace.zip',
+        'test-results/**/error-context.md'
+      ]);
+      assert.equal(upload.with['retention-days'], 3);
+      assert.equal(upload.with['include-hidden-files'], false);
+      assert.equal(upload.with['if-no-files-found'], 'ignore');
+      assert.equal(job.steps.at(-1), upload);
+      artifactNames.add(upload.with.name);
+    }
+  }
+  assert.equal(artifactNames.size, 2);
+});
+
 test('scan workflow enforces dependency audit and vendor governance gates', () => {
   const workflow = YAML.parse(fs.readFileSync('.github/workflows/scan.yml', 'utf8'));
   const jobs = Object.values(workflow.jobs);
