@@ -26,7 +26,7 @@ const PINNED_BOOTSTRAP_CSS = Object.freeze({
   version: '5.3.8',
   source: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css',
   license: 'MIT',
-  last_reviewed: '2026-09-27',
+  last_reviewed: '2026-11-23',
   review_cadence: 'monthly',
   max_review_age_days: 45,
   sha256: '8f8173cb2d8f867274aeb0cb15328e60f490c7f272351e51a55f1dabb486e4ff'
