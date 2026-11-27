@@ -77,8 +77,6 @@ The build workflow uses Node 24 LTS, regenerates static pages, checks that gener
 
 Draft pull requests intentionally skip the Playwright integration workflow. Mark a PR ready for review only when local validation has passed and generated files are committed.
 
-The Gemini assistant workflow separates planning from execution. Planning can inspect repository context and post comments, but cannot mint the GitHub App token or use git write commands. Execution runs in a separate job only after a trusted collaborator submits an exact `plan#<uuid> approved` command that references a prior `github-actions[bot]` plan comment.
-
 ## Release Checklist
 
 - [ ] `npm run build`

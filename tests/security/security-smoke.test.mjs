@@ -29,7 +29,7 @@ function smokeFixture(t) {
     write('src/' + filename, '<meta http-equiv="Content-Security-Policy" content="default-src \'self\'">\n');
   }
   write('partials/header.html', '<header>Safe fixture</header>\n');
-  write('.github/workflows/gemini-cli.yml', "permissions:\n  contents: 'read'\n");
+  write('.github/workflows/build.yml', "permissions:\n  contents: 'read'\n");
   write('_headers', "/*\n  Content-Security-Policy: default-src 'self'\n  Permissions-Policy: camera=()\n  X-Frame-Options: DENY\n");
   // Do not run a build or governance script while exercising the shell CLI.
   write('bin/node', '#!/usr/bin/env bash\nexit 0\n', true);
@@ -59,7 +59,7 @@ function smokeFixture(t) {
     'if [[ "$SMOKE_TEST_RG_NO_MATCH_CALL" == "$count" ]]; then exit 1; fi',
     'if [[ "$SMOKE_TEST_REAL_RG" != "" ]]; then exec "$SMOKE_TEST_REAL_RG" "$@"; fi',
     'case "$count" in',
-    '  5|6|7|9) exit 0 ;;',
+    '  5|6|7) exit 0 ;;',
     '  *) exit 1 ;;',
     'esac',
     ''
@@ -100,7 +100,7 @@ test('security smoke CLI accepts clean no-matches and completes its positive gua
   const result = fixture.run();
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stdout, /\[security-smoke\] All checks passed\./);
-  assert.equal(fixture.calls(), 9);
+  assert.equal(fixture.calls(), 8);
 });
 
 test('security smoke CLI fails closed when PCRE searches are unavailable', (t) => {
@@ -143,8 +143,7 @@ test('security smoke CLI retains required positive-match failures', (t) => {
   const positiveChecks = [
     { call: 5, message: '[security-smoke] Missing CSP response header in _headers.' },
     { call: 6, message: '[security-smoke] Missing Permissions-Policy in _headers.' },
-    { call: 7, message: '[security-smoke] Missing X-Frame-Options: DENY in _headers.' },
-    { call: 9, message: '[security-smoke] gemini-cli workflow should default to contents: read.' }
+    { call: 7, message: '[security-smoke] Missing X-Frame-Options: DENY in _headers.' }
   ];
   for (const { call, message } of positiveChecks) {
     const result = fixture.run({ SMOKE_TEST_RG_NO_MATCH_CALL: String(call) });
@@ -166,8 +165,7 @@ test('security smoke forwards real rg patterns over clean and unsafe fixture dat
     { name: 'unsafe URL', file: 'index.html', body: '<a href="javascript:alert(1)">Bad</a>', message: /dangerous URL/ },
     { name: 'unsafe CSP', file: 'src/index.html', body: '<meta http-equiv="Content-Security-Policy" content="style-src \'unsafe-inline\'">', message: /forbidden style-src/ },
     { name: 'inline style', file: 'offline.html', body: '<p style="color:red">Bad</p>', message: /inline style/ },
-    { name: 'missing required header', file: '_headers', body: '/*\n  Content-Security-Policy: default-src \'self\'\n  X-Frame-Options: DENY\n', message: /Missing Permissions-Policy/ },
-    { name: 'missing permission', file: '.github/workflows/gemini-cli.yml', body: 'permissions: {}\n', message: /contents: read/ }
+    { name: 'missing required header', file: '_headers', body: '/*\n  Content-Security-Policy: default-src \'self\'\n  X-Frame-Options: DENY\n', message: /Missing Permissions-Policy/ }
   ];
   for (const definition of fixtures) await t.test(definition.name, (t) => {
     const fixture = smokeFixture(t);
@@ -179,7 +177,7 @@ test('security smoke forwards real rg patterns over clean and unsafe fixture dat
       assert.doesNotMatch(result.stdout, /All checks passed/);
     } else {
       assert.match(result.stdout, /All checks passed/);
-      assert.equal(fixture.calls(), 9);
+      assert.equal(fixture.calls(), 8);
     }
   });
 });

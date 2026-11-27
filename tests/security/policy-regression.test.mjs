@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
 import YAML from 'yaml';
 import { parseHtmlDocument } from '../../scripts/lib/html-document.mjs';
 import path from 'node:path';
@@ -31,8 +30,6 @@ const GENERATED_HTML_FILES = [
 ];
 
 const HEADERS_FILE = '_headers';
-const GEMINI_ACTION_REFERENCE = /^        uses: 'google-github-actions\/run-gemini-cli@f77273f4c914e4bf38440cf36a0369cb64a37489' # ratchet:google-github-actions\/run-gemini-cli@v0\.1\.22$/m;
-
 
 function cspDirectives(value) {
   const directives = new Map();
@@ -169,88 +166,6 @@ test('scan workflow enforces dependency audit and vendor governance gates', () =
   }
   assert.equal(jobs.some((job) => job.steps?.some((step) => step.run === 'npm run validate:vendor')), false);
 
-});
-
-test('Gemini workflow keeps model sessions separate from GitHub and Git authority', () => {
-  const content = fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8');
-  const planJobStart = content.indexOf('  gemini-cli-plan:');
-  const executeJobStart = content.indexOf('  gemini-cli-execute:');
-
-  assert.ok(planJobStart >= 0, 'Missing Gemini planning job');
-  assert.ok(executeJobStart > planJobStart, 'Missing Gemini execution job after planning job');
-
-  const planJob = content.slice(planJobStart, executeJobStart);
-  const executeJob = content.slice(executeJobStart);
-
-  assert.doesNotMatch(planJob, /actions\/create-github-app-token/);
-  assert.doesNotMatch(planJob, /run_shell_command\(/);
-  assert.match(planJob, /"coreTools": \["write_file"\]/);
-  assert.match(planJob, /Post validated planning response/);
-  const planningActionStart = planJob.indexOf("- name: 'Run Gemini planning'");
-  const planningPostStart = planJob.indexOf("- name: 'Post validated planning response'");
-  const planningAction = planJob.slice(planningActionStart, planningPostStart);
-  assert.doesNotMatch(planningAction, /GITHUB_TOKEN:/);
-  assert.match(planningAction, GEMINI_ACTION_REFERENCE);
-  assert.doesNotMatch(planJob, /actions\/checkout@/);
-  assert.match(planJob, /Write Safety.*planning job MUST NOT run `git add`, `git commit`, `git push`/s);
-  assert.ok(
-    planJob.includes("!(contains(github.event.issue.body, 'plan#') && contains(github.event.issue.body, 'approved'))"),
-    'Planning job must not accept approved plan issue bodies'
-  );
-  assert.equal(
-    planJob.split("!(contains(github.event.comment.body, 'plan#') && contains(github.event.comment.body, 'approved'))").length - 1,
-    2,
-    'Planning job must not accept approved plan issue or review comments'
-  );
-  assert.ok(
-    planJob.includes("!(contains(github.event.review.body, 'plan#') && contains(github.event.review.body, 'approved'))"),
-    'Planning job must not accept approved plan reviews'
-  );
-
-  assert.doesNotMatch(executeJob, /actions\/create-github-app-token/);
-  assert.match(executeJob, /request_type=plan_execution/);
-  assert.match(executeJob, /plan#\$\{PLAN_ID\}/);
-  assert.match(executeJob, /github-actions\[bot\]/);
-  assert.doesNotMatch(executeJob, /run_shell_command\(/);
-  assert.match(executeJob, /"coreTools": \["write_file"\]/);
-  assert.match(executeJob, /Validate and publish implementation guidance/);
-  assert.match(executeJob, /no file-read, shell, GitHub, Git, comment, or token-backed tools/);
-  assert.match(executeJob, /Never attempt to commit, push, create branches, create pull requests, or post comments/);
-  const executionActionStart = executeJob.indexOf("- name: 'Run Gemini execution'");
-  const executionPostStart = executeJob.indexOf("- name: 'Validate and publish implementation guidance'");
-  const executionAction = executeJob.slice(executionActionStart, executionPostStart);
-  assert.doesNotMatch(executionAction, /GITHUB_TOKEN:/);
-  assert.match(executionAction, GEMINI_ACTION_REFERENCE);
-  assert.doesNotMatch(executeJob, /actions\/checkout@/);
-  assert.doesNotMatch(executeJob, /git (?:add|commit|push)\b/);
-});
-
-test('Gemini workflow removes GitHub App bootstrap and branch automation in favor of deterministic response validation', () => {
-  const content = fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8');
-  const planJobStart = content.indexOf('  gemini-cli-plan:');
-  const executeJobStart = content.indexOf('  gemini-cli-execute:');
-  const planJob = content.slice(planJobStart, executeJobStart);
-  const executeJob = content.slice(executeJobStart);
-  const executeJobPermissions = executeJob.slice(0, executeJob.indexOf('steps:'));
-
-  assert.doesNotMatch(content, /actions\/create-github-app-token/);
-  assert.doesNotMatch(content, /generate_token/);
-  assert.doesNotMatch(content, /BRANCH_NAME/);
-  assert.doesNotMatch(content, /Create new branch for issue/);
-  assert.doesNotMatch(content, /Set up git user for commits/);
-  assert.doesNotMatch(content, /Validate token for plan execution/);
-  assert.doesNotMatch(content, /Please respond to me by commenting your response/);
-
-  assert.doesNotMatch(executeJobPermissions, /id-token/);
-  assert.match(planJob, /id-token: 'write'/);
-
-  [planJob, executeJob].forEach((job) => {
-    assert.match(job, /if \[\[ ! -f response\.md \|\| -L response\.md \]\]; then/);
-    assert.match(job, /if \(\( \$\(wc -c < response\.md\) > 60000 \)\); then/);
-    assert.match(job, /GH_CONFIG_DIR: '\$\{\{ runner\.temp \}\}/);
-  });
-
-  assert.doesNotMatch(content, /actions\/checkout@/);
 });
 
 test('required CI workflows use the authoritative generated-file inventory', () => {
@@ -660,62 +575,13 @@ test('parsed HTML security oracles handle browser attribute normalization and ex
   assert.deepEqual(htmlSecurityFindings('<!-- <a target=_blank href=javascript:bad> --><p>Safe text</p><img src="data:image/png;base64,AAAA">'), []);
 });
 
-test('parsed workflow gates use operative steps and restrict model authority', () => {
+test('parsed workflow gates use operative steps', () => {
   for (const file of ['.github/workflows/build.yml', '.github/workflows/scan.yml']) {
     const workflow = YAML.parse(fs.readFileSync(file, 'utf8'));
     for (const command of ['npm run check:generated', 'npm run test:security:coverage']) {
       const job = Object.values(workflow.jobs).find((job) => job.steps?.some((step) => step.run === command));
       assert.ok(job, `${file}: ${command}`);
       requiredRun(job, command);
-    }
-  }
-  const workflow = YAML.parse(fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8'));
-  for (const job of Object.values(workflow.jobs)) {
-    const modelIndex = job.steps.findIndex((step) => step.uses?.startsWith('google-github-actions/run-gemini-cli@'));
-    assert.ok(modelIndex >= 0);
-    const model = job.steps[modelIndex];
-    assert.deepEqual(JSON.parse(model.with.settings).coreTools, ['write_file']);
-    assert.equal(model.env.GITHUB_TOKEN, undefined);
-    assert.equal(model.env.GH_TOKEN, undefined);
-    assert.equal(job.steps.some((step) => step.uses?.startsWith('actions/checkout@')), false);
-    const publish = job.steps.findIndex((step) => ['Post validated planning response', 'Validate and publish implementation guidance'].includes(step.name));
-    assert.ok(publish > modelIndex);
-    assert.equal(job.steps[publish].if, undefined);
-    assert.ok([undefined, false].includes(job.steps[publish]['continue-on-error']));
-    assert.match(job.steps[publish].env.GH_CONFIG_DIR, /^\$\{\{ runner\.temp }}/);
-  }
-});
-
-test('actual Gemini publish scripts reject invalid responses before any comment effect', async (t) => {
-  const workflow = YAML.parse(fs.readFileSync('.github/workflows/gemini-cli.yml', 'utf8'));
-  for (const job of Object.values(workflow.jobs)) {
-    const publish = job.steps.find((step) => ['Post validated planning response', 'Validate and publish implementation guidance'].includes(step.name));
-    assert.ok(publish);
-    for (const fixture of ['missing', 'directory', 'symlink', 'oversized', 'exact limit', 'valid issue']) {
-      await t.test(`${publish.name}: ${fixture}`, (t) => {
-        const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gemini-response-contract-'));
-        t.after(() => fs.rmSync(rootDir, { recursive: true, force: true }));
-        const response = path.join(rootDir, 'response.md');
-        const trace = path.join(rootDir, 'gh-trace');
-        const bin = path.join(rootDir, 'bin');
-        fs.mkdirSync(bin);
-        fs.writeFileSync(path.join(bin, 'gh'), '#!/usr/bin/env bash\nprintf \'%s\\n\' "$@" > "$GH_TEST_TRACE"\n', { mode: 0o755 });
-        if (fixture === 'directory') fs.mkdirSync(response);
-        else if (fixture === 'symlink') {
-          fs.writeFileSync(path.join(rootDir, 'target'), 'target must not be published');
-          fs.symlinkSync('target', response);
-        } else if (fixture !== 'missing') fs.writeFileSync(response, 'x'.repeat(fixture === 'oversized' ? 60001 : fixture === 'exact limit' ? 60000 : 10));
-        const valid = ['exact limit', 'valid issue'].includes(fixture);
-        const result = spawnSync('/bin/bash', ['--noprofile', '--norc', '-c', '[[ $(command -v gh) == "$GH_TEST_BINARY" ]] || exit 24\n' + publish.run], {
-          cwd: rootDir, encoding: 'utf8', timeout: 5000,
-          env: { PATH: bin + path.delimiter + '/usr/bin:/bin', GH_TEST_BINARY: path.join(bin, 'gh'), GH_TEST_TRACE: trace, IS_PR: fixture === 'valid issue' ? 'false' : 'true', ISSUE_NUMBER: '42', REPOSITORY: 'owner/repo', GH_CONFIG_DIR: path.join(rootDir, 'gh-config') }
-        });
-        assert.equal(result.error, undefined);
-        assert.equal(result.status, valid ? 0 : 1, result.stdout + result.stderr);
-        assert.equal(fs.existsSync(trace), valid);
-        if (valid) assert.deepEqual(fs.readFileSync(trace, 'utf8').trimEnd().split('\n'), [fixture === 'valid issue' ? 'issue' : 'pr', 'comment', '42', '--repo', 'owner/repo', '--body-file', 'response.md']);
-        else assert.match(result.stderr, fixture === 'oversized' ? /60,000-byte comment limit/ : /regular file/);
-      });
     }
   }
 });
