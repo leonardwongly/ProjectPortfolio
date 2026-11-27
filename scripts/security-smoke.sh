@@ -94,10 +94,4 @@ echo "[security-smoke] Checking generated HTML for inline style attributes..."
 assert_no_matches "[security-smoke] Found inline style attribute in generated HTML." \
   -n "\\sstyle\\s*=" index.html reading.html offline.html
 
-echo "[security-smoke] Checking workflow permission baseline..."
-if ! rg -n "contents: 'read'" .github/workflows/gemini-cli.yml >/dev/null; then
-  echo "[security-smoke] gemini-cli workflow should default to contents: read." >&2
-  exit 1
-fi
-
 echo "[security-smoke] All checks passed."

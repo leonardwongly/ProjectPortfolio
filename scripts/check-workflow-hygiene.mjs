@@ -17,12 +17,6 @@ const APPROVED_WRITE_GRANTS = new Map([
   ['.github/workflows/codeql.yml', {
     workflow: new Set(['security-events']),
     jobs: new Map([['analyze', new Set(['security-events'])]])
-  }],
-  ['.github/workflows/gemini-cli.yml', {
-    jobs: new Map([
-      ['gemini-cli-plan', new Set(['id-token', 'issues', 'pull-requests'])],
-      ['gemini-cli-execute', new Set(['issues', 'pull-requests'])]
-    ])
   }]
 ]);
 const REMOTE_ACTION_WITH_SHA = /^([^@\s]+)@([0-9a-f]{40})$/i;
